@@ -1,0 +1,10 @@
+DOXYFILE_ENCODING         = UTF-8
+ENABLE_PREPROCESSING      = NO
+EXTRACT_ALL               = YES
+GENERATE_TREEVIEW         = YES
+INPUT                     = src/
+INPUT_ENCODING            = UTF-8
+OUTPUT_DIRECTORY          = docs
+PROJECT_BRIEF             = "myproject"
+PROJECT_NAME              = myproject
+PROJECT_NUMBER            = 0.0.1
