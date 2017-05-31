@@ -55,7 +55,8 @@ void drop_reference(Regref reference);
  */
 lua_State* get_lua_state();
 
-}
-}
+
+} // namespace Script
+} // namespace pegr
 
 #endif // PEGR_SCRIPT_SCRIPT_HPP

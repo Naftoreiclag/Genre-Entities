@@ -22,6 +22,7 @@
 set(PGLOCAL_SOURCES_LIST "")
 foreach(fname 
 
+"Gensys.cpp"
 "Script.cpp"
 "main.cpp"
 
