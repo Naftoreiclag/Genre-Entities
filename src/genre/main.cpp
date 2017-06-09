@@ -6,18 +6,20 @@
 using namespace pegr;
 
 int test(lua_State* l) {
-    std::cout << "test" << std::endl;
+    std::cout << "Hello from C++" << std::endl;
     return 0;
 }
 
 int main() {
     Script::initialize();
+    Script::Regref func = Script::load_c_function(test);
+    Script::add_to_pegr_table("test", func);
+    std::cout << "asdfasdf" << std::endl;
+    
+    
     Script::Regref environment = Script::new_sandbox();
     Script::Regref script = Script::load_lua_function("test.lua", environment);
-    Script::Regref func = Script::load_c_function(test);
-    
-    Script::add_to_pegr_table("test", func);
-    
+    Script::run_function(script);
     /*
     Script::run_function(script);
     std::cout << sizeof(std::string) << std::endl;

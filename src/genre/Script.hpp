@@ -11,7 +11,10 @@ namespace Script {
  */
 typedef int Regref;
 
+extern const char* PEGR_MODULE_NAME;
+
 extern const Regref ROOT_ENVIRONMENT;
+extern Regref m_pristine_sandbox;
 
 /**
  * @brief Creates the lua state and loads standard libraries
@@ -72,6 +75,15 @@ lua_State* get_lua_state();
  * @param safe If true, then this value is accessible in sandboxes
  */
 void add_to_pegr_table(const char* key, Regref value, bool safe = true);
+
+/**
+ * @brief Makes a "semi-deep" copy of the table at given index:
+ * Does try to copy the keys. Only tries to copy the values if they are tables.
+ * The copy is pushed onto the stack.
+ * @param idx The index in the stack of the table you want to copy. Does not
+ * pop that value off the stack.
+ */
+void stk_simple_deep_copy(int idx = -1);
 
 
 } // namespace Script

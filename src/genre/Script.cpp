@@ -10,9 +10,15 @@
 namespace pegr {
 namespace Script {
 
+const char* PEGR_MODULE_NAME = "pegr";
+    
 lua_State* m_l = nullptr;
 bool m_initialized = false;
 std::string m_lua_version;
+Regref m_pristine_sandbox;
+
+Regref m_pegr_table;
+Regref m_pegr_table_safe;
 
 typedef std::pair<const char*, std::vector<const char*> > Whitelist_Entry;
 
@@ -137,6 +143,45 @@ void initialize() {
     m_lua_version = std::string(luastr, strlen);
     std::cout << m_lua_version << std::endl;
     lua_pop(m_l, 1);
+    
+    lua_newtable(m_l);
+    for (const Whitelist_Entry& whitelisted_table : m_global_whitelist) {
+        const char* module = whitelisted_table.first;
+        const auto& members = whitelisted_table.second;
+        if (module) {
+            lua_newtable(m_l);
+            lua_getglobal(m_l, module);
+            assert(!lua_isnil(m_l, -1) && "Required library not found!");
+            for (const char* member : members) {
+                lua_getfield(m_l, -1, member);
+                //std::cout << module << "." << member << std::endl;
+                assert(!lua_isnil(m_l, -1) && "Required lib func not found!");
+                lua_setfield(m_l, -3, member);
+            }
+            lua_pop(m_l, 1);
+            lua_setfield(m_l, -2, module);
+        }
+        else {
+            for (const char* member : members) {
+                lua_getglobal(m_l, member);
+                //std::cout << member << std::endl;
+                assert(!lua_isnil(m_l, -1) && "Required glob func not found!");
+                lua_setfield(m_l, -2, member);
+            }
+        }
+    }
+    lua_newtable(m_l);
+    lua_pushvalue(m_l, -1);
+    m_pegr_table_safe = luaL_ref(m_l, LUA_REGISTRYINDEX);
+    lua_setfield(m_l, -2, PEGR_MODULE_NAME);
+    m_pristine_sandbox = luaL_ref(m_l, LUA_REGISTRYINDEX);
+    
+    lua_newtable(m_l);
+    lua_pushvalue(m_l, -1);
+    m_pegr_table = luaL_ref(m_l, LUA_REGISTRYINDEX);
+    lua_setglobal(m_l, PEGR_MODULE_NAME);
+    
+    assert(lua_gettop(m_l) == 0);
 }
 
 void cleanup() {
@@ -237,36 +282,15 @@ void run_function(Regref func) {
 }
 
 Regref new_sandbox() {
-    lua_newtable(m_l);
-    for (const Whitelist_Entry& whitelisted_table : m_global_whitelist) {
-        const char* module = whitelisted_table.first;
-        const auto& members = whitelisted_table.second;
-        if (module) {
-            lua_newtable(m_l);
-            lua_getglobal(m_l, module);
-            assert(!lua_isnil(m_l, -1) && "Required library not found!");
-            for (const char* member : members) {
-                lua_getfield(m_l, -1, member);
-                //std::cout << module << "." << member << std::endl;
-                assert(!lua_isnil(m_l, -1) && "Required lib func not found!");
-                lua_setfield(m_l, -3, member);
-            }
-            lua_pop(m_l, 1);
-            lua_setfield(m_l, -2, module);
-        }
-        else {
-            for (const char* member : members) {
-                lua_getglobal(m_l, member);
-                //std::cout << member << std::endl;
-                assert(!lua_isnil(m_l, -1) && "Required glob func not found!");
-                lua_setfield(m_l, -2, member);
-            }
-        }
-    }
+    // Make a deep copy of the pristine sandbox
+    lua_rawgeti(m_l, LUA_REGISTRYINDEX, m_pristine_sandbox);
+    stk_simple_deep_copy();
     // Set the "_G" member to itself
     lua_pushvalue(m_l, -1);
     lua_setfield(m_l, -2, "_G");
-    return luaL_ref(m_l, LUA_REGISTRYINDEX);
+    Regref ret_val = luaL_ref(m_l, LUA_REGISTRYINDEX);
+    lua_pop(m_l, 1); // Pop the pristine sandbox
+    return ret_val;
 }
 
 void drop_reference(Regref reference) {
@@ -278,7 +302,42 @@ lua_State* get_lua_state() {
 }
 
 void add_to_pegr_table(const char* key, Regref value, bool safe) {
-    
+    lua_rawgeti(m_l, LUA_REGISTRYINDEX, m_pegr_table);
+    lua_rawgeti(m_l, LUA_REGISTRYINDEX, value);
+    if (safe) {
+        lua_rawgeti(m_l, LUA_REGISTRYINDEX, m_pegr_table_safe);
+        lua_rawgeti(m_l, LUA_REGISTRYINDEX, value);
+        lua_setfield(m_l, -2, key);
+        lua_pop(m_l, 1);
+    }
+    lua_setfield(m_l, -2, key);
+}
+
+void stk_simple_deep_copy(int idx) {
+    if (idx < 0) {
+        idx = lua_gettop(m_l) + idx + 1;
+    }
+    lua_newtable(m_l);
+    lua_pushnil(m_l);
+    while (lua_next(m_l, idx) != 0) {
+        // Copy the reference to the key so there is one for iterating with
+        lua_pushvalue(m_l, -2);
+        
+        // Copy the value if it is a table
+        if (lua_type(m_l, -2) == LUA_TTABLE) {
+            stk_simple_deep_copy(-2);
+        } else {
+            lua_pushvalue(m_l, -2);
+        }
+        
+        // Set the key-value pair
+        lua_settable(m_l, -5);
+        
+        // Remove the original value reference
+        lua_pop(m_l, 1);
+        
+        // (A reference to the key is still on the stack for iteration)
+    }
 }
 
 } // namespace Script
