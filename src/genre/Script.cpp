@@ -16,6 +16,8 @@ std::string m_lua_version;
 
 typedef std::pair<const char*, std::vector<const char*> > Whitelist_Entry;
 
+const Regref ROOT_ENVIRONMENT = LUA_GLOBALSINDEX;
+
 const std::vector<Whitelist_Entry> m_global_whitelist = {
     { nullptr, {
         "_VERSION",
@@ -143,6 +145,11 @@ void cleanup() {
     lua_close(m_l);
 }
 
+Regref load_c_function(lua_CFunction func, int closure_size) {
+    lua_pushcclosure(m_l, func, closure_size);
+    return luaL_ref(m_l, LUA_REGISTRYINDEX);
+}
+
 const std::streamsize BLOCK_LENGTH = 4096;
 struct FR_Closure {
     std::ifstream m_file;
@@ -152,6 +159,7 @@ struct FR_Closure {
         m_file.swap(file);
     }
 };
+
 const char* file_reader(lua_State* L, void* data, size_t* size) {
     FR_Closure& closure = *static_cast<FR_Closure*>(data);
     if (closure.m_file.eof()) {
@@ -164,7 +172,7 @@ const char* file_reader(lua_State* L, void* data, size_t* size) {
     return closure.m_block;
 }
 
-Regref load_function(const char* filename, Regref environment,
+Regref load_lua_function(const char* filename, Regref environment,
                             const char* chunkname) {
     if (!chunkname) { chunkname = filename; }
     /* Note: as far as I know, both Lua 5.1 and LuaJIT recognize bytecode
@@ -239,7 +247,7 @@ Regref new_sandbox() {
             assert(!lua_isnil(m_l, -1) && "Required library not found!");
             for (const char* member : members) {
                 lua_getfield(m_l, -1, member);
-                std::cout << module << "." << member << std::endl;
+                //std::cout << module << "." << member << std::endl;
                 assert(!lua_isnil(m_l, -1) && "Required lib func not found!");
                 lua_setfield(m_l, -3, member);
             }
@@ -249,7 +257,7 @@ Regref new_sandbox() {
         else {
             for (const char* member : members) {
                 lua_getglobal(m_l, member);
-                std::cout << member << std::endl;
+                //std::cout << member << std::endl;
                 assert(!lua_isnil(m_l, -1) && "Required glob func not found!");
                 lua_setfield(m_l, -2, member);
             }
@@ -267,6 +275,10 @@ void drop_reference(Regref reference) {
 
 lua_State* get_lua_state() {
     return m_l;
+}
+
+void add_to_pegr_table(const char* key, Regref value, bool safe) {
+    
 }
 
 } // namespace Script

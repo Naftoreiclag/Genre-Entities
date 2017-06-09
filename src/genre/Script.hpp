@@ -11,6 +11,8 @@ namespace Script {
  */
 typedef int Regref;
 
+extern const Regref ROOT_ENVIRONMENT;
+
 /**
  * @brief Creates the lua state and loads standard libraries
  */
@@ -22,13 +24,21 @@ void initialize();
 void cleanup();
 
 /**
+ * @brief Loads a c function
+ * @param func Pointer to the function to add
+ * @param closure_size 
+ * @return 
+ */
+Regref load_c_function(lua_CFunction func, int closure_size = 0);
+
+/**
  * @brief Loads a function from a lua file
  * @param filename The file to read
  * @param environment The environment (closure upvalue table) for this function
  * @param chunkname The name of the chunk used for debugging purposes
  * @return A lua reference to the new function
  */
-Regref load_function(const char* filename, Regref environment,
+Regref load_lua_function(const char* filename, Regref environment,
                             const char* chunkname = nullptr);
 
 /**
@@ -54,6 +64,14 @@ void drop_reference(Regref reference);
  * @return The global lua state
  */
 lua_State* get_lua_state();
+
+/**
+ * @brief Adds a lua value to the pegr table
+ * @param key The key
+ * @param value The value
+ * @param safe If true, then this value is accessible in sandboxes
+ */
+void add_to_pegr_table(const char* key, Regref value, bool safe = true);
 
 
 } // namespace Script
