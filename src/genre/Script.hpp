@@ -1,8 +1,6 @@
 #ifndef PEGR_SCRIPT_SCRIPT_HPP
 #define PEGR_SCRIPT_SCRIPT_HPP
 
-#include <cstddef>
-
 #include <lua.hpp>
 
 namespace pegr {
@@ -97,12 +95,10 @@ void expose_string(const char* key, const char* str, bool safe = true);
 /**
  * @brief Exposes multiple c functions to lua. Faster than repeatedly calling
  * expose_referenced_value with referenced functions
- * @param api Multiple registry entries
- * @param count Number of items in entry array
+ * @param api Multiple registry entries. Array must end with a pair of nullptrs.
  * @param safe If true, then these values are accessible in sandboxes
  */
-void multi_expose_c_functions(const luaL_Reg* api, std::size_t count, 
-        bool safe = true);
+void multi_expose_c_functions(const luaL_Reg* api, bool safe = true);
 
 /**
  * @brief Makes a "semi-deep" copy of the table at given index:

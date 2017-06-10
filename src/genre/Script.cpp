@@ -1,6 +1,7 @@
 #include "Script.hpp"
 
 #include <cassert>
+#include <cstddef>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -336,14 +337,16 @@ void expose_string(const char* key, const char* str, bool safe) {
     }
     lua_setfield(m_l, -2, key);
 }
-void multi_expose_c_functions(const luaL_Reg* api, std::size_t count, 
-        bool safe) {
+void multi_expose_c_functions(const luaL_Reg* api, bool safe) {
     lua_rawgeti(m_l, LUA_REGISTRYINDEX, m_pegr_table);
     if (safe) {
         lua_rawgeti(m_l, LUA_REGISTRYINDEX, m_pegr_table_safe);
     }
-    for (std::size_t idx = 0; idx < count; ++ idx) {
+    for (std::size_t idx = 0; /*reg.name is not nullptr*/; ++idx) {
         const luaL_Reg& reg = api[idx];
+        if (reg.name == nullptr) {
+            break;
+        }
         lua_pushcfunction(m_l, reg.func);
         if (safe) {
             lua_pushvalue(m_l, -1);
