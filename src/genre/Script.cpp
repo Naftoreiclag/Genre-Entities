@@ -139,7 +139,7 @@ void initialize() {
     luaL_openlibs(m_l);
     
     lua_getglobal(m_l, "_VERSION");
-    size_t strlen;
+    std::size_t strlen;
     const char* luastr = lua_tolstring(m_l, -1, &strlen);
     m_lua_version = std::string(luastr, strlen);
     std::cout << m_lua_version << std::endl;
@@ -279,7 +279,8 @@ void run_function(Regref func) {
         case LUA_ERRERR: {
             size_t strlen;
             const char* luastr = lua_tolstring(m_l, -1, &strlen);
-            std::cout << std::string(luastr, strlen) << std::endl;
+            std::cout << "LUA ERROR:" 
+                << std::string(luastr, strlen) << std::endl;
         }
     }
 }

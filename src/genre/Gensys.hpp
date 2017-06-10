@@ -97,6 +97,9 @@ public:
     void finalize();
 
 };
+
+
+int li_add_component(lua_State* l);
     
 } // namespace Gensys
 } // namespace pegr
