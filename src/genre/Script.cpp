@@ -14,7 +14,6 @@ namespace Script {
 const char* PEGR_MODULE_NAME = "pegr";
     
 lua_State* m_l = nullptr;
-bool m_initialized = false;
 std::string m_lua_version;
 Regref m_pristine_sandbox;
 
@@ -132,8 +131,7 @@ const std::vector<Whitelist_Entry> m_global_whitelist = {
 };
 
 void initialize() {
-    assert(!m_initialized);
-    m_initialized = true;
+    assert(!m_l);
     
     m_l = luaL_newstate();
     luaL_openlibs(m_l);
@@ -173,27 +171,27 @@ void initialize() {
     }
     lua_newtable(m_l);
     lua_pushvalue(m_l, -1);
-    m_pegr_table_safe = luaL_ref(m_l, LUA_REGISTRYINDEX);
+    m_pegr_table_safe = grab_reference();
     lua_setfield(m_l, -2, PEGR_MODULE_NAME);
-    m_pristine_sandbox = luaL_ref(m_l, LUA_REGISTRYINDEX);
+    m_pristine_sandbox = grab_reference();
     
     lua_newtable(m_l);
     lua_pushvalue(m_l, -1);
-    m_pegr_table = luaL_ref(m_l, LUA_REGISTRYINDEX);
+    m_pegr_table = grab_reference();
     lua_setglobal(m_l, PEGR_MODULE_NAME);
     
     assert(lua_gettop(m_l) == 0);
 }
 
 void cleanup() {
-    assert(m_initialized);
-    m_initialized = false;
+    assert(m_l);
     lua_close(m_l);
+    m_l = nullptr;
 }
 
 Regref load_c_function(lua_CFunction func, int closure_size) {
     lua_pushcclosure(m_l, func, closure_size);
-    return luaL_ref(m_l, LUA_REGISTRYINDEX);
+    return grab_reference();
 }
 
 const std::streamsize BLOCK_LENGTH = 4096;
@@ -263,14 +261,14 @@ Regref load_lua_function(const char* filename, Regref environment,
         default: break;
     }
     if (environment != NO_SANDBOX) {
-        lua_rawgeti(m_l, LUA_REGISTRYINDEX, environment);
+        push_reference(environment);
         lua_setfenv(m_l, -2);
     }
-    return luaL_ref(m_l, LUA_REGISTRYINDEX);
+    return grab_reference();
 }
 
 void run_function(Regref func) {
-    lua_rawgeti(m_l, LUA_REGISTRYINDEX, func);
+    push_reference(func);
     int status = lua_pcall(m_l, 0, LUA_MULTRET, 0);
     
     switch (status) {
@@ -287,12 +285,12 @@ void run_function(Regref func) {
 
 Regref new_sandbox() {
     // Make a deep copy of the pristine sandbox
-    lua_rawgeti(m_l, LUA_REGISTRYINDEX, m_pristine_sandbox);
+    push_reference(m_pristine_sandbox);
     stk_simple_deep_copy();
     // Set the "_G" member to itself
     lua_pushvalue(m_l, -1);
     lua_setfield(m_l, -2, "_G");
-    Regref ret_val = luaL_ref(m_l, LUA_REGISTRYINDEX);
+    Regref ret_val = grab_reference();
     lua_pop(m_l, 1); // Pop the pristine sandbox
     return ret_val;
 }
@@ -301,15 +299,23 @@ void drop_reference(Regref reference) {
     luaL_unref(m_l, LUA_REGISTRYINDEX, reference);
 }
 
+void push_reference(Regref reference) {
+    lua_rawgeti(m_l, LUA_REGISTRYINDEX, reference);
+}
+
+Regref grab_reference() {
+    luaL_ref(m_l, LUA_REGISTRYINDEX);
+}
+
 lua_State* get_lua_state() {
     return m_l;
 }
 
 void expose_referenced_value(const char* key, Regref value, bool safe) {
-    lua_rawgeti(m_l, LUA_REGISTRYINDEX, m_pegr_table);
-    lua_rawgeti(m_l, LUA_REGISTRYINDEX, value);
+    push_reference(m_pegr_table);
+    push_reference(value);
     if (safe) {
-        lua_rawgeti(m_l, LUA_REGISTRYINDEX, m_pegr_table_safe);
+        push_reference(m_pegr_table_safe);
         lua_pushvalue(m_l, -1);
         lua_setfield(m_l, -2, key);
         lua_pop(m_l, 1);
@@ -317,10 +323,10 @@ void expose_referenced_value(const char* key, Regref value, bool safe) {
     lua_setfield(m_l, -2, key);
 }
 void expose_number(const char* key, lua_Number num, bool safe) {
-    lua_rawgeti(m_l, LUA_REGISTRYINDEX, m_pegr_table);
+    push_reference(m_pegr_table);
     lua_pushnumber(m_l, num);
     if (safe) {
-        lua_rawgeti(m_l, LUA_REGISTRYINDEX, m_pegr_table_safe);
+        push_reference(m_pegr_table_safe);
         lua_pushvalue(m_l, -1);
         lua_setfield(m_l, -2, key);
         lua_pop(m_l, 1);
@@ -328,10 +334,10 @@ void expose_number(const char* key, lua_Number num, bool safe) {
     lua_setfield(m_l, -2, key);
 }
 void expose_string(const char* key, const char* str, bool safe) {
-    lua_rawgeti(m_l, LUA_REGISTRYINDEX, m_pegr_table);
+    push_reference(m_pegr_table);
     lua_pushstring(m_l, str);
     if (safe) {
-        lua_rawgeti(m_l, LUA_REGISTRYINDEX, m_pegr_table_safe);
+        push_reference(m_pegr_table_safe);
         lua_pushvalue(m_l, -1);
         lua_setfield(m_l, -2, key);
         lua_pop(m_l, 1);
@@ -339,9 +345,9 @@ void expose_string(const char* key, const char* str, bool safe) {
     lua_setfield(m_l, -2, key);
 }
 void multi_expose_c_functions(const luaL_Reg* api, bool safe) {
-    lua_rawgeti(m_l, LUA_REGISTRYINDEX, m_pegr_table);
+    push_reference(m_pegr_table);
     if (safe) {
-        lua_rawgeti(m_l, LUA_REGISTRYINDEX, m_pegr_table_safe);
+        push_reference(m_pegr_table_safe);
     }
     for (std::size_t idx = 0; /*reg.name is not nullptr*/; ++idx) {
         const luaL_Reg& reg = api[idx];
@@ -361,7 +367,7 @@ void stk_simple_deep_copy(int idx) {
     if (idx < 0) {
         idx = lua_gettop(m_l) + idx + 1;
     }
-    lua_newtable(m_l);
+    lua_newtable(m_l); // TODO: preallocate enough space
     lua_pushnil(m_l);
     while (lua_next(m_l, idx) != 0) {
         // Copy the reference to the key so there is one for iterating with

@@ -17,10 +17,16 @@ int restricted(lua_State* l) {
 
 int main() {
     Script::initialize();
+    Gensys::initialize();
     
     const luaL_Reg api_safe[] = {
         {"test", test},
+        {"add_archetype", Gensys::li_add_archetype},
+        {"find_archetype", Gensys::li_get_archetype},
+        {"add_genre", Gensys::li_add_genre},
+        {"find_genre", Gensys::li_get_genre},
         {"add_component", Gensys::li_add_component},
+        {"find_component", Gensys::li_get_component},
         
         // End of the list
         {nullptr, nullptr}

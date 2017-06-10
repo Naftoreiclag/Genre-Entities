@@ -29,8 +29,6 @@ struct Prim_V {
     };
 };
 
-namespace Working {
-
 typedef std::string Comp_Ref;
 typedef std::string Symbol;
 
@@ -77,30 +75,20 @@ struct Genre {
     std::map<Comp_Ref, Pattern> m_patterns;
 };
 
-} // namespace Working
+extern Script::Regref m_working_archetypes;
+extern Script::Regref m_working_genres;
+extern Script::Regref m_working_components;
 
-/**
- * @class World
- * @brief Entity interaction environment
- */
-class World {
-    
-private:
-    
-public:
-    
-    void set_archetype(std::string id, Script::Regref arch);
-    void set_genre(std::string id, Script::Regref genre);
-    void set_component(std::string id, Script::Regref comp);
+void initialize();
+void compile();
 
-    // TODO: JIT for archetypes
-    void finalize();
-
-};
-
-
+int li_add_archetype(lua_State* l);
+int li_get_archetype(lua_State* l);
+int li_add_genre(lua_State* l);
+int li_get_genre(lua_State* l);
 int li_add_component(lua_State* l);
-    
+int li_get_component(lua_State* l);
+
 } // namespace Gensys
 } // namespace pegr
 

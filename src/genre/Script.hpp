@@ -63,6 +63,19 @@ Regref new_sandbox();
 void drop_reference(Regref reference);
 
 /**
+ * @brief Pushes the referenced value onto the lua stack.
+ * @param reference The reference you would like to be pushed onto the stack
+ */
+void push_reference(Regref reference);
+
+/**
+ * @brief Makes a new reference to the element on the top of the stack and pops
+ * it from the stack.
+ * @return The new reference
+ */
+Regref grab_reference();
+
+/**
  * @brief Get the global lua state
  * @return The global lua state
  */
