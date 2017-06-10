@@ -1,6 +1,8 @@
 #ifndef PEGR_SCRIPT_SCRIPT_HPP
 #define PEGR_SCRIPT_SCRIPT_HPP
 
+#include <cstddef>
+
 #include <lua.hpp>
 
 namespace pegr {
@@ -13,7 +15,7 @@ typedef int Regref;
 
 extern const char* PEGR_MODULE_NAME;
 
-extern const Regref ROOT_ENVIRONMENT;
+extern const Regref NO_SANDBOX;
 extern Regref m_pristine_sandbox;
 
 /**
@@ -69,12 +71,38 @@ void drop_reference(Regref reference);
 lua_State* get_lua_state();
 
 /**
- * @brief Adds a lua value to the pegr table
+ * @brief Adds a lua value to the pegr table, making it accessible in lua.
  * @param key The key
- * @param value The value
+ * @param value Lua reference to the value
  * @param safe If true, then this value is accessible in sandboxes
  */
-void add_to_pegr_table(const char* key, Regref value, bool safe = true);
+void expose_referenced_value(const char* key, Regref value, bool safe = true);
+
+/**
+ * @brief Adds a number to the pegr table
+ * @param key The key
+ * @param num The number
+ * @param safe If true, then this value is accessible in sandboxes
+ */
+void expose_number(const char* key, lua_Number num, bool safe = true);
+
+/**
+ * @brief Adds a string to the pegr table
+ * @param key The key
+ * @param str The string
+ * @param safe If true, then this value is accessible in sandboxes
+ */
+void expose_string(const char* key, const char* str, bool safe = true);
+
+/**
+ * @brief Exposes multiple c functions to lua. Faster than repeatedly calling
+ * expose_referenced_value with referenced functions
+ * @param api Multiple registry entries
+ * @param count Number of items in entry array
+ * @param safe If true, then these values are accessible in sandboxes
+ */
+void multi_expose_c_functions(const luaL_Reg* api, std::size_t count, 
+        bool safe = true);
 
 /**
  * @brief Makes a "semi-deep" copy of the table at given index:

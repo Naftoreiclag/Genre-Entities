@@ -10,31 +10,28 @@ int test(lua_State* l) {
     return 0;
 }
 
+int restricted(lua_State* l) {
+    std::cout << "You can't use this function" << std::endl;
+    return 0;
+}
+
 int main() {
     Script::initialize();
-    Script::Regref func = Script::load_c_function(test);
-    Script::add_to_pegr_table("test", func);
-    std::cout << "asdfasdf" << std::endl;
+    const luaL_Reg safe_api[] = {
+        {"test", test}
+    };
+    Script::multi_expose_c_functions(safe_api, 
+            sizeof(safe_api) / sizeof(luaL_Reg));
+    const luaL_Reg restricted_api[] = {
+        {"restricted", restricted}
+    };
+    Script::multi_expose_c_functions(restricted_api, 
+            sizeof(restricted_api) / sizeof(luaL_Reg), false);
     
+    Script::run_function(Script::load_lua_function("malicious.lua", Script::new_sandbox()));
+    Script::run_function(Script::load_lua_function("test.lua", Script::new_sandbox()));
+    Script::run_function(Script::load_lua_function("elevated.lua", Script::NO_SANDBOX));
     
-    Script::Regref environment = Script::new_sandbox();
-    Script::Regref script = Script::load_lua_function("test.lua", environment);
-    Script::run_function(script);
-    /*
-    Script::run_function(script);
-    std::cout << sizeof(std::string) << std::endl;
-    std::cout << sizeof(float) << std::endl;
-    std::cout << sizeof(double) << std::endl;
-    */
-    /*
-    const char* deg;
-    {
-        std::string egg;
-        std::getline(std::cin, egg);
-        deg = egg.c_str();
-    }
-    std::cout << deg << std::endl;
-    */
     Script::cleanup();
     return 0;
 }

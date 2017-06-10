@@ -22,7 +22,7 @@ Regref m_pegr_table_safe;
 
 typedef std::pair<const char*, std::vector<const char*> > Whitelist_Entry;
 
-const Regref ROOT_ENVIRONMENT = LUA_GLOBALSINDEX;
+const Regref NO_SANDBOX = LUA_GLOBALSINDEX;
 
 const std::vector<Whitelist_Entry> m_global_whitelist = {
     { nullptr, {
@@ -261,8 +261,10 @@ Regref load_lua_function(const char* filename, Regref environment,
         }
         default: break;
     }
-    lua_rawgeti(m_l, LUA_REGISTRYINDEX, environment);
-    lua_setfenv(m_l, -2);
+    if (environment != NO_SANDBOX) {
+        lua_rawgeti(m_l, LUA_REGISTRYINDEX, environment);
+        lua_setfenv(m_l, -2);
+    }
     return luaL_ref(m_l, LUA_REGISTRYINDEX);
 }
 
@@ -301,16 +303,54 @@ lua_State* get_lua_state() {
     return m_l;
 }
 
-void add_to_pegr_table(const char* key, Regref value, bool safe) {
+void expose_referenced_value(const char* key, Regref value, bool safe) {
     lua_rawgeti(m_l, LUA_REGISTRYINDEX, m_pegr_table);
     lua_rawgeti(m_l, LUA_REGISTRYINDEX, value);
     if (safe) {
         lua_rawgeti(m_l, LUA_REGISTRYINDEX, m_pegr_table_safe);
-        lua_rawgeti(m_l, LUA_REGISTRYINDEX, value);
+        lua_pushvalue(m_l, -1);
         lua_setfield(m_l, -2, key);
         lua_pop(m_l, 1);
     }
     lua_setfield(m_l, -2, key);
+}
+void expose_number(const char* key, lua_Number num, bool safe) {
+    lua_rawgeti(m_l, LUA_REGISTRYINDEX, m_pegr_table);
+    lua_pushnumber(m_l, num);
+    if (safe) {
+        lua_rawgeti(m_l, LUA_REGISTRYINDEX, m_pegr_table_safe);
+        lua_pushvalue(m_l, -1);
+        lua_setfield(m_l, -2, key);
+        lua_pop(m_l, 1);
+    }
+    lua_setfield(m_l, -2, key);
+}
+void expose_string(const char* key, const char* str, bool safe) {
+    lua_rawgeti(m_l, LUA_REGISTRYINDEX, m_pegr_table);
+    lua_pushstring(m_l, str);
+    if (safe) {
+        lua_rawgeti(m_l, LUA_REGISTRYINDEX, m_pegr_table_safe);
+        lua_pushvalue(m_l, -1);
+        lua_setfield(m_l, -2, key);
+        lua_pop(m_l, 1);
+    }
+    lua_setfield(m_l, -2, key);
+}
+void multi_expose_c_functions(const luaL_Reg* api, std::size_t count, 
+        bool safe) {
+    lua_rawgeti(m_l, LUA_REGISTRYINDEX, m_pegr_table);
+    if (safe) {
+        lua_rawgeti(m_l, LUA_REGISTRYINDEX, m_pegr_table_safe);
+    }
+    for (std::size_t idx = 0; idx < count; ++ idx) {
+        const luaL_Reg& reg = api[idx];
+        lua_pushcfunction(m_l, reg.func);
+        if (safe) {
+            lua_pushvalue(m_l, -1);
+            lua_setfield(m_l, -4, reg.name); // Add to the normal table
+        }
+        lua_setfield(m_l, -2, reg.name); // Add to the remaining table
+    }
 }
 
 void stk_simple_deep_copy(int idx) {
