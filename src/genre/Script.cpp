@@ -46,14 +46,10 @@ void Regref_Guard::release_reference() {
 
 const char* PEGR_MODULE_NAME = "pegr";
 
+bool m_torndown = false;
 lua_State* m_l = nullptr;
 std::string m_lua_version;
 Regref m_pristine_sandbox;
-
-Regref m_luaglob__VERISON;
-Regref m_luaglob_tostring;
-
-Regref m_std_tostring;
 
 Regref m_pegr_table;
 Regref m_pegr_table_safe;
@@ -173,15 +169,22 @@ struct Lua_Global_Cacher{
     Regref* const m_cache;
 };
 
-void initialize() {
-    assert(!is_initialized());
-    
+void create_state_and_open_libs() {
     m_l = luaL_newstate();
     luaL_openlibs(m_l);
-    
+}
+
+Regref m_luaglob__VERISON;
+Regref m_luaglob_tostring;
+Regref m_luaglob_print;
+
+void cache_lua_std_lib() {
     const Lua_Global_Cacher cachers[] = {
-        {"_VERSION", &m_luaglob__VERISON},
-        {"tostring", &m_luaglob_tostring},
+        {"_VERSION",    &m_luaglob__VERISON},
+        {"tostring",    &m_luaglob_tostring},
+        {"print",       &m_luaglob_print},
+        
+        // End of the list
         {nullptr, nullptr}
     };
     
@@ -195,7 +198,9 @@ void initialize() {
                 << cacher.m_name << std::endl;
         (*cacher.m_cache) = grab_reference();
     }
-    
+}
+
+void get_and_print_lua_version() {
     push_reference(m_luaglob__VERISON);
     std::size_t strlen;
     const char* luastr = lua_tolstring(m_l, -1, &strlen);
@@ -203,7 +208,15 @@ void initialize() {
     Logger::log(Logger::INFO) << "Lua version: "
             << m_lua_version << std::endl;
     lua_pop(m_l, 1);
-    
+}
+
+void replace_std_functions() {
+    push_reference(m_luaglob_tostring);
+    lua_pushcclosure(m_l, li_print, 1);
+    lua_setglobal(m_l, "print");
+}
+
+void setup_basic_pristine_sandbox() {
     lua_newtable(m_l);
     for (const Whitelist_Entry& whitelisted_table : m_global_whitelist) {
         const char* module = whitelisted_table.first;
@@ -233,23 +246,41 @@ void initialize() {
     m_pegr_table_safe = grab_reference();
     lua_setfield(m_l, -2, PEGR_MODULE_NAME);
     m_pristine_sandbox = grab_reference();
-    
+}
+
+void setup_basic_pegr_module() {
     lua_newtable(m_l);
     lua_pushvalue(m_l, -1);
     m_pegr_table = grab_reference();
     lua_setglobal(m_l, PEGR_MODULE_NAME);
+}
+
+void initialize() {
+    assert(!is_initialized());
+    assert(!m_torndown);
+    
+    create_state_and_open_libs();
+    cache_lua_std_lib();
+    get_and_print_lua_version();
+    replace_std_functions();
+    setup_basic_pristine_sandbox();
+    setup_basic_pegr_module();
     
     assert(lua_gettop(m_l) == 0);
 }
 
 bool is_initialized() {
+    // Make sure that we aren't torn down and initialized at the same time
+    assert(!(m_torndown && !!m_l));
     return m_l;
 }
 
 void cleanup() {
     assert(is_initialized());
+    assert(!m_torndown);
     lua_close(m_l);
     m_l = nullptr;
+    m_torndown = true;
 }
 
 Regref load_c_function(lua_CFunction func, int closure_size) {
@@ -471,15 +502,30 @@ void stk_simple_deep_copy(int idx) {
 }
 
 int li_print(lua_State* l) {
+    /* Expects upvalues:
+     * 1: default lua tostring() function
+     */
     int nargs = lua_gettop(l);
-    bool acquired_tostring = false;
+    Logger::Out log = Logger::log(Logger::ADDON);
     for (int idx = 1; idx <= nargs; ++idx) {
         const char* str = lua_tostring(l, idx);
         if (!str) {
-            
+            lua_pushvalue(l, lua_upvalueindex(1));
+            lua_pushvalue(l, idx);
+            lua_call(l, 1, 1);
+            str = lua_tostring(l, -1);
+            if (!str) {
+                luaL_error(l, "'print' requires 'tostring' to return a string");
+            }
+            lua_pop(l, 1);
+        }
+        log << str;
+        if (idx < nargs) {
+            log << "\t";
         }
     }
-    const char* key = luaL_checklstring(l, 1, nullptr);
+    log << std::endl;
+    return 0;
 }
 
 } // namespace Script

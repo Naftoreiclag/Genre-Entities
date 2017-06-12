@@ -14,6 +14,7 @@ typedef int Regref;
 /**
  * @class Regref_Guard
  * @brief Handles the release of a value referenced in the lua registry (RAII)
+ * Note that these must go out of scope before Script::cleanup() is called.
  */
 class Regref_Guard {
 public:
@@ -76,6 +77,7 @@ extern Regref m_pristine_sandbox;
 
 extern Regref m_luaglob_tostring;
 extern Regref m_luaglob__VERISON;
+extern Regref m_luaglob_print;
 
 /**
  * @brief Creates the lua state and loads standard libraries
