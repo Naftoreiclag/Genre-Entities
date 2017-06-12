@@ -515,7 +515,8 @@ int li_print(lua_State* l) {
             lua_call(l, 1, 1);
             str = lua_tostring(l, -1);
             if (!str) {
-                luaL_error(l, "'print' requires 'tostring' to return a string");
+                luaL_argerror(l, idx, 
+                    "calling 'tostring' on this value did not return a string");
             }
             lua_pop(l, 1);
         }
