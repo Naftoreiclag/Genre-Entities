@@ -40,8 +40,18 @@ int main() {
     };
     Script::multi_expose_c_functions(api_restricted, false);
     
-    Script::run_function(Script::load_lua_function("test.lua", Script::new_sandbox()));
+    {
+    Script::Regref_Guard sandbox(Script::new_sandbox());
+    Script::Regref_Guard init_fun(
+            Script::load_lua_function("test.lua", sandbox.regref()));
+    Script::Regref_Guard postinit_fun(
+            Script::load_lua_function("instantiate.lua", sandbox.regref()));
     
+    Script::run_function(init_fun.regref());
+    Gensys::compile();
+    Script::run_function(postinit_fun.regref());
+    
+    }
     Script::cleanup();
     return 0;
 }

@@ -11,7 +11,7 @@
 namespace pegr {
 namespace Gensys {
 
-enum Prim_T {
+enum struct Prim_T {
     STR,
     FUNC,
     F32, F64,
@@ -79,6 +79,19 @@ extern Script::Regref m_working_archetypes;
 extern Script::Regref m_working_genres;
 extern Script::Regref m_working_components;
 
+enum struct GlobalState {
+    UNINITIALIZED,
+    MUTABLE,
+    EXECUTABLE,
+    ENUM_SIZE
+};
+
+GlobalState get_global_state();
+
+/**
+ * @brief Initializes the gensys. Sets up workspaces for adding new components,
+ * genres, archetypes, etc. Initially in editing (working) mode.
+ */
 void initialize();
 void compile();
 

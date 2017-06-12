@@ -11,15 +11,82 @@ namespace Script {
  */
 typedef int Regref;
 
+/**
+ * @class Regref_Guard
+ * @brief Handles the release of a value referenced in the lua registry (RAII)
+ */
+class Regref_Guard {
+public:
+    /**
+     * @brief Guards nothing
+     */
+    Regref_Guard();
+    
+    /**
+     * @brief Guards the given reference. When this guard is deleted (for
+     * example, by going out of scope) the reference is freed from the lua
+     * registry, thus allowing that value to be gc'd.
+     */
+    Regref_Guard(Regref ref);
+    
+    /**
+     * @brief Copy construction not allowed 
+     * (there should only be one guard for a single reference)
+     */
+    Regref_Guard(const Regref_Guard& other) = delete;
+    
+    /**
+     * @brief Copy assignment not allowed 
+     * (there should only be one guard for a single reference)
+     */
+    Regref_Guard& operator=(const Regref_Guard& other) = delete;
+    
+    
+    /**
+     * @brief Move construction
+     */
+    Regref_Guard(Regref_Guard&& other);
+    
+    /**
+     * @brief Move assignment
+     */
+    Regref_Guard& operator=(Regref_Guard&& other);
+    
+    /**
+     * @brief Deconstructor. Releases whatever reference it is guarding.
+     */
+    ~Regref_Guard();
+    
+    /**
+     * @brief Get the lua reference that this is guarding
+     * @return the lua reference that this is guarding
+     */
+    Regref regref();
+    
+private:
+    void release_reference();
+    
+    Regref m_reference;
+};
+
 extern const char* PEGR_MODULE_NAME;
 
 extern const Regref NO_SANDBOX;
 extern Regref m_pristine_sandbox;
 
+extern Regref m_luaglob_tostring;
+extern Regref m_luaglob__VERISON;
+
 /**
  * @brief Creates the lua state and loads standard libraries
  */
 void initialize();
+
+/**
+ * @brief Returns if the lua scripting system is initialized
+ * @return if the lua scripting system is initialized
+ */
+bool is_initialized();
 
 /**
  * @brief Frees all lua resources, invalidates all registry references
@@ -121,6 +188,11 @@ void multi_expose_c_functions(const luaL_Reg* api, bool safe = true);
  * pop that value off the stack.
  */
 void stk_simple_deep_copy(int idx = -1);
+
+/**
+ * @brief Replacement print for lua, uses logger
+ */
+int li_print(lua_State* l);
 
 
 } // namespace Script

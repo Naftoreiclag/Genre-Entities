@@ -3,19 +3,57 @@
 #include <cassert>
 #include <cstddef>
 #include <fstream>
-#include <iostream>
 #include <string>
 #include <sstream>
 #include <vector>
 
+#include "Logger.hpp"
+
 namespace pegr {
 namespace Script {
 
-const char* PEGR_MODULE_NAME = "pegr";
+Regref_Guard::Regref_Guard()
+: m_reference(LUA_REFNIL) { }
+
+Regref_Guard::Regref_Guard(Regref ref)
+: m_reference(ref) { }
+
+Regref_Guard::Regref_Guard(Regref_Guard&& other) {
+    release_reference();
+    m_reference = other.m_reference;
+    other.m_reference = LUA_REFNIL;
+}
+
+Regref_Guard& Regref_Guard::operator=(Regref_Guard&& other) {
+    release_reference();
+    m_reference = other.m_reference;
+    other.m_reference = LUA_REFNIL;
     
+    return *this;
+}
+
+Regref_Guard::~Regref_Guard() {
+    release_reference();
+}
+
+Regref Regref_Guard::regref() {
+    return m_reference;
+}
+
+void Regref_Guard::release_reference() {
+    drop_reference(m_reference);
+}
+
+const char* PEGR_MODULE_NAME = "pegr";
+
 lua_State* m_l = nullptr;
 std::string m_lua_version;
 Regref m_pristine_sandbox;
+
+Regref m_luaglob__VERISON;
+Regref m_luaglob_tostring;
+
+Regref m_std_tostring;
 
 Regref m_pegr_table;
 Regref m_pegr_table_safe;
@@ -130,17 +168,40 @@ const std::vector<Whitelist_Entry> m_global_whitelist = {
     } }
 };
 
+struct Lua_Global_Cacher{
+    const char* const m_name;
+    Regref* const m_cache;
+};
+
 void initialize() {
-    assert(!m_l);
+    assert(!is_initialized());
     
     m_l = luaL_newstate();
     luaL_openlibs(m_l);
     
-    lua_getglobal(m_l, "_VERSION");
+    const Lua_Global_Cacher cachers[] = {
+        {"_VERSION", &m_luaglob__VERISON},
+        {"tostring", &m_luaglob_tostring},
+        {nullptr, nullptr}
+    };
+    
+    for (int idx = 0; /*Have not reached sentinel*/; ++idx) {
+        const Lua_Global_Cacher& cacher = cachers[idx];
+        if (!cacher.m_name) {
+            break;
+        }
+        lua_getglobal(m_l, cacher.m_name);
+        Logger::log(Logger::VERBOSE) << "Caching " 
+                << cacher.m_name << std::endl;
+        (*cacher.m_cache) = grab_reference();
+    }
+    
+    push_reference(m_luaglob__VERISON);
     std::size_t strlen;
     const char* luastr = lua_tolstring(m_l, -1, &strlen);
     m_lua_version = std::string(luastr, strlen);
-    std::cout << m_lua_version << std::endl;
+    Logger::log(Logger::INFO) << "Lua version: "
+            << m_lua_version << std::endl;
     lua_pop(m_l, 1);
     
     lua_newtable(m_l);
@@ -153,7 +214,6 @@ void initialize() {
             assert(!lua_isnil(m_l, -1) && "Required library not found!");
             for (const char* member : members) {
                 lua_getfield(m_l, -1, member);
-                //std::cout << module << "." << member << std::endl;
                 assert(!lua_isnil(m_l, -1) && "Required lib func not found!");
                 lua_setfield(m_l, -3, member);
             }
@@ -163,7 +223,6 @@ void initialize() {
         else {
             for (const char* member : members) {
                 lua_getglobal(m_l, member);
-                //std::cout << member << std::endl;
                 assert(!lua_isnil(m_l, -1) && "Required glob func not found!");
                 lua_setfield(m_l, -2, member);
             }
@@ -183,13 +242,18 @@ void initialize() {
     assert(lua_gettop(m_l) == 0);
 }
 
+bool is_initialized() {
+    return m_l;
+}
+
 void cleanup() {
-    assert(m_l);
+    assert(is_initialized());
     lua_close(m_l);
     m_l = nullptr;
 }
 
 Regref load_c_function(lua_CFunction func, int closure_size) {
+    assert(is_initialized());
     lua_pushcclosure(m_l, func, closure_size);
     return grab_reference();
 }
@@ -205,6 +269,7 @@ struct FR_Closure {
 };
 
 const char* file_reader(lua_State* L, void* data, size_t* size) {
+    assert(is_initialized());
     FR_Closure& closure = *static_cast<FR_Closure*>(data);
     if (closure.m_file.eof()) {
         (*size) = 0;
@@ -218,31 +283,35 @@ const char* file_reader(lua_State* L, void* data, size_t* size) {
 
 Regref load_lua_function(const char* filename, Regref environment,
                             const char* chunkname) {
+    assert(is_initialized());
     if (!chunkname) { chunkname = filename; }
     /* Note: as far as I know, both Lua 5.1 and LuaJIT recognize bytecode
      * by checking if the first char is 0x1B (escape character '\033')*/
     std::ifstream file(filename, std::ios::binary | std::ios::in);
     // File isn't open
     if (!file.is_open()) {
-        std::cout << "Error" << std::endl;
         std::stringstream ss;
         ss << "Could not open file for " << chunkname;
+        Logger::log(Logger::WARN) << ss.str().c_str() << std::endl;
         lua_pushstring(m_l, ss.str().c_str());
+        return grab_reference();
     }
     int peek = file.peek();
     // File is empty
     if (peek == std::char_traits<char>::eof()) {
-        std::cout << "Error" << std::endl;
         std::stringstream ss;
-        ss << "file for " << chunkname << " is empty";
+        ss << "File for " << chunkname << " is empty";
+        Logger::log(Logger::WARN) << ss.str().c_str() << std::endl;
         lua_pushstring(m_l, ss.str().c_str());
+        return grab_reference();
     }
     // Bytecode
     if (peek == 0x1B) {
-        std::cout << "Error" << std::endl;
         std::stringstream ss;
-        ss << "file for " << chunkname << " is bytecode";
+        ss << "File for " << chunkname << " is bytecode";
+        Logger::log(Logger::WARN) << ss.str().c_str() << std::endl;
         lua_pushstring(m_l, ss.str().c_str());
+        return grab_reference();
     }
     int status;
     {
@@ -251,11 +320,11 @@ Regref load_lua_function(const char* filename, Regref environment,
     }
     switch (status) {
         case LUA_ERRSYNTAX: {
-            std::cout << "Error" << std::endl;
+            Logger::log(Logger::WARN) << "Lua syntax error" << std::endl;
             break;
         }
         case LUA_ERRMEM: {
-            std::cout << "Error" << std::endl;
+            Logger::log(Logger::WARN) << "Lua memory error" << std::endl;
             break;
         }
         default: break;
@@ -268,6 +337,7 @@ Regref load_lua_function(const char* filename, Regref environment,
 }
 
 void run_function(Regref func) {
+    assert(is_initialized());
     push_reference(func);
     int status = lua_pcall(m_l, 0, LUA_MULTRET, 0);
     
@@ -277,13 +347,14 @@ void run_function(Regref func) {
         case LUA_ERRERR: {
             size_t strlen;
             const char* luastr = lua_tolstring(m_l, -1, &strlen);
-            std::cout << "LUA ERROR:" 
+            Logger::log(Logger::WARN) << "LUA ERROR:" 
                 << std::string(luastr, strlen) << std::endl;
         }
     }
 }
 
 Regref new_sandbox() {
+    assert(is_initialized());
     // Make a deep copy of the pristine sandbox
     push_reference(m_pristine_sandbox);
     stk_simple_deep_copy();
@@ -296,22 +367,27 @@ Regref new_sandbox() {
 }
 
 void drop_reference(Regref reference) {
+    assert(is_initialized());
     luaL_unref(m_l, LUA_REGISTRYINDEX, reference);
 }
 
 void push_reference(Regref reference) {
+    assert(is_initialized());
     lua_rawgeti(m_l, LUA_REGISTRYINDEX, reference);
 }
 
 Regref grab_reference() {
+    assert(is_initialized());
     luaL_ref(m_l, LUA_REGISTRYINDEX);
 }
 
 lua_State* get_lua_state() {
+    assert(is_initialized());
     return m_l;
 }
 
 void expose_referenced_value(const char* key, Regref value, bool safe) {
+    assert(is_initialized());
     push_reference(m_pegr_table);
     push_reference(value);
     if (safe) {
@@ -323,6 +399,7 @@ void expose_referenced_value(const char* key, Regref value, bool safe) {
     lua_setfield(m_l, -2, key);
 }
 void expose_number(const char* key, lua_Number num, bool safe) {
+    assert(is_initialized());
     push_reference(m_pegr_table);
     lua_pushnumber(m_l, num);
     if (safe) {
@@ -334,6 +411,7 @@ void expose_number(const char* key, lua_Number num, bool safe) {
     lua_setfield(m_l, -2, key);
 }
 void expose_string(const char* key, const char* str, bool safe) {
+    assert(is_initialized());
     push_reference(m_pegr_table);
     lua_pushstring(m_l, str);
     if (safe) {
@@ -345,6 +423,7 @@ void expose_string(const char* key, const char* str, bool safe) {
     lua_setfield(m_l, -2, key);
 }
 void multi_expose_c_functions(const luaL_Reg* api, bool safe) {
+    assert(is_initialized());
     push_reference(m_pegr_table);
     if (safe) {
         push_reference(m_pegr_table_safe);
@@ -364,6 +443,7 @@ void multi_expose_c_functions(const luaL_Reg* api, bool safe) {
 }
 
 void stk_simple_deep_copy(int idx) {
+    assert(is_initialized());
     if (idx < 0) {
         idx = lua_gettop(m_l) + idx + 1;
     }
@@ -388,6 +468,18 @@ void stk_simple_deep_copy(int idx) {
         
         // (A reference to the key is still on the stack for iteration)
     }
+}
+
+int li_print(lua_State* l) {
+    int nargs = lua_gettop(l);
+    bool acquired_tostring = false;
+    for (int idx = 1; idx <= nargs; ++idx) {
+        const char* str = lua_tostring(l, idx);
+        if (!str) {
+            
+        }
+    }
+    const char* key = luaL_checklstring(l, 1, nullptr);
 }
 
 } // namespace Script

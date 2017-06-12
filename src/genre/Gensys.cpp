@@ -10,9 +10,16 @@ namespace Gensys {
 Script::Regref m_working_archetypes;
 Script::Regref m_working_genres;
 Script::Regref m_working_components;
-    
+
+GlobalState m_global_state = GlobalState::UNINITIALIZED;
+
+GlobalState get_global_state() {
+    return m_global_state;
+}
+
 void initialize() {
-    assert(Script::get_lua_state() != nullptr);
+    assert(Script::is_initialized());
+    assert(m_global_state == GlobalState::UNINITIALIZED);
     lua_State* l = Script::get_lua_state();
     lua_newtable(l);
     m_working_archetypes = Script::grab_reference();
@@ -20,10 +27,15 @@ void initialize() {
     m_working_genres = Script::grab_reference();
     lua_newtable(l);
     m_working_components = Script::grab_reference();
+    m_global_state = GlobalState::MUTABLE;
 }
 
 void compile() {
+    assert(m_global_state == GlobalState::MUTABLE);
     
+    
+    
+    m_global_state = GlobalState::MUTABLE;
 }
 
 int li_add_archetype(lua_State* l) {
