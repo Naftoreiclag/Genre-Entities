@@ -107,11 +107,16 @@ namespace Logger {
         return Out(channel);
     }
 
-    extern Channel* const VERBOSE = new Channel("VERB");
-    extern Channel* const INFO = new Channel("INFO");
-    extern Channel* const WARN = new Channel("WARN!");
-    extern Channel* const SEVERE = new Channel("SEVR!!");
-    extern Channel* const ADDON = new Channel("ADON");
+    Channel* const VERBOSE = new Channel("VERB");
+    Channel* const INFO = new Channel("INFO");
+    Channel* const WARN = new Channel("WARN!");
+    Channel* const SEVERE = new Channel("SEVR!!");
+    Channel* const ADDON = new Channel("ADON");
+    Out OVERBOSE = Out(VERBOSE);
+    Out OINFO = Out(INFO);
+    Out OWARN = Out(WARN);
+    Out OSEVERE = Out(SEVERE);
+    Out OADDON = Out(ADDON);
 
 } // Logger
 } // pgg

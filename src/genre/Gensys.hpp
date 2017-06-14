@@ -16,25 +16,24 @@ enum struct Prim_T {
     FUNC,
     F32, F64,
     I32, I64,
+    ERROR,
     ENUM_SIZE
 };
 
 struct Prim_V {
-    Prim_T m_type;
-    union {
-        std::string m_str;
-        Script::Regref m_func;
-        float m_f32; double m_f64;
-        int32_t m_i32; int64_t m_i64;
-    };
+    Prim_T m_type = Prim_T::ERROR;
+
+    std::string m_str;
+    Script::Regref m_func;
+    float m_f32; double m_f64;
+    int32_t m_i32; int64_t m_i64;
 };
 
-typedef std::string Comp_Ref;
 typedef std::string Symbol;
 
 struct Comp_Def {
-    // Named members with primitive types
-    std::map<Symbol, Prim_T> m_members;
+    // Named members with primitive values
+    std::map<Symbol, Prim_V> m_members;
 };
 
 struct Archetype {
@@ -42,7 +41,7 @@ struct Archetype {
     typedef std::map<Symbol, Prim_V> Default_Vals;
     
     // Key: component, Value: implementations for the component's members
-    std::map<Comp_Ref, Default_Vals> m_implements;
+    std::map<Comp_Def*, Default_Vals> m_implements;
 };
 
 struct Genre {
@@ -72,12 +71,8 @@ struct Genre {
         std::map<Symbol, Alias_V> m_aliases;
     };
     
-    std::map<Comp_Ref, Pattern> m_patterns;
+    std::map<Comp_Def*, Pattern> m_patterns;
 };
-
-extern Script::Regref m_working_archetypes;
-extern Script::Regref m_working_genres;
-extern Script::Regref m_working_components;
 
 enum struct GlobalState {
     UNINITIALIZED,
@@ -93,14 +88,17 @@ GlobalState get_global_state();
  * genres, archetypes, etc. Initially in editing (working) mode.
  */
 void initialize();
-void compile();
+void parse_all();
 
 int li_add_archetype(lua_State* l);
-int li_get_archetype(lua_State* l);
+int li_edit_archetype(lua_State* l);
+int li_find_archetype(lua_State* l);
 int li_add_genre(lua_State* l);
-int li_get_genre(lua_State* l);
+int li_edit_genre(lua_State* l);
 int li_add_component(lua_State* l);
-int li_get_component(lua_State* l);
+int li_edit_component(lua_State* l);
+
+int li_entity_new(lua_State* l);
 
 } // namespace Gensys
 } // namespace pegr

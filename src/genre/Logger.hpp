@@ -79,6 +79,12 @@ namespace Logger {
     Out log(std::string id);
     Out log(Channel* channel);
     Channel* getChannel(std::string id);
+    
+    extern Out OVERBOSE;
+    extern Out OINFO;
+    extern Out OWARN;
+    extern Out OSEVERE;
+    extern Out OADDON;
 
 } // Logger
 } // pgg
