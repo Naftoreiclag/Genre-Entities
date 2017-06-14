@@ -55,8 +55,7 @@ Prim_V parse_primitive(int idx) {
     Prim_V ret_val;
     
     if (lua_type(l, idx) != LUA_TTABLE) {
-        Logger::log(Logger::WARN)
-                << "Invalid primitive constructor" << std::endl;
+        Logger::log()->warn("Invalid primitive constructor");
         assert(original_size == lua_gettop(l)); // Balance sanity
         return ret_val;
     }
@@ -67,7 +66,7 @@ Prim_V parse_primitive(int idx) {
     lua_rawgeti(l, idx, 1); // First member of the table should be type
     strdata = lua_tolstring(l, -1, &strlen);
     if (!strdata) {
-        Logger::log(Logger::WARN) << "Invalid type" << std::endl;
+        Logger::log()->warn("Invalid type");
         lua_pop(l, 1); // Remove rawgeti
         assert(original_size == lua_gettop(l)); // Balance sanity
         return ret_val;
@@ -89,7 +88,7 @@ Prim_V parse_primitive(int idx) {
     } else if (type_name == "func") {
         ret_val.m_type = Prim_T::FUNC;
     } else {
-        Logger::log(Logger::WARN) << "Unknown type: " << type_name << std::endl;
+        Logger::log()->warn("Unknown type: %v", type_name);
         assert(original_size == lua_gettop(l)); // Balance sanity
         return ret_val;
     }
@@ -115,7 +114,7 @@ Prim_V parse_primitive(int idx) {
         case Prim_T::STR: {
             strdata = lua_tolstring(l, -1, &strlen);
             if (!strdata) {
-                Logger::log(Logger::WARN) << "Invalid string" << std::endl;
+                Logger::log()->warn("Invalid string");
                 lua_pop(l, 1); // Remove rawgeti
                 assert(original_size == lua_gettop(l)); // Balance sanity
                 return ret_val;
@@ -125,7 +124,7 @@ Prim_V parse_primitive(int idx) {
         }
         case Prim_T::FUNC: {
             if (lua_type(l, -1) != LUA_TFUNCTION) {
-                Logger::log(Logger::WARN) << "Invalid function" << std::endl;
+                Logger::log()->warn("Invalid function");
                 lua_pop(l, 1); // Remove rawgeti
                 assert(original_size == lua_gettop(l)); // Balance sanity
                 return ret_val;
@@ -162,8 +161,7 @@ Comp_Def* parse_component_definition(int table_idx) {
         lua_pushvalue(l, -2); // Make a copy of the key
         strdata = lua_tolstring(l, -1, &strlen);
         if (!strdata) {
-            Logger::log(Logger::WARN)
-                    << "Invalid key in components cstr table" << std::endl;
+            Logger::log()->warn("Invalid key in components cstr table");
             lua_pop(l, 2); // Leave only the key for next iteration
             continue;
         }
@@ -173,8 +171,7 @@ Comp_Def* parse_component_definition(int table_idx) {
         
         // Check that no symbol is duplicated (possible through integer keys)
         if (symbols.find(symbol) != symbols.end()) {
-            Logger::log(Logger::WARN)
-                << "Duplicate symbol" << std::endl;
+            Logger::log()->warn("Duplicate symbol");
             lua_pop(l, 1);
             continue;
         }
@@ -189,9 +186,7 @@ Comp_Def* parse_component_definition(int table_idx) {
 }
 
 void parse_all() {
-    Logger::Out logger = Logger::log(Logger::VERBOSE);
-    
-    logger << "Parsing gensys data..." << std::endl;
+    Logger::log()->info("Parsing gensys data...");
     assert(m_global_state == GlobalState::MUTABLE);
     lua_State* l = Script::get_lua_state();
     int original_size; assert(original_size = lua_gettop(l)); // Balance sanity
@@ -206,14 +201,13 @@ void parse_all() {
         
         strdata = lua_tolstring(l, -1, &strlen);
         if (!strdata) {
-            Logger::log(Logger::WARN)
-                    << "Invalid key in working components table" << std::endl;
+            Logger::log()->warn("Invalid key in working components table");
             lua_pop(l, 2); // Leave only the key for next iteration
             continue;
         }
         lua_pop(l, 1); // Remove the copy of the key
         std::string comp_id(strdata, strlen);
-        logger << "Process: " << comp_id << std::endl;
+        Logger::log()->info("Process: %v", comp_id);
         
         m_components[comp_id] = parse_component_definition(-1);
         lua_pop(l, 1); // Leave only the key for next iteration

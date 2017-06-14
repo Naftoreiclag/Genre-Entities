@@ -2,7 +2,6 @@
 
 #include "Gensys.hpp"
 #include "Script.hpp"
-
 #include "Logger.hpp"
 
 using namespace pegr;
@@ -18,6 +17,7 @@ int restricted(lua_State* l) {
 }
 
 int main() {
+    Logger::initialize();
     Script::initialize();
     Gensys::initialize();
     
@@ -41,7 +41,6 @@ int main() {
         {nullptr, nullptr}
     };
     Script::multi_expose_c_functions(api_restricted, false);
-    Logger::OVERBOSE << "hey " << std::endl;
     {
         Script::Regref_Guard sandbox(Script::new_sandbox());
         Script::Regref_Guard init_fun(

@@ -194,8 +194,7 @@ void cache_lua_std_lib() {
             break;
         }
         lua_getglobal(m_l, cacher.m_name);
-        Logger::log(Logger::VERBOSE) << "Caching " 
-                << cacher.m_name << std::endl;
+        Logger::log()->verbose(1, "Caching %v", cacher.m_name);
         (*cacher.m_cache) = grab_reference();
     }
 }
@@ -205,8 +204,7 @@ void get_and_print_lua_version() {
     std::size_t strlen;
     const char* luastr = lua_tolstring(m_l, -1, &strlen);
     m_lua_version = std::string(luastr, strlen);
-    Logger::log(Logger::INFO) << "Lua version: "
-            << m_lua_version << std::endl;
+    Logger::log()->info("Lua version: %v", m_lua_version);
     lua_pop(m_l, 1);
 }
 
@@ -323,7 +321,7 @@ Regref load_lua_function(const char* filename, Regref environment,
     if (!file.is_open()) {
         std::stringstream ss;
         ss << "Could not open file for " << chunkname;
-        Logger::log(Logger::WARN) << ss.str().c_str() << std::endl;
+        Logger::log()->warn(ss.str().c_str());
         lua_pushstring(m_l, ss.str().c_str());
         return grab_reference();
     }
@@ -332,7 +330,7 @@ Regref load_lua_function(const char* filename, Regref environment,
     if (peek == std::char_traits<char>::eof()) {
         std::stringstream ss;
         ss << "File for " << chunkname << " is empty";
-        Logger::log(Logger::WARN) << ss.str().c_str() << std::endl;
+        Logger::log()->warn(ss.str().c_str());
         lua_pushstring(m_l, ss.str().c_str());
         return grab_reference();
     }
@@ -340,7 +338,7 @@ Regref load_lua_function(const char* filename, Regref environment,
     if (peek == 0x1B) {
         std::stringstream ss;
         ss << "File for " << chunkname << " is bytecode";
-        Logger::log(Logger::WARN) << ss.str().c_str() << std::endl;
+        Logger::log()->warn(ss.str().c_str());
         lua_pushstring(m_l, ss.str().c_str());
         return grab_reference();
     }
@@ -351,11 +349,11 @@ Regref load_lua_function(const char* filename, Regref environment,
     }
     switch (status) {
         case LUA_ERRSYNTAX: {
-            Logger::log(Logger::WARN) << "Lua syntax error" << std::endl;
+            Logger::log()->warn("Lua syntax error");
             break;
         }
         case LUA_ERRMEM: {
-            Logger::log(Logger::WARN) << "Lua memory error" << std::endl;
+            Logger::log()->warn("Lua memory error");
             break;
         }
         default: break;
@@ -378,8 +376,7 @@ void run_function(Regref func) {
         case LUA_ERRERR: {
             size_t strlen;
             const char* luastr = lua_tolstring(m_l, -1, &strlen);
-            Logger::log(Logger::WARN) << "LUA ERROR:" 
-                << std::string(luastr, strlen) << std::endl;
+            Logger::log()->warn("LUA ERROR: %v", std::string(luastr, strlen));
         }
     }
 }
@@ -506,7 +503,7 @@ int li_print(lua_State* l) {
      * 1: default lua tostring() function
      */
     int nargs = lua_gettop(l);
-    Logger::Out log = Logger::log(Logger::ADDON);
+    std::stringstream log;
     for (int idx = 1; idx <= nargs; ++idx) {
         const char* str = lua_tostring(l, idx);
         if (!str) {
@@ -525,7 +522,7 @@ int li_print(lua_State* l) {
             log << "\t";
         }
     }
-    log << std::endl;
+    Logger::alog("addon")->info(log.str());
     return 0;
 }
 

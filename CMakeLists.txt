@@ -50,14 +50,14 @@ message(STATUS "Package status: ")
 
 ## Header-Only / Compiled Third-party ##
 
-# JsonCpp #
-message(STATUS "JsonCpp ==============")
-find_package(JsonCpp)
-if(JSONCPP_FOUND)
-    message(STATUS "\tInclude Dirs: " ${JSONCPP_INCLUDE_DIR})
-    message(STATUS "\tSource Files: " ${JSONCPP_SOURCE_FILES})
-    list(APPEND PGLOCAL_INCLUDE_DIRS ${JSONCPP_INCLUDE_DIR})
-    list(APPEND PGLOCAL_SOURCES_LIST ${JSONCPP_SOURCE_FILES})
+# EasyLog++ #
+message(STATUS "EasyLog++ ============")
+find_package(EasyLoggingPP)
+if(EASYLOGPP_FOUND)
+    message(STATUS "\tInclude Dirs: " ${EASYLOGPP_INCLUDE_DIR})
+    message(STATUS "\tSource Files: " ${EASYLOGPP_SOURCE_FILES})
+    list(APPEND PGLOCAL_INCLUDE_DIRS ${EASYLOGPP_INCLUDE_DIR})
+    list(APPEND PGLOCAL_SOURCES_LIST ${EASYLOGPP_SOURCE_FILES})
 else()
     message("\tNOT FOUND")
     set(PGLOCAL_ALL_REQUIRED_READY FALSE)

@@ -16,107 +16,32 @@
 
 #include "Logger.hpp"
 
-#include <iostream>
-#include <map>
+#include <cassert>
+
+#include <easylogging++.h>
+
+INITIALIZE_EASYLOGGINGPP
 
 namespace pegr {
 namespace Logger {
-    /*
-    Out::Out()
-    : mChannel(Logger::VERBOSE)
-    , std::ostream(new OutBuffer(Logger::VERBOSE)) {
-        mOutBuf = static_cast<OutBuffer*>(rdbuf());
-    }
-    */
-    
-    Out::Out(Channel* channel)
-    : mChannel(channel)
-    , std::ostream(new OutBuffer(channel)) {
-        mOutBuf = static_cast<OutBuffer*>(rdbuf());
-    }
 
-    Out::Out(const Out& copyCtr)
-    : mChannel(copyCtr.mChannel)
-    , std::ostream(new OutBuffer(copyCtr.mChannel)) {
-        mOutBuf = static_cast<OutBuffer*>(rdbuf());
-    }
-    
-    /*
-    Out::operator=(const Out& assignment) {
-        if(mChannel != assignment.mChannel) {
-            mChannel = assignment.mChannel;
-            delete mOutBuf;
-            rdbuf(new OutBuffer(mChannel));
-            mOutBuf = static_cast<OutBuffer*>(rdbuf());
-        }
-    }
-    */
+el::Logger* m_common_logger = nullptr;
 
-    Out::~Out() {
-        delete mOutBuf;
-    }
-    
-    void Out::indent() {
-        ++ mOutBuf->mIndent;
-    }
-    
-    void Out::unindent() {
-        if(mOutBuf->mIndent > 0) -- mOutBuf->mIndent;
-    }
+void initialize() {
+    assert(!m_common_logger);
+    m_common_logger = el::Loggers::getLogger("pegr");
+}
 
-    OutBuffer::OutBuffer(Channel* channel)
-    : mIndent(0)
-    , mChannel(channel) { }
+// TODO: constexpr?
+el::Logger* log() {
+    assert(m_common_logger);
+    return m_common_logger;
+}
 
-    int OutBuffer::sync() {
-        return mChannel->sync(*this, mIndent);
-    }
+el::Logger* alog(const char* addon_name) {
+    return el::Loggers::getLogger(addon_name);
+}
 
-    Channel::Channel(std::string id)
-    : mId(id)
-    , mName(id)
-    , mEnabled(true) { }
+} // namespace Logger
+} // namespace pegr
 
-    int Channel::sync(OutBuffer& buffer, uint16_t indent) {
-        if(mEnabled) std::cout << mName << '\t' << std::string(indent * 2, ' ') << buffer.str();
-        buffer.str("");
-        return std::cout ? 0 : -1;
-    }
-    
-    void Channel::setEnabled(bool enabled) { mEnabled = enabled; }
-
-    void Channel::setName(std::string name) { mName = name; }
-    std::string Channel::getName() { return mName; }
-
-    std::map<std::string, Channel*> sChannels;
-    Channel* getChannel(std::string id) {
-        std::map<std::string, Channel*>::iterator iter = sChannels.find(id);
-        if(iter != sChannels.end()) {
-            return iter->second;
-        } else {
-            Channel* newChannel = new Channel(id);
-            sChannels[id] = newChannel;
-            return newChannel;
-        }
-    }
-
-    Out log(std::string channel) {
-        return Out(getChannel(channel));
-    }
-    Out log(Channel* channel) {
-        return Out(channel);
-    }
-
-    Channel* const VERBOSE = new Channel("VERB");
-    Channel* const INFO = new Channel("INFO");
-    Channel* const WARN = new Channel("WARN!");
-    Channel* const SEVERE = new Channel("SEVR!!");
-    Channel* const ADDON = new Channel("ADON");
-    Out OVERBOSE = Out(VERBOSE);
-    Out OINFO = Out(INFO);
-    Out OWARN = Out(WARN);
-    Out OSEVERE = Out(SEVERE);
-    Out OADDON = Out(ADDON);
-
-} // Logger
-} // pgg

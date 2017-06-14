@@ -14,79 +14,20 @@
  *  limitations under the License.
  */
 
-#ifndef PEGR_ENGINELOGGER_HPP
-#define PEGR_ENGINELOGGER_HPP
+#ifndef PEGR_LOGGER_HPP
+#define PEGR_LOGGER_HPP
 
-#include <cstdint>
-#include <iostream>
-#include <sstream>
+#include <easylogging++.h>
 
 namespace pegr {
 namespace Logger {
 
-    class Channel;
-    class OutBuffer;
-    class Out : public std::ostream {
-    public:
-        //Out();
-        Out(Channel* channel);
-        Out(const Out& copyCtr);
-        //operator=(const Out& assignment);
-        ~Out();
-        
-        // Instead of re-assigning to an Out instance, switch between Channel pointers!
-        
-        void indent();
-        void unindent();
-    private:
-        OutBuffer* mOutBuf;
-        Channel* const mChannel;
-    };
-    
-    class OutBuffer : public std::stringbuf {
-    public:
-        OutBuffer(Channel* channel);
-        
-        int sync();
-    private:
-        uint16_t mIndent;
-        Channel* const mChannel;
-        friend class Out;
-    };
+void initialize();
 
-    class Channel {
-    public:
-        Channel(std::string id);
-        const std::string mId;
-        
-        int sync(OutBuffer& buffer, uint16_t indent);
-        
-        void setEnabled(bool enabled);
-        
-        void setName(std::string name);
-        std::string getName();
-    private:
-        std::string mName;
-        bool mEnabled;
-    };
+el::Logger* log();
+el::Logger* alog(const char* addon_name);
 
-    extern Channel* const VERBOSE;
-    extern Channel* const INFO;
-    extern Channel* const WARN;
-    extern Channel* const SEVERE;
-    extern Channel* const ADDON;
+} // namespace Logger
+} // namespace pegr
 
-    Out log(std::string id);
-    Out log(Channel* channel);
-    Channel* getChannel(std::string id);
-    
-    extern Out OVERBOSE;
-    extern Out OINFO;
-    extern Out OWARN;
-    extern Out OSEVERE;
-    extern Out OADDON;
-
-} // Logger
-} // pgg
-
-#endif // PEGR_ENGINELOGGER_HPP
+#endif // PEGR_LOGGER_HPP
