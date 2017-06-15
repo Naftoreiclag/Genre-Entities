@@ -25,9 +25,9 @@ foreach(fname
 "gensys/Gensys.cpp"
 "gensys/GensysIntermediate.cpp"
 "logger/Logger.cpp"
+"main.cpp"
 "script/Script.cpp"
 "script/ScriptHelper.cpp"
-"main.cpp"
 
 )
 list(APPEND PGLOCAL_SOURCES_LIST "${PGLOCAL_SOURCE_DIR}/pegr/${fname}")

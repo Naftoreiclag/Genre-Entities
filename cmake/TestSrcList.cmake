@@ -27,8 +27,9 @@ foreach(fname
 "logger/Logger.cpp"
 "script/Script.cpp"
 "script/ScriptHelper.cpp"
-"test/ScriptHelperTest.cpp"
 "test.cpp"
+"test/InitializationSanityTest.cpp"
+"test/ScriptHelperTest.cpp"
 
 )
 list(APPEND PGLOCAL_SOURCES_LIST "${PGLOCAL_SOURCE_DIR}/pegr/${fname}")

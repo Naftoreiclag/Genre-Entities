@@ -53,7 +53,12 @@ for item in testCpps:
 testsList = []
 testsFwdDecls = []
 
+funcNamesSorted = []
 for funcName in funcs:
+    funcNamesSorted.append(funcName)
+funcNamesSorted.sort()
+
+for funcName in funcNamesSorted:
     testsFwdDecls.append('bool ' + funcName + '();')
     testsList.append('    {"' + funcs[funcName] + '", ' + funcName + '},')
 
