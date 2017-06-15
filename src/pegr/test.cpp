@@ -1,28 +1,22 @@
-#include <iostream>
-
 #include "pegr/gensys/Gensys.hpp"
 #include "pegr/script/Script.hpp"
 #include "pegr/logger/Logger.hpp"
 
+#include "pegr/test/Tests.hpp"
+
 using namespace pegr;
 
-int test(lua_State* l) {
-    std::cout << "Hello from C++" << std::endl;
-    return 0;
-}
-
-int restricted(lua_State* l) {
-    std::cout << "You can't use this function" << std::endl;
-    return 0;
-}
-
-int main() {
+void setup_logger() {
     Logger::initialize();
+}
+
+void setup_scripting() {
     Script::initialize();
+}
+
+void setup_gensys() {
     Gensys::initialize();
-    
     const luaL_Reg api_safe[] = {
-        {"test", test},
         {"add_archetype", Gensys::li_add_archetype},
         {"edit_archetype", Gensys::li_edit_archetype},
         {"add_genre", Gensys::li_add_genre},
@@ -34,25 +28,42 @@ int main() {
         {nullptr, nullptr}
     };
     Script::multi_expose_c_functions(api_safe);
-    const luaL_Reg api_restricted[] = {
-        {"restricted", restricted},
-        
-        // End of the list
-        {nullptr, nullptr}
-    };
-    Script::multi_expose_c_functions(api_restricted, false);
-    {
-        Script::Regref_Guard sandbox(Script::new_sandbox());
-        Script::Regref_Guard init_fun(
-                Script::load_lua_function("init.lua", sandbox.regref()));
-        Script::Regref_Guard postinit_fun(
-                Script::load_lua_function("postinit.lua", sandbox.regref()));
-        
-        Script::run_function(init_fun.regref());
-        Gensys::compile();
-        Script::run_function(postinit_fun.regref());
-        
+}
+
+void setup() {
+    setup_logger();
+    setup_scripting();
+    setup_gensys();
+}
+
+void run() {
+    int num_passes = 0;
+    int num_fails = 0;
+    for (std::size_t idx = 0; /*Until sentiel reached*/; ++idx) {
+        const Test::NamedTest& test = Test::m_tests[idx];
+        if (!test.m_name) {
+            break;
+        }
+        Logger::log()->info(test.m_name);
+        bool success = test.m_test();
+        if (success) {
+            Logger::log()->info("\t...PASSED!");
+            ++num_passes;
+        } else {
+            Logger::log()->warn("\t...FAILED!");
+            ++num_fails;
+        }
     }
+    Logger::log()->info("%v passed\t%v failed", num_passes, num_fails);
+}
+
+void cleanup() {
     Script::cleanup();
+}
+
+int main() {
+    setup();
+    run();
+    cleanup();
     return 0;
 }

@@ -27,6 +27,7 @@ foreach(fname
 "logger/Logger.cpp"
 "script/Script.cpp"
 "script/ScriptHelper.cpp"
+"test/ScriptHelperTest.cpp"
 "test.cpp"
 
 )
