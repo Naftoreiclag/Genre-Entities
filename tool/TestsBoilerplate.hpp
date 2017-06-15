@@ -6,7 +6,7 @@
 namespace pegr {
 namespace Test {
 
-bool script_helper();
+/*### TESTS FWD ###*/
 
 struct NamedTest {
     const char* m_name;
@@ -17,7 +17,7 @@ const NamedTest m_tests[] = {
     
     {"Testing Framework", []()->bool{return true;}},
 
-    {"Script Helper", script_helper},
+/*### TESTS LIST ###*/
     
     // Sentinel
     {nullptr, std::function<bool()>()}
