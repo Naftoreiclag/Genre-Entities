@@ -6,6 +6,7 @@
 namespace pegr {
 namespace Test {
 
+bool init_sanity_test();
 bool script_helper();
 
 struct NamedTest {
@@ -17,6 +18,7 @@ const NamedTest m_tests[] = {
     
     {"Testing Framework", []()->bool{return true;}},
 
+    {"Initialization Sanity Test", init_sanity_test},
     {"Script Helper", script_helper},
     
     // Sentinel
