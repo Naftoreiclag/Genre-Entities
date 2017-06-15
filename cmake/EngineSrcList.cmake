@@ -22,13 +22,13 @@
 set(PGLOCAL_SOURCES_LIST "")
 foreach(fname 
 
-"Gensys.cpp"
-"GensysIntermediate.cpp"
-"Logger.cpp"
-"Script.cpp"
-"ScriptHelper.cpp"
+"gensys/Gensys.cpp"
+"gensys/GensysIntermediate.cpp"
+"logger/Logger.cpp"
 "main.cpp"
+"script/Script.cpp"
+"script/ScriptHelper.cpp"
 
 )
-list(APPEND PGLOCAL_SOURCES_LIST "${PGLOCAL_SOURCE_DIR}/genre/${fname}")
+list(APPEND PGLOCAL_SOURCES_LIST "${PGLOCAL_SOURCE_DIR}/pegr/${fname}")
 endforeach()

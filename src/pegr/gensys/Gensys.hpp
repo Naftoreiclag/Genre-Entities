@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-#include "genre/Script.hpp"
+#include "pegr/script/Script.hpp"
 
 namespace pegr {
 namespace Gensys {

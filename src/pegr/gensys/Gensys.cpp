@@ -1,4 +1,4 @@
-#include "genre/Gensys.hpp"
+#include "pegr/gensys/Gensys.hpp"
 
 #include <cassert>
 #include <cstddef>
@@ -6,8 +6,8 @@
 #include <iostream>
 #include <map>
 
-#include "genre/Logger.hpp"
-#include "genre/GensysIntermediate.hpp"
+#include "pegr/logger/Logger.hpp"
+#include "pegr/gensys/GensysIntermediate.hpp"
 
 namespace pegr {
 namespace Gensys {

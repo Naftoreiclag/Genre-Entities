@@ -17,13 +17,13 @@ import os
 
 from Common import indexFiles
 sourceList, _, __ = \
-    indexFiles('../src/genre/', ['.cpp'], ['deprecated/'])
+    indexFiles('../src/pegr/', ['.cpp'], ['deprecated/'])
 includeList, _, __ = \
-    indexFiles('../src/genre/', ['.hpp'], ['deprecated/'])
+    indexFiles('../src/pegr/', ['.hpp'], ['deprecated/'])
 
 projFilename = '../ide/VS/VS.vcxproj'
 filtFilename = '../ide/VS/VS.vcxproj.filters'
-sourceRootRelativePath = '../../src/genre/'
+sourceRootRelativePath = '../../src/pegr/'
 
 def convertToProjectPath(path):
     return os.path.join(sourceRootRelativePath, path).replace('/', '\\')

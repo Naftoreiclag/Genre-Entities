@@ -1,8 +1,8 @@
-#include "genre/ScriptHelper.hpp"
+#include "pegr/script/ScriptHelper.hpp"
 
 #include <cassert>
 
-#include "genre/Script.hpp"
+#include "pegr/script/Script.hpp"
 
 namespace pegr {
 namespace Script {

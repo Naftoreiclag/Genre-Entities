@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <map>
 
-#include "genre/Script.hpp"
+#include "pegr/script/Script.hpp"
 
 namespace pegr {
 namespace Gensys {

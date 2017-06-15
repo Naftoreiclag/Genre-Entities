@@ -16,7 +16,7 @@ import os
 
 from Common import indexFiles
 sourceList, includeDirList, _ = \
-    indexFiles('../src/genre/', ['.cpp'], ['deprecated/'])
+    indexFiles('../src/pegr/', ['.cpp'], ['deprecated/'])
 
 sourceListVector = '### SOURCE LIST ###'
 includeDirListVector = '### INCLUDE DIR LIST ###'

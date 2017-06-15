@@ -17,10 +17,10 @@ import os
 
 from Common import indexFiles
 sourceList, _, __ = \
-    indexFiles('../src/genre/', ['.cpp', '.hpp'], ['deprecated/'])
+    indexFiles('../src/pegr/', ['.cpp', '.hpp'], ['deprecated/'])
 
 projectFilename = '../ide/Codelite/Codelite.project'
-sourceRootRelativePath = '../../src/genre/'
+sourceRootRelativePath = '../../src/pegr/'
 
 projectEtree = ET.parse(projectFilename)
 projectRoot = projectEtree.getroot()
@@ -28,7 +28,7 @@ virtualDirs = projectRoot.findall('VirtualDirectory')
 
 genreVirtualDir = None
 for virtualDir in virtualDirs:
-    if virtualDir.get('Name') == 'genre':
+    if virtualDir.get('Name') == 'pegr':
         genreVirtualDir = virtualDir
         break
 if not genreVirtualDir:

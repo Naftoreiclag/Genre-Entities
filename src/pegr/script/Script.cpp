@@ -1,4 +1,4 @@
-#include "genre/Script.hpp"
+#include "pegr/script/Script.hpp"
 
 #include <cassert>
 #include <cstddef>
@@ -7,8 +7,8 @@
 #include <sstream>
 #include <vector>
 
-#include "genre/Logger.hpp"
-#include "genre/ScriptHelper.hpp"
+#include "pegr/logger/Logger.hpp"
+#include "pegr/script/ScriptHelper.hpp"
 
 namespace pegr {
 namespace Script {

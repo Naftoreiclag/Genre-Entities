@@ -1,8 +1,8 @@
 #include <iostream>
 
-#include "genre/Gensys.hpp"
-#include "genre/Script.hpp"
-#include "genre/Logger.hpp"
+#include "pegr/gensys/Gensys.hpp"
+#include "pegr/script/Script.hpp"
+#include "pegr/logger/Logger.hpp"
 
 using namespace pegr;
 
