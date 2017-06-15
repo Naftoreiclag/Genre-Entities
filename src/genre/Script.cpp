@@ -1,4 +1,4 @@
-#include "Script.hpp"
+#include "genre/Script.hpp"
 
 #include <cassert>
 #include <cstddef>
@@ -7,7 +7,8 @@
 #include <sstream>
 #include <vector>
 
-#include "Logger.hpp"
+#include "genre/Logger.hpp"
+#include "genre/ScriptHelper.hpp"
 
 namespace pegr {
 namespace Script {
@@ -385,7 +386,7 @@ Regref new_sandbox() {
     assert(is_initialized());
     // Make a deep copy of the pristine sandbox
     push_reference(m_pristine_sandbox);
-    stk_simple_deep_copy();
+    Helper::simple_deep_copy(-1);
     // Set the "_G" member to itself
     lua_pushvalue(m_l, -1);
     lua_setfield(m_l, -2, "_G");
@@ -467,34 +468,6 @@ void multi_expose_c_functions(const luaL_Reg* api, bool safe) {
             lua_setfield(m_l, -4, reg.name); // Add to the normal table
         }
         lua_setfield(m_l, -2, reg.name); // Add to the remaining table
-    }
-}
-
-void stk_simple_deep_copy(int idx) {
-    assert(is_initialized());
-    if (idx < 0) {
-        idx = lua_gettop(m_l) + idx + 1;
-    }
-    lua_newtable(m_l); // TODO: preallocate enough space
-    lua_pushnil(m_l);
-    while (lua_next(m_l, idx) != 0) {
-        // Copy the reference to the key so there is one for iterating with
-        lua_pushvalue(m_l, -2);
-        
-        // Copy the value if it is a table
-        if (lua_type(m_l, -2) == LUA_TTABLE) {
-            stk_simple_deep_copy(-2);
-        } else {
-            lua_pushvalue(m_l, -2);
-        }
-        
-        // Set the key-value pair
-        lua_settable(m_l, -5);
-        
-        // Remove the original value reference
-        lua_pop(m_l, 1);
-        
-        // (A reference to the key is still on the stack for iteration)
     }
 }
 

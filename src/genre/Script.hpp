@@ -183,15 +183,6 @@ void expose_string(const char* key, const char* str, bool safe = true);
 void multi_expose_c_functions(const luaL_Reg* api, bool safe = true);
 
 /**
- * @brief Makes a "semi-deep" copy of the table at given index:
- * Does try to copy the keys. Only tries to copy the values if they are tables.
- * The copy is pushed onto the stack.
- * @param idx The index in the stack of the table you want to copy. Does not
- * pop that value off the stack.
- */
-void stk_simple_deep_copy(int idx = -1);
-
-/**
  * @brief Replacement print for lua, uses logger
  */
 int li_print(lua_State* l);

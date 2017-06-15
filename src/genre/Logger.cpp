@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-#include "Logger.hpp"
+#include "genre/Logger.hpp"
 
 #include <cassert>
 
