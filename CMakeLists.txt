@@ -36,14 +36,18 @@ set(PGLOCAL_SOURCE_DIR "${GENREENT_SOURCE_DIR}/src")
 set(PGLOCAL_INCLUDE_DIRS ${PGLOCAL_SOURCE_DIR})
 
 # Name of target executable
-set(PGLOCAL_ENGINE_TARGET "GenreEntitySystem")
+set(PGLOCAL_MAIN_TARGET "GenreEntitySystem")
+set(PGLOCAL_TEST_TARGET "GenreEntitySystemTest")
 
 ### User options ###
 
 ### Build target configuration ###
 
-# Load the sources list from a file as PGLOCAL_SOURCES_LIST
-include("EngineSrcList")
+include("MainSrcList")
+set(PGLOCAL_MAIN_SOURCES_LIST ${PGLOCAL_SOURCES_LIST})
+include("TestSrcList")
+set(PGLOCAL_TEST_SOURCES_LIST ${PGLOCAL_SOURCES_LIST})
+set(PGLOCAL_SOURCES_LIST "")
 
 set(PGLOCAL_ALL_REQUIRED_READY TRUE)
 message(STATUS "Package status: ")
@@ -57,17 +61,20 @@ if(EASYLOGPP_FOUND)
     message(STATUS "\tInclude Dirs: " ${EASYLOGPP_INCLUDE_DIR})
     message(STATUS "\tSource Files: " ${EASYLOGPP_SOURCE_FILES})
     list(APPEND PGLOCAL_INCLUDE_DIRS ${EASYLOGPP_INCLUDE_DIR})
-    list(APPEND PGLOCAL_SOURCES_LIST ${EASYLOGPP_SOURCE_FILES})
+    list(APPEND PGLOCAL_MAIN_SOURCES_LIST ${EASYLOGPP_SOURCE_FILES})
+    list(APPEND PGLOCAL_TEST_SOURCES_LIST ${EASYLOGPP_SOURCE_FILES})
 else()
     message("\tNOT FOUND")
     set(PGLOCAL_ALL_REQUIRED_READY FALSE)
 endif()
 
-# Add a new build target
-add_executable(${PGLOCAL_ENGINE_TARGET} ${PGLOCAL_SOURCES_LIST})
+# Add build targets
+add_executable(${PGLOCAL_MAIN_TARGET} ${PGLOCAL_MAIN_SOURCES_LIST})
+add_executable(${PGLOCAL_TEST_TARGET} ${PGLOCAL_TEST_SOURCES_LIST})
 
 # Add required features
-set_property(TARGET ${PGLOCAL_ENGINE_TARGET} PROPERTY CXX_STANDARD 11)
+set_property(TARGET ${PGLOCAL_MAIN_TARGET} PROPERTY CXX_STANDARD 11)
+set_property(TARGET ${PGLOCAL_TEST_TARGET} PROPERTY CXX_STANDARD 11)
 
 ## Linked Third-party ##
 
@@ -78,7 +85,8 @@ if(LUAJIT_FOUND)
     message(STATUS "\tInclude Dirs: " ${LUAJIT_INCLUDE_DIR})
     message(STATUS "\tLibraries: " ${LUAJIT_LIBRARY})
     list(APPEND PGLOCAL_INCLUDE_DIRS ${LUAJIT_INCLUDE_DIR})
-    target_link_libraries(${PGLOCAL_ENGINE_TARGET} ${LUAJIT_LIBRARY})
+    target_link_libraries(${PGLOCAL_MAIN_TARGET} ${LUAJIT_LIBRARY})
+    target_link_libraries(${PGLOCAL_TEST_TARGET} ${LUAJIT_LIBRARY})
 else()
     message("\tNOT FOUND")
     set(PGLOCAL_ALL_REQUIRED_READY FALSE)

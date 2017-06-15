@@ -14,12 +14,14 @@
 
 import os
 
-def indexFiles(searchPath, allowedFileExts, blacklistedDirs):
+def indexFiles(searchPath, allowedFileExts, blacklistedDirs, includeRoot=True):
     ''' Indexes all of the files located in searchPath.
     
     Only files with the extensions listed in allowedFileExts are included.
     Any files located in the directories (or subdirectories thereof) listed in 
     blacklistedDirs are discluded.
+    
+    Files at the root of the search path are included iff includeRoot is True.
     
     First return is a list of all of the files, relative to searchPath.
     
@@ -31,8 +33,8 @@ def indexFiles(searchPath, allowedFileExts, blacklistedDirs):
     '''
 
     sourceList = []
-    fnameToPath = {}
     includeDirList = []
+    fnameToPath = {}
 
     def addSource(filepath):
         if not any(filepath.startswith(dir) for dir in blacklistedDirs) \
@@ -53,7 +55,8 @@ def indexFiles(searchPath, allowedFileExts, blacklistedDirs):
             nodeLocation = os.path.join(location, node)
         
             if os.path.isfile(nodeLocation):
-                addSource(prefixStr + str(node))
+                if not (prefixStr == '' and not includeRoot):
+                    addSource(prefixStr + str(node))
             else:
                 recursiveSearch(prefixStr + str(node) + '/', nodeLocation)
 
