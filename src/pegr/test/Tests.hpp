@@ -18,7 +18,7 @@ const NamedTest m_tests[] = {
     
     {"Testing Framework", []()->bool{return true;}},
 
-    {"Initialization Sanity Test", init_sanity_test},
+    {"000 Initialization Sanity Test", init_sanity_test},
     {"Script Helper", script_helper},
     
     // Sentinel
