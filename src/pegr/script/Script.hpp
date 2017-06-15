@@ -62,7 +62,12 @@ public:
      * @brief Get the lua reference that this is guarding
      * @return the lua reference that this is guarding
      */
-    Regref regref();
+    Regref regref() const;
+    
+    /**
+     * @brief Implicit conversion to the Regref type
+     */
+    operator Regref() const;
     
 private:
     void release_reference();
@@ -116,8 +121,11 @@ Regref load_lua_function(const char* filename, Regref environment,
 /**
  * @brief Executes a function given by a registry reference.
  * @param func The registry reference for this function
+ * @param nargs The number of arguments this function will consume
+ * @param nresults The number of values this function will return
+ * @return success
  */
-void run_function(Regref func);
+bool run_function(Regref func, int nargs, int nresults);
 
 /**
  * @brief Produces a new sandbox environment for running user scripts in.

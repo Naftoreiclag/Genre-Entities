@@ -37,8 +37,12 @@ Regref_Guard::~Regref_Guard() {
     release_reference();
 }
 
-Regref Regref_Guard::regref() {
+Regref Regref_Guard::regref() const {
     return m_reference;
+}
+    
+Regref_Guard::operator Regref() const {
+    return regref();
 }
 
 void Regref_Guard::release_reference() {
@@ -366,10 +370,10 @@ Regref load_lua_function(const char* filename, Regref environment,
     return grab_reference();
 }
 
-void run_function(Regref func) {
+bool run_function(Regref func, int nargs, int nresults) {
     assert(is_initialized());
     push_reference(func);
-    int status = lua_pcall(m_l, 0, LUA_MULTRET, 0);
+    int status = lua_pcall(m_l, nargs, nresults, 0);
     
     switch (status) {
         case LUA_ERRRUN:
@@ -378,8 +382,11 @@ void run_function(Regref func) {
             size_t strlen;
             const char* luastr = lua_tolstring(m_l, -1, &strlen);
             Logger::log()->warn("LUA ERROR: %v", std::string(luastr, strlen));
+            return false;
         }
     }
+    
+    return true;
 }
 
 Regref new_sandbox() {

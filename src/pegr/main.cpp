@@ -41,9 +41,9 @@ void run() {
     Script::Regref_Guard postinit_fun(
             Script::load_lua_function("postinit.lua", sandbox.regref()));
     
-    Script::run_function(init_fun.regref());
+    Script::run_function(init_fun.regref(), 0, 0);
     Gensys::compile();
-    Script::run_function(postinit_fun.regref());
+    Script::run_function(postinit_fun.regref(), 0, 0);
     
 }
 
