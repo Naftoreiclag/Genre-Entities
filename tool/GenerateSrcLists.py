@@ -14,19 +14,20 @@
 
 import os
 from Common import indexFiles
+from Common import writeWithReplacements
 
 sourceListVector = '### SOURCE LIST ###'
 boilerplateFilename = 'SrcListBoilerplate.cmake'
 
-def generate(outputFilename, sourceList):
-    with open(outputFilename, 'w') as outputFile:
-        with open(boilerplateFilename, 'r') as boilerplateFile:
-            for line in boilerplateFile:
-                if line.startswith(sourceListVector):
-                    for sourceEntry in sourceList:
-                        outputFile.write('\"' + sourceEntry + '\"\n')
-                else:
-                    outputFile.write(line)
+def addQuotes(list):
+    for i in range(len(list)):
+        list[i] = '"' + str(list[i]) + '"'
+
+def generate(destination, sourceList):
+    addQuotes(sourceList)
+    replacements = {}
+    replacements[sourceListVector] = sourceList
+    writeWithReplacements(boilerplateFilename, destination, replacements)
 
 # Generate for main sources
 sourceList, dirList, _ = \

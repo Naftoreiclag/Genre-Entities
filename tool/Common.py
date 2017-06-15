@@ -14,6 +14,33 @@
 
 import os
 
+def writeWithReplacements(boilerplateFilename, outputFilename, replacements):
+    ''' Outputs a copy of the file at "boilerplateFilename" to "outputFilename",
+    except with any line starting with a key in the dictionary "replacements"
+    is replaced with the corresponding value.
+    
+    If that corresponding value is a string, the entire line is replaced with
+    that string. If the value is a list of strings, then the entire line is
+    replaced with that list's elements joined together as one string with
+    newline characters between each element.
+    '''
+    with open(outputFilename, 'w') as outputFile:
+        with open(boilerplateFilename, 'r') as boilerplateFile:
+            for line in boilerplateFile:
+                replaced = False
+                for key in replacements:
+                    if line.startswith(key):
+                        value = replacements[key]
+                        if type(value) == type([]):
+                            for entry in value:
+                                outputFile.write(str(entry) + '\n')
+                        else:
+                            outputFile.write(str(value) + '\n')
+                        replaced = True
+                        break
+                if not replaced:
+                    outputFile.write(line)
+
 def indexFiles(searchPath, allowedFileExts, blacklistedDirs, includeRoot=True):
     ''' Indexes all of the files located in searchPath.
     
