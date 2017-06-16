@@ -1,12 +1,5 @@
-#ifndef PEGR_GENSYS_HPP
-#define PEGR_GENSYS_HPP
-
-#include <cstdint>
-#include <map>
-#include <string>
-#include <vector>
-
-#include "pegr/script/Script.hpp"
+#ifndef PEGR_GENSYS_GENSYS_HPP
+#define PEGR_GENSYS_GENSYS_HPP
 
 namespace pegr {
 namespace Gensys {
@@ -32,17 +25,7 @@ void initialize();
  */
 void compile();
 
-int li_add_archetype(lua_State* l);
-int li_edit_archetype(lua_State* l);
-int li_find_archetype(lua_State* l);
-int li_add_genre(lua_State* l);
-int li_edit_genre(lua_State* l);
-int li_add_component(lua_State* l);
-int li_edit_component(lua_State* l);
-
-int li_entity_new(lua_State* l);
-
 } // namespace Gensys
 } // namespace pegr
 
-#endif // PEGR_GENSYS_HPP
+#endif // PEGR_GENSYS_GENSYS_HPP

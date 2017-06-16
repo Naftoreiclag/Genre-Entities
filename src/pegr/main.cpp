@@ -1,4 +1,5 @@
 #include "pegr/gensys/Gensys.hpp"
+#include "pegr/gensys/GensysLuaInterface.hpp"
 #include "pegr/script/Script.hpp"
 #include "pegr/logger/Logger.hpp"
 
@@ -15,12 +16,12 @@ void setup_scripting() {
 void setup_gensys() {
     Gensys::initialize();
     const luaL_Reg api_safe[] = {
-        {"add_archetype", Gensys::li_add_archetype},
-        {"edit_archetype", Gensys::li_edit_archetype},
-        {"add_genre", Gensys::li_add_genre},
-        {"edit_genre", Gensys::li_edit_genre},
-        {"add_component", Gensys::li_add_component},
-        {"edit_component", Gensys::li_edit_component},
+        {"add_archetype", Gensys::LI::add_archetype},
+        {"edit_archetype", Gensys::LI::edit_archetype},
+        {"add_genre", Gensys::LI::add_genre},
+        {"edit_genre", Gensys::LI::edit_genre},
+        {"add_component", Gensys::LI::add_component},
+        {"edit_component", Gensys::LI::edit_component},
         
         // End of the list
         {nullptr, nullptr}

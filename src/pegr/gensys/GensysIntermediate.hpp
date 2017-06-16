@@ -1,5 +1,5 @@
-#ifndef PEGR_GENSYS_GENSYSINTERMEDIATE_HPP
-#define PEGR_GENSYS_GENSYSINTERMEDIATE_HPP
+#ifndef PEGR_GENSYS_INTERM_HPP
+#define PEGR_GENSYS_INTERM_HPP
 
 #include <cstdint>
 #include <map>
@@ -72,10 +72,10 @@ struct Genre {
     
     std::map<Comp_Def*, Pattern> m_patterns;
 };
-    
+
 } // namespace Interm
 } // namespace Gensys
 } // namespace pegr
 
 
-#endif // PEGR_GENSYS_GENSYSINTERMEDIATE_HPP
+#endif // PEGR_GENSYS_INTERM_HPP

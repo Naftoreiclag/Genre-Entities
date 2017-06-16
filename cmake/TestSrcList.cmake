@@ -24,6 +24,7 @@ foreach(fname
 
 "gensys/Gensys.cpp"
 "gensys/GensysIntermediate.cpp"
+"gensys/GensysLuaInterface.cpp"
 "logger/Logger.cpp"
 "script/Script.cpp"
 "script/ScriptHelper.cpp"

@@ -1,4 +1,5 @@
 #include <cstddef>
+#include <map>
 
 #include "pegr/script/ScriptHelper.hpp"
 #include "pegr/script/Script.hpp"
@@ -18,8 +19,16 @@ bool script_helper() {
     
     lua_State* l = Script::get_lua_state();
     
+    std::map<std::string, std::string> expected = {
+        {"a", "apple"},
+        {"b", "banana"},
+        {"c", "cherry"}
+    };
+    
+    std::map<std::string, std::string> got;
+    
     bool success = true;
-    auto body = [l, &success]() {
+    auto body = [l, &got, &expected]() {
         std::size_t strlen;
         const char* strdata;
         
@@ -30,19 +39,7 @@ bool script_helper() {
         strdata = lua_tolstring(l, -1, &strlen);
         std::string val(strdata, strlen);
         
-        if (key == "a") {
-            if (val != "apple") {
-                success = false;
-            }
-        } else if (key == "b") {
-            if (val != "banana") {
-                success = false;
-            }
-        } else if (key == "c") {
-            if (val != "cherry") {
-                success = false;
-            }
-        }
+        got[key] = val;
         
         Logger::log()->verbose(1, "%v\t%v", key, val);
         
@@ -59,7 +56,7 @@ bool script_helper() {
         return true;
     }, true);
     
-    return success;
+    return expected == got;
 }
 
 }
