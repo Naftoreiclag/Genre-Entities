@@ -6,6 +6,7 @@
 namespace pegr {
 namespace Test {
 
+bool gensys_primitive_test();
 bool init_sanity_test();
 bool script_helper();
 
@@ -18,6 +19,7 @@ const NamedTest m_tests[] = {
     
     {"Testing Framework", []()->bool{return true;}},
 
+    {"Gensys Intermediates", gensys_primitive_test},
     {"000 Initialization Sanity Test", init_sanity_test},
     {"Script Helper", script_helper},
     

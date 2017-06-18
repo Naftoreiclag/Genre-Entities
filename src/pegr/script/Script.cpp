@@ -25,11 +25,18 @@ Regref_Guard::Regref_Guard(Regref_Guard&& other) {
     other.m_reference = LUA_REFNIL;
 }
 
-Regref_Guard& Regref_Guard::operator=(Regref_Guard&& other) {
+// Move assignment
+Regref_Guard& Regref_Guard::operator =(Regref_Guard&& other) {
     release_reference();
     m_reference = other.m_reference;
     other.m_reference = LUA_REFNIL;
-    
+    return *this;
+}
+
+// Assignment of value
+Regref_Guard& Regref_Guard::operator =(Regref& value) {
+    release_reference();
+    m_reference = value;
     return *this;
 }
 

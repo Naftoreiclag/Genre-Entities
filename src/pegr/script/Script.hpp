@@ -26,12 +26,12 @@ public:
     /**
      * @brief Guards the given reference. When this guard is deleted (for
      * example, by going out of scope) the reference is freed from the lua
-     * registry, thus allowing that value to be gc'd.
+     * registry, possibly causing that value to be gc'd.
      */
     Regref_Guard(Regref ref);
     
     /**
-     * @brief Copy construction not allowed 
+     * @brief Copy construction not allowed
      * (there should only be one guard for a single reference)
      */
     Regref_Guard(const Regref_Guard& other) = delete;
@@ -40,8 +40,14 @@ public:
      * @brief Copy assignment not allowed 
      * (there should only be one guard for a single reference)
      */
-    Regref_Guard& operator=(const Regref_Guard& other) = delete;
+    Regref_Guard& operator =(const Regref_Guard& other) = delete;
     
+    /**
+     * @brief Allow assignment of references directly to the guard. The
+     * currently guarded object will be released.
+     * @param ref The reference to guard
+     */
+    Regref_Guard& operator =(const Regref& ref);
     
     /**
      * @brief Move construction
@@ -54,13 +60,13 @@ public:
     Regref_Guard& operator=(Regref_Guard&& other);
     
     /**
-     * @brief Deconstructor. Releases whatever reference it is guarding.
+     * @brief Deconstructor. Drops whatever reference it is guarding.
      */
     ~Regref_Guard();
     
     /**
-     * @brief Get the lua reference that this is guarding
-     * @return the lua reference that this is guarding
+     * @brief Get the Lua reference that this is guarding
+     * @return the Lua reference that this is guarding
      */
     Regref regref() const;
     

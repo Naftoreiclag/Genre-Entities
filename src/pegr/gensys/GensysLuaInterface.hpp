@@ -13,16 +13,18 @@ namespace Gensys {
 namespace LI {
 
 /**
- * @brief Initializes the gensys. Sets up workspaces for adding new components,
- * genres, archetypes, etc. Initially in editing (working) mode.
+ * @brief Initializes. Sets up workspaces for adding new components,
+ * genres, archetypes, etc.
  */
 void initialize();
 
 /**
- * @brief Transitions to executable mode, turning all of the lua tables into
- * their post-process types
+ * @brief Translates all submitted Lua tables into their intermediate forms and
+ * submits to the gensys pipeline.
  */
-void compile();
+void translate_working();
+
+void cleanup();
 
 int add_archetype(lua_State* l);
 int edit_archetype(lua_State* l);

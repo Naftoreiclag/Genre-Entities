@@ -10,34 +10,65 @@ namespace pegr {
 namespace Gensys {
 namespace Interm {
 
-enum struct Prim_T {
-    STR,
-    FUNC,
-    F32, F64,
-    I32, I64,
-    ERROR,
-    ENUM_SIZE
-};
+class Prim {
+public:
+    enum struct Type {
+        STR,
+        FUNC,
+        F32, F64,
+        I32, I64,
+        ERROR,
+        ENUM_SIZE
+    };
+    
+    Prim();
+    Prim(const Prim& other_p);
+    Prim(Prim&& other_p);
+    Prim& operator =(const Prim& other_p);
+    Prim& operator =(Prim&& other_p);
+    ~Prim();
+    
+    void set_type(Type type);
+    Type get_type() const;
+    
+    bool is_error() const;
+    
+    const std::string& get_string() const;
+    const Script::Regref_Guard& get_function() const;
+    float get_f32() const;
+    double get_f64() const;
+    int32_t get_i32() const;
+    int64_t get_i64() const;
+    
+    void set_string(std::string str);
+    void set_function(Script::Regref func);
+    void set_f32(float f32) const;
+    void set_f64(double f64) const;
+    void set_i32(int32_t i32) const;
+    void set_i64(int64_t i64) const;
 
-struct Prim_V {
-    Prim_T m_type = Prim_T::ERROR;
-
-    std::string m_str;
-    Script::Regref m_func;
-    float m_f32; double m_f64;
-    int32_t m_i32; int64_t m_i64;
+private:
+    Type m_type = Type::ERROR;
+    union {
+        std::string m_str;
+        Script::Regref_Guard m_func;
+        float m_f32; double m_f64;
+        int32_t m_i32; int64_t m_i64;
+    };
+    
+    void deconstruct_current();
 };
 
 typedef std::string Symbol;
 
 struct Comp_Def {
     // Named members with primitive values
-    std::map<Symbol, Prim_V> m_members;
+    std::map<Symbol, Prim> m_members;
 };
 
-struct Archetype {
+struct Arche {
     // Named members with primitive values
-    typedef std::map<Symbol, Prim_V> Default_Vals;
+    typedef std::map<Symbol, Prim> Default_Vals;
     
     // Key: component, Value: implementations for the component's members
     std::map<Comp_Def*, Default_Vals> m_implements;
@@ -45,7 +76,7 @@ struct Archetype {
 
 struct Genre {
     // The interface
-    std::map<Symbol, Prim_T> m_interface;
+    std::map<Symbol, Prim::Type> m_interface;
     
     enum Alias_T {
         RENAME,

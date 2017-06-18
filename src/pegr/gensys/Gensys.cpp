@@ -21,8 +21,12 @@ void initialize() {
 
 void compile() {
     assert(m_global_state == GlobalState::MUTABLE);
-    LI::compile();
+    LI::translate_working();
     m_global_state = GlobalState::EXECUTABLE;
+}
+
+void stage_component(Interm::Comp_Def comp_def) {
+    
 }
 
 } // namespace Gensys

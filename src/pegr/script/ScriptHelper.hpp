@@ -11,7 +11,9 @@ namespace Helper {
  * @brief Calls the provided function for every key,value pair in the lua table
  * at position table_idx on the main stack. Before each call, the key is placed
  * at position -2 and the value at position -1. The loop breaks if the function
- * returns false.
+ * returns false. The provided function may not modify or remove the key from
+ * the stack. Doing so may destroy the loop. The function may consume the value
+ * associated with that key, but only if pops_value is true.
  * @param table_idx the location of the table on the lua stack. Can be negative.
  * Does not pop that value off the stack.
  * @param func The function to call for every pair in the table.
