@@ -34,7 +34,7 @@ Regref_Guard& Regref_Guard::operator =(Regref_Guard&& other) {
 }
 
 // Assignment of value
-Regref_Guard& Regref_Guard::operator =(Regref& value) {
+Regref_Guard& Regref_Guard::operator =(const Regref& value) {
     release_reference();
     m_reference = value;
     return *this;

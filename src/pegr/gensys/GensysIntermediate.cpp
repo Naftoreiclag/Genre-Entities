@@ -81,8 +81,8 @@ Prim::Prim(const Prim& other_p) {
         }
     }
 }
+
 Prim::Prim(Prim&& other) {
-    
 }
 Prim& Prim::operator =(const Prim& other) {
     return *this;
@@ -109,6 +109,25 @@ void Prim::deconstruct_current() {
         }
     }
     m_type = Type::ERROR;
+}
+
+void Prim::set_string(std::string str) {
+    
+}
+void Prim::set_function(Script::Regref func) {
+    
+}
+void Prim::set_f32(float f32) {
+    
+}
+void Prim::set_f64(double f64) {
+    
+}
+void Prim::set_i32(int32_t i32) {
+    
+}
+void Prim::set_i64(int64_t i64) {
+    
 }
 
 } // namespace Interm

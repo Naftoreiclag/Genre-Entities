@@ -42,10 +42,10 @@ public:
     
     void set_string(std::string str);
     void set_function(Script::Regref func);
-    void set_f32(float f32) const;
-    void set_f64(double f64) const;
-    void set_i32(int32_t i32) const;
-    void set_i64(int64_t i64) const;
+    void set_f32(float f32);
+    void set_f64(double f64);
+    void set_i32(int32_t i32);
+    void set_i64(int64_t i64);
 
 private:
     Type m_type = Type::ERROR;

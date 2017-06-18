@@ -47,7 +47,7 @@ public:
      * currently guarded object will be released.
      * @param ref The reference to guard
      */
-    Regref_Guard& operator =(const Regref& ref);
+    Regref_Guard& operator =(const Regref& value);
     
     /**
      * @brief Move construction
