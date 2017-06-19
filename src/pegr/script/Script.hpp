@@ -147,13 +147,22 @@ Regref load_lua_function(const char* filename, Regref environment,
                             const char* chunkname = nullptr);
 
 /**
- * @brief Executes a function given by a registry reference.
+ * @brief Executes a function given by a registry reference
+ * Lua errors are thrown as runtime exceptions
  * @param func The registry reference for this function
  * @param nargs The number of arguments this function will consume
  * @param nresults The number of values this function will return
- * @return success
  */
-bool run_function(Regref func, int nargs, int nresults);
+void run_function(Regref func, int nargs, int nresults);
+
+/**
+ * @brief Executes a function given by its position on the stack
+ * Lua errors are thrown as runtime exceptions
+ * @param func_idx The location of this function on the stack
+ * @param nargs The number of arguments this function will consume
+ * @param nresults The number of values this function will return
+ */
+void run_cached_function(int func_idx, int nargs, int nresults);
 
 /**
  * @brief Produces a new sandbox environment for running user scripts in.
@@ -223,6 +232,13 @@ void multi_expose_c_functions(const luaL_Reg* api, bool safe = true);
  */
 int li_print(lua_State* l);
 
+/**
+ * @brief Turns an index relative to the top of the stack (negative indices)
+ * into ones relative to the bottom of the stack (absolute indices)
+ * @param idx The index, can be negative
+ * @return An index that points to the same position on the stack
+ */
+int absolute_idx(int idx);
 
 } // namespace Script
 } // namespace pegr

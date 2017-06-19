@@ -12,10 +12,7 @@ void for_pairs(int table_idx, std::function<bool()> func, bool pops_value) {
     lua_State* l = Script::get_lua_state();
     int original_size; assert(original_size = lua_gettop(l)); // Balance sanity
     
-    if (table_idx < 0) {
-        table_idx = lua_gettop(l) + table_idx + 1;
-    }
-    assert(table_idx > 0);
+    table_idx = Script::absolute_idx(table_idx);
     
     lua_pushnil(l);
     while (lua_next(l, table_idx) != 0) {
@@ -36,10 +33,7 @@ void simple_deep_copy(int table_idx) {
     lua_State* l = Script::get_lua_state();
     int original_size; assert(original_size = lua_gettop(l)); // Balance sanity
     
-    if (table_idx < 0) {
-        table_idx = lua_gettop(l) + table_idx + 1;
-    }
-    assert(table_idx > 0);
+    table_idx = Script::absolute_idx(table_idx);
     lua_newtable(l); // TODO: preallocate enough space
     lua_pushnil(l);
     while (lua_next(l, table_idx) != 0) {
@@ -60,6 +54,23 @@ void simple_deep_copy(int table_idx) {
         lua_pop(l, 1);
         
         // (A reference to the key is still on the stack for iteration)
+    }
+    
+    assert(original_size + 1 == lua_gettop(l)); // Balance sanity
+}
+
+std::string to_string(int idx, int max_recusions) {
+    lua_State* l = Script::get_lua_state();
+    int original_size; assert(original_size = lua_gettop(l)); // Balance sanity
+    idx = Script::absolute_idx(idx);
+    
+    Script::push_reference(Script::m_luaglob_tostring);
+    lua_pushvalue(l, idx);
+    
+    std::size_t strsize;
+    const char* strdata = lua_tolstring(l, -1, &strsize);
+    
+    if (!strdata) {
     }
     
     assert(original_size + 1 == lua_gettop(l)); // Balance sanity

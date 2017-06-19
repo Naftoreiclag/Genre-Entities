@@ -42,10 +42,13 @@ void simple_deep_copy(int idx);
  * a string. If the value returned by tostring() is not convertable to a Lua
  * string by lua_tolstring(), then this process is repeated on that returned
  * value at most max_recusions times.
- * @param 
- * @return 
+ * @param idx The location of the relevant value on the main stack. Can be
+ * negative
+ * @param max_recusions The max number of recusions that can be performed,
+ * otherwise an exception is thrown
+ * @return The string
  */
-bool to_string(int idx, std::string& str, int max_recusions = 8);
+std::string to_string(int idx, int max_recusions = 64);
 
 } // namespace Helper
 } // namespace Script
