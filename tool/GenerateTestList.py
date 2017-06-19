@@ -44,7 +44,6 @@ for item in testCpps:
                 match = testFuncPattern.match(line)
                 if match:
                     funcName = match.group(1)
-                    print('\t' + funcName)
                     if funcName in funcs:
                         print('WARNING: That function is duplicated')
                     funcs[funcName] = annotName
@@ -59,6 +58,7 @@ for funcName in funcs:
 funcNamesSorted.sort()
 
 for funcName in funcNamesSorted:
+    print('\t' + funcName)
     testsFwdDecls.append('bool ' + funcName + '();')
     testsList.append('    {"' + funcs[funcName] + '", ' + funcName + '},')
 
