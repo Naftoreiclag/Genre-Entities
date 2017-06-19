@@ -330,6 +330,7 @@ const char* file_reader(lua_State* L, void* data, size_t* size) {
     return closure.m_block;
 }
 
+// TODO: check if this file has already been loaded ... ?
 Regref load_lua_function(const char* filename, Regref environment,
                             const char* chunkname) {
     assert(is_initialized());

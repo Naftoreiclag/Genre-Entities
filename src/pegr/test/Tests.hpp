@@ -6,25 +6,27 @@
 namespace pegr {
 namespace Test {
 
-bool test_000_init_sanity();
-bool test_gensys_primitive_test();
-bool test_script_helper();
+void test_0000_init_sanity();
+void test_0030_gensys_primitive();
+void test_0030_gensys_primitive_multiple();
+void test_script_helper();
 
 struct NamedTest {
     const char* m_name;
-    std::function<bool()> m_test;
+    std::function<void()> m_test;
 };
 
 const NamedTest m_tests[] = {
     
-    {"Testing Framework", []()->bool{return true;}},
+    {"Testing Framework", [](){}},
 
-    {"Initialization Sanity Test", test_000_init_sanity},
-    {"Gensys Intermediates", test_gensys_primitive_test},
+    {"Initialization Sanity Test", test_0000_init_sanity},
+    {"Single gensys primitive", test_0030_gensys_primitive},
+    {"Reassignment of gensys primitives", test_0030_gensys_primitive_multiple},
     {"Script Helper", test_script_helper},
     
     // Sentinel
-    {nullptr, std::function<bool()>()}
+    {nullptr, std::function<void()>()}
 };
 
 }

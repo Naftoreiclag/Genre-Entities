@@ -2,6 +2,7 @@
 #define PEGR_SCRIPT_LUAHELPER_HPP
 
 #include <functional>
+#include <string>
 
 namespace pegr {
 namespace Script {
@@ -33,6 +34,18 @@ void for_pairs(int table_idx, std::function<bool()> func,
  * negative. Does not pop that value off the stack.
  */
 void simple_deep_copy(int idx);
+
+/**
+ * @brief Turns the provided value on the main Lua stack into a standard string.
+ * Unlike using lua_tolstring(), this function also calls the built-in Lua
+ * function tostring() if the provided value cannot immediately be turned into
+ * a string. If the value returned by tostring() is not convertable to a Lua
+ * string by lua_tolstring(), then this process is repeated on that returned
+ * value at most max_recusions times.
+ * @param 
+ * @return 
+ */
+bool to_string(int idx, std::string& str, int max_recusions = 8);
 
 } // namespace Helper
 } // namespace Script

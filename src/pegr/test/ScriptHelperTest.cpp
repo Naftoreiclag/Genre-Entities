@@ -11,7 +11,7 @@ namespace Test {
 typedef Script::Regref_Guard RG;
     
 //@Test Script Helper
-bool test_script_helper() {
+void test_script_helper() {
     RG sandbox(Script::new_sandbox());
     RG table_fun(Script::load_lua_function("test/simple_table.lua", sandbox));
     
@@ -56,7 +56,9 @@ bool test_script_helper() {
         return true;
     }, true);
     
-    return expected == got;
+    if (expected != got) {
+        throw std::runtime_error("Resulting table does not match expectation.");
+    }
 }
 
 }

@@ -1,6 +1,5 @@
 #include <sstream>
 #include <iomanip>
-#include <limits>
 
 #include "pegr/gensys/GensysIntermediate.hpp"
 #include "pegr/logger/Logger.hpp"
@@ -8,23 +7,21 @@
 namespace pegr {
 namespace Test {
 
-//@Test Gensys Intermediates
-bool test_gensys_primitive_test() {
+//@Test Single gensys primitive
+void test_0030_gensys_primitive() {
     lua_State* l = Script::get_lua_state();
     int stack_size = lua_gettop(l);
     
     Gensys::Interm::Prim prim;
     
     if (!prim.is_error()) {
-        Logger::log()->warn("Prim is not an error!");
-        return false;
+        throw std::runtime_error("Prim is not an error!");
     }
     
     prim.set_f32(0.5f);
     
     if (prim.get_type() != Gensys::Interm::Prim::Type::F32) {
-        Logger::log()->warn("Type must be F32!");
-        return false;
+        throw std::runtime_error("Type must be F32!");
     }
     
     double pi = 3.14159265358979323846264338328d;
@@ -45,13 +42,14 @@ bool test_gensys_primitive_test() {
     prim.set_f64(pi);
     
     if (prim.get_type() != Gensys::Interm::Prim::Type::F64) {
-        Logger::log()->warn("Type must be F64!");
-        return false;
+        throw std::runtime_error("Type must be F64!");
     }
     
     if (prim.get_f64() != pi) {
-        Logger::log()->warn("Wrong double: %v", prim.get_f64());
-        return false;
+        std::stringstream ss;
+        ss << "Wrong double: ";
+        ss << prim.get_f64();
+        throw std::runtime_error(ss.str());
     }
     std::stringstream ss;
     ss << prim.get_f64();
@@ -64,8 +62,7 @@ bool test_gensys_primitive_test() {
     prim.set_function(Script::make_shared(table_fun));
     
     if (prim.get_type() != Gensys::Interm::Prim::Type::FUNC) {
-        Logger::log()->warn("Type must be function!");
-        return false;
+        throw std::runtime_error("Type must be function!");
     }
     
     Script::run_function(*prim.get_function(), 0, 1);
@@ -77,8 +74,10 @@ bool test_gensys_primitive_test() {
     std::string a_val(strdata, strsize);
     
     if (a_val != "apple") {
-        Logger::log()->warn("Loaded function failed: %v", a_val);
-        return false;
+        std::stringstream ss;
+        ss << "Loaded function failed: ";
+        ss << a_val;
+        throw std::runtime_error(ss.str());
     }
     Logger::log()->info("Correct function return val: %v", a_val);
     
@@ -90,19 +89,51 @@ bool test_gensys_primitive_test() {
     prim.set_string(str);
     
     if (prim.get_type() != Gensys::Interm::Prim::Type::STR) {
-        Logger::log()->warn("Type must be string!");
-        return false;
+        throw std::runtime_error("Type must be string!");
     }
     
     if (prim.get_string() != str) {
-        Logger::log()->warn("Wrong string returned: %v", prim.get_string());
-        return false;
+        std::stringstream ss;
+        ss << "Wrong string returned: ";
+        ss << prim.get_string();
+        throw std::runtime_error(ss.str());
     }
     Logger::log()->info("Correct string retrieved: %v", prim.get_string());
     
     if (lua_gettop(l) != stack_size) {
-        Logger::log()->warn("Unbalanced!");
-        return false;
+        throw std::runtime_error("Unbalanced!");
+    }
+}
+
+//@Test Reassignment of gensys primitives
+void test_0030_gensys_primitive_multiple() {
+    lua_State* l = Script::get_lua_state();
+    int stack_size = lua_gettop(l);
+    
+    Gensys::Interm::Prim prim_fruit;
+    Gensys::Interm::Prim prim_military;
+    
+    Script::Regref_Guard sandbox(Script::new_sandbox());
+    Script::Regref_Shared func_fruit_table = Script::make_shared(
+            Script::load_lua_function("test/simple_table.lua", sandbox));
+    Script::Regref_Shared func_military_table = Script::make_shared(
+            Script::load_lua_function("test/simple_table_alt.lua", sandbox));
+    
+    prim_fruit.set_function(func_fruit_table);
+    prim_military.set_function(func_military_table);
+    
+    /*
+    Script::run_function(*prim_fruit.get_function(), 0, 1);
+    
+    lua_getfield(l, -1, "a");
+    std::size_t strsize;
+    const char* strdata = lua_tolstring(l, -1, &strsize);
+    std::string a_fruit(strdata, strsize);
+    
+    Script::run_function(*prim_military.get_function(), 0, 1);
+    */
+    if (lua_gettop(l) != stack_size) {
+        throw std::runtime_error("Unbalanced!");
     }
 }
 

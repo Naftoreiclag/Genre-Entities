@@ -27,7 +27,7 @@ testCpps, _, __ = indexFiles(testSourcesDir, ['.cpp'], [], True)
 import re
 
 testAnnotationPattern = re.compile('\s*//@Test\s+(.*)')
-testFuncPattern = re.compile('\s*bool\s+(\S+)\s*\(\s*\).*')
+testFuncPattern = re.compile('\s*void\s+(\S+)\s*\(\s*\).*')
 
 funcs = {}
 
@@ -59,7 +59,7 @@ funcNamesSorted.sort()
 
 for funcName in funcNamesSorted:
     print('\t' + funcName)
-    testsFwdDecls.append('bool ' + funcName + '();')
+    testsFwdDecls.append('void ' + funcName + '();')
     testsList.append('    {"' + funcs[funcName] + '", ' + funcName + '},')
 
 replacements = {}

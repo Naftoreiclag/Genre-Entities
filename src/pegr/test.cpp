@@ -1,8 +1,9 @@
+#include <stdexcept>
+
 #include "pegr/gensys/Gensys.hpp"
 #include "pegr/gensys/GensysLuaInterface.hpp"
 #include "pegr/script/Script.hpp"
 #include "pegr/logger/Logger.hpp"
-
 #include "pegr/test/Tests.hpp"
 
 using namespace pegr;
@@ -46,14 +47,16 @@ void run() {
             break;
         }
         Logger::log()->info(test.m_name);
-        bool success = test.m_test();
-        if (success) {
-            Logger::log()->info("\t...PASSED!");
-            ++num_passes;
-        } else {
-            Logger::log()->warn("\t...FAILED!");
-            ++num_fails;
+        try {
+            test.m_test();
         }
+        catch (std::runtime_error e) {
+            Logger::log()->warn("\t...FAILED! %v", e.what());
+            ++num_fails;
+            continue;
+        }
+        Logger::log()->info("\t...PASSED!");
+        ++num_passes;
     }
     Logger::log()->info("%v passed\t%v failed", num_passes, num_fails);
 }
