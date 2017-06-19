@@ -1,4 +1,5 @@
 #include <cstddef>
+#include <sstream>
 #include <map>
 
 #include "pegr/script/ScriptHelper.hpp"
@@ -56,8 +57,24 @@ void test_script_helper() {
         return true;
     }, true);
     
-    if (expected != got) {
-        throw std::runtime_error("Resulting table does not match expectation.");
+    for (auto key_value : expected) {
+        auto iter = got.find(key_value.first);
+        if (iter == got.end()) {
+            std::stringstream ss;
+            ss << "Resulting table missing key: ";
+            ss << key_value.first;
+            throw std::runtime_error(ss.str());
+        }
+        if (key_value.second != (*iter).second) {
+            std::stringstream ss;
+            ss << "Resulting table has wrong value for ";
+            ss << key_value.first;
+            ss << ": Expected: ";
+            ss << key_value.second;
+            ss << ": Got: ";
+            ss << (*iter).second;
+            throw std::runtime_error(ss.str());
+        }
     }
 }
 
