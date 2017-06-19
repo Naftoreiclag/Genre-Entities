@@ -11,14 +11,16 @@ namespace Test {
 
 typedef Script::Regref_Guard RG;
     
-//@Test Script Helper
-void test_script_helper() {
+//@Test Script Helper for_pairs
+void test_0028_for_pairs() {
+    lua_State* l = Script::get_lua_state();
+    int original_size = lua_gettop(l);
+    
     RG sandbox(Script::new_sandbox());
     RG table_fun(Script::load_lua_function("test/simple_table.lua", sandbox));
     
     Script::Helper::run_simple_function(table_fun, 1);
     
-    lua_State* l = Script::get_lua_state();
     
     std::map<std::string, std::string> expected = {
         {"a", "apple"},
@@ -75,6 +77,33 @@ void test_script_helper() {
             ss << (*iter).second;
             throw std::runtime_error(ss.str());
         }
+    }
+    lua_pop(l, 1);
+    
+    if (original_size != lua_gettop(l)) {
+        throw std::runtime_error("Unbalanced");
+    }
+}
+
+//@Test Script Helper to_string
+void test_0028_to_string() {
+    lua_State* l = Script::get_lua_state();
+    int original_size = lua_gettop(l);
+    
+    RG sandbox(Script::new_sandbox());
+    RG table_fun(
+            Script::load_lua_function("test/complex_tostring.lua", sandbox));
+            
+    Script::Helper::run_simple_function(table_fun, 1);
+    std::string resp = Script::Helper::to_string(-1);
+    lua_pop(l, 1);
+    
+    if (resp != "bottom") {
+        throw std::runtime_error("Did not reach the bottom of tostring");
+    }
+    
+    if (original_size != lua_gettop(l)) {
+        throw std::runtime_error("Unbalanced");
     }
 }
 
