@@ -387,14 +387,7 @@ Regref load_lua_function(const char* filename, Regref environment,
     return grab_reference();
 }
 
-/**
- * @brief Similar to lua_pcall, but instead uses custom exception types.
- * Guaranteed to pop off the expected number of values from the stack regardless
- * of errors.
- * @param nargs Same as in lua_pcall
- * @param nresults Same as in lua_pcall
- */
-void pcall_with_exceptions(int nargs, int nresults) {
+void run_function(int nargs, int nresults) {
     assert(is_initialized());
     switch (lua_pcall(m_l, nargs, nresults, 0)) {
         case LUA_ERRRUN:
@@ -405,18 +398,6 @@ void pcall_with_exceptions(int nargs, int nresults) {
             throw std::runtime_error(std::string(luastr, strlen));
         }
     }
-}
-
-void run_function(Regref func, int nargs, int nresults) {
-    assert(is_initialized());
-    push_reference(func);
-    pcall_with_exceptions(nargs, nresults);
-}
-
-void run_cached_function(int func_idx, int nargs, int nresults) {
-    assert(is_initialized());
-    lua_pushvalue(m_l, func_idx);
-    pcall_with_exceptions(nargs, nresults);
 }
 
 Regref new_sandbox() {

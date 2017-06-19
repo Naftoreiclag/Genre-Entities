@@ -59,6 +59,11 @@ void simple_deep_copy(int table_idx) {
     assert(original_size + 1 == lua_gettop(l)); // Balance sanity
 }
 
+void run_simple_function(Script::Regref ref, int nresults) {
+    Script::push_reference(ref);
+    Script::run_function(0, nresults);
+}
+
 std::string to_string(int idx, int max_recusions) {
     lua_State* l = Script::get_lua_state();
     int original_size; assert(original_size = lua_gettop(l)); // Balance sanity

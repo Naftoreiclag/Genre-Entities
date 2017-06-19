@@ -16,7 +16,7 @@ void test_script_helper() {
     RG sandbox(Script::new_sandbox());
     RG table_fun(Script::load_lua_function("test/simple_table.lua", sandbox));
     
-    Script::run_function(table_fun, 0, 1);
+    Script::Helper::run_simple_function(table_fun, 1);
     
     lua_State* l = Script::get_lua_state();
     

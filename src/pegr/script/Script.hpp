@@ -147,22 +147,14 @@ Regref load_lua_function(const char* filename, Regref environment,
                             const char* chunkname = nullptr);
 
 /**
- * @brief Executes a function given by a registry reference
- * Lua errors are thrown as runtime exceptions
- * @param func The registry reference for this function
+ * @brief Runs the function on the stack. Behaves exactly like lua_pcall,
+ * except Lua errors are turned into thrown runtime exceptions.
+ * Guaranteed to pop off the expected number of values from the stack regardless
+ * of errors.
  * @param nargs The number of arguments this function will consume
  * @param nresults The number of values this function will return
  */
-void run_function(Regref func, int nargs, int nresults);
-
-/**
- * @brief Executes a function given by its position on the stack
- * Lua errors are thrown as runtime exceptions
- * @param func_idx The location of this function on the stack
- * @param nargs The number of arguments this function will consume
- * @param nresults The number of values this function will return
- */
-void run_cached_function(int func_idx, int nargs, int nresults);
+void run_function(int nargs, int nresults);
 
 /**
  * @brief Produces a new sandbox environment for running user scripts in.

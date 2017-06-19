@@ -3,6 +3,7 @@
 
 #include "pegr/gensys/GensysIntermediate.hpp"
 #include "pegr/logger/Logger.hpp"
+#include "pegr/script/ScriptHelper.hpp"
 
 namespace pegr {
 namespace Test {
@@ -65,7 +66,7 @@ void test_0030_gensys_primitive() {
         throw std::runtime_error("Type must be function!");
     }
     
-    Script::run_function(*prim.get_function(), 0, 1);
+    Script::Helper::run_simple_function(*prim.get_function(), 1);
     lua_getfield(l, -1, "a");
     
     std::size_t strsize;

@@ -4,6 +4,8 @@
 #include <functional>
 #include <string>
 
+#include "pegr/script/Script.hpp"
+
 namespace pegr {
 namespace Script {
 namespace Helper {
@@ -34,6 +36,13 @@ void for_pairs(int table_idx, std::function<bool()> func,
  * negative. Does not pop that value off the stack.
  */
 void simple_deep_copy(int idx);
+
+/**
+ * @brief Runs a function that takes no arguments.
+ * @param ref The registry reference for the said function
+ * @param nresults The number of results to return.
+ */
+void run_simple_function(Script::Regref ref, int nresults);
 
 /**
  * @brief Turns the provided value on the main Lua stack into a standard string.

@@ -1,6 +1,7 @@
 #include "pegr/gensys/Gensys.hpp"
 #include "pegr/gensys/GensysLuaInterface.hpp"
 #include "pegr/script/Script.hpp"
+#include "pegr/script/ScriptHelper.hpp"
 #include "pegr/logger/Logger.hpp"
 
 using namespace pegr;
@@ -42,9 +43,9 @@ void run() {
     Script::Regref_Guard postinit_fun(
             Script::load_lua_function("postinit.lua", sandbox.regref()));
     
-    Script::run_function(init_fun.regref(), 0, 0);
+    Script::Helper::run_simple_function(init_fun, 0);
     Gensys::compile();
-    Script::run_function(postinit_fun.regref(), 0, 0);
+    Script::Helper::run_simple_function(postinit_fun, 0);
     
 }
 
