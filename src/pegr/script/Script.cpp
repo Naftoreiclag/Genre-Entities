@@ -72,6 +72,9 @@ lua_State* m_l = nullptr;
 std::string m_lua_version;
 Regref m_pristine_sandbox;
 
+// Keeps track of how many registry keys we are holding
+int m_total_grab_delta = 0;
+
 Regref m_pegr_table;
 Regref m_pegr_table_safe;
 
@@ -217,6 +220,7 @@ void cache_lua_std_lib() {
         lua_getglobal(m_l, cacher.m_name);
         Logger::log()->verbose(1, "Caching %v", cacher.m_name);
         (*cacher.m_cache) = grab_reference();
+        m_total_grab_delta -= 1; /*Ignore these grabs*/
     }
 }
 
@@ -265,12 +269,14 @@ void setup_basic_pristine_sandbox() {
     m_pegr_table_safe = grab_reference();
     lua_setfield(m_l, -2, PEGR_MODULE_NAME);
     m_pristine_sandbox = grab_reference();
+    m_total_grab_delta -= 2; /*Ignore these grabs*/
 }
 
 void setup_basic_pegr_module() {
     lua_newtable(m_l);
     lua_pushvalue(m_l, -1);
     m_pegr_table = grab_reference();
+    m_total_grab_delta -= 1; /*Ignore these grabs*/
     lua_setglobal(m_l, PEGR_MODULE_NAME);
 }
 
@@ -297,6 +303,9 @@ bool is_initialized() {
 void cleanup() {
     assert(is_initialized());
     assert(!m_torndown);
+    if (m_total_grab_delta != 0) {
+        Logger::log()->warn("Non-zero grab delta: %v", m_total_grab_delta);
+    }
     lua_close(m_l);
     m_l = nullptr;
     m_torndown = true;
@@ -409,6 +418,7 @@ Regref new_sandbox() {
 
 void drop_reference(Regref ref) {
     assert(is_initialized());
+    --m_total_grab_delta;
     luaL_unref(m_l, LUA_REGISTRYINDEX, ref);
 }
 
@@ -419,6 +429,7 @@ void push_reference(Regref ref) {
 
 Regref grab_reference() {
     assert(is_initialized());
+    ++m_total_grab_delta;
     return luaL_ref(m_l, LUA_REGISTRYINDEX);
 }
 

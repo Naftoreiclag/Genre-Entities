@@ -33,6 +33,8 @@ void initialize();
  */
 void compile();
 
+void cleanup();
+
 /**
  * @brief Stages an intermediate component definition for compilation
  * @param comp_def the component definition

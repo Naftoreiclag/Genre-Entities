@@ -23,8 +23,8 @@ void test_0010_check_script_loading() {
     throw std::runtime_error("No syntax error");
 }
 
-//@Test Script regref memory leaks
-void test_0010_check_memory_leaks() {
+//@Test Script Regref_Guard memory leaks
+void test_0010_check_guard_memory_leaks() {
     lua_State* l = Script::get_lua_state();
     Logger::log()->info("Testing explicit...");
     
@@ -52,7 +52,28 @@ void test_0010_check_memory_leaks() {
         throw std::runtime_error("Guard did not release reference!");
     }
     lua_pop(l, 1);
+}
+
+//@Test Script Regref_Shared memory leaks
+void test_0010_check_guard_memory_leaks_shared() {
+    lua_State* l = Script::get_lua_state();
+    Script::Regref ref;
+    ref = Script::new_sandbox();
     
+    {
+        Script::Regref_Shared shared1;
+        {
+            Script::Regref_Shared shared2 = Script::make_shared(ref);
+            shared1 = shared2;
+        }
+    }
+    
+    Script::push_reference(ref);
+    if (!lua_isnil(l, -1)) {
+        lua_pop(l, 1);
+        throw std::runtime_error("Shared guard did not release reference!");
+    }
+    lua_pop(l, 1);
     
     
 }

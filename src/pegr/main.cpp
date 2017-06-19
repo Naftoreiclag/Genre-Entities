@@ -50,7 +50,9 @@ void run() {
 }
 
 void cleanup() {
+    Gensys::cleanup();
     Script::cleanup();
+    Logger::cleanup();
 }
 
 int main() {

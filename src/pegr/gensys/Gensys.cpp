@@ -25,6 +25,12 @@ void compile() {
     m_global_state = GlobalState::EXECUTABLE;
 }
 
+void cleanup() {
+    assert(m_global_state != GlobalState::UNINITIALIZED);
+    LI::cleanup();
+    m_global_state = GlobalState::UNINITIALIZED;
+}
+
 void stage_component(Interm::Comp_Def comp_def) {
     
 }

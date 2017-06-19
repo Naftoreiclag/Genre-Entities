@@ -7,7 +7,8 @@ namespace pegr {
 namespace Test {
 
 void test_0000_init_sanity();
-void test_0010_check_memory_leaks();
+void test_0010_check_guard_memory_leaks();
+void test_0010_check_guard_memory_leaks_shared();
 void test_0010_check_script_loading();
 void test_0028_for_pairs();
 void test_0028_to_string();
@@ -24,7 +25,8 @@ const NamedTest m_tests[] = {
     {"Testing Framework", [](){}},
 
     {"Initialization Sanity Test", test_0000_init_sanity},
-    {"Script regref memory leaks", test_0010_check_memory_leaks},
+    {"Script Regref_Guard memory leaks", test_0010_check_guard_memory_leaks},
+    {"Script Regref_Shared memory leaks", test_0010_check_guard_memory_leaks_shared},
     {"Identifying syntax errors", test_0010_check_script_loading},
     {"Script Helper for_pairs", test_0028_for_pairs},
     {"Script Helper to_string", test_0028_to_string},
