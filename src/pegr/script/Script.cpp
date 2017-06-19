@@ -343,26 +343,23 @@ Regref load_lua_function(const char* filename, Regref environment,
     if (!file.is_open()) {
         std::stringstream ss;
         ss << "Could not open file for " << chunkname;
-        Logger::log()->warn(ss.str().c_str());
         lua_pushstring(m_l, ss.str().c_str());
-        return grab_reference();
+        throw std::runtime_error(ss.str());
     }
     int peek = file.peek();
     // File is empty
     if (peek == std::char_traits<char>::eof()) {
         std::stringstream ss;
         ss << "File for " << chunkname << " is empty";
-        Logger::log()->warn(ss.str().c_str());
         lua_pushstring(m_l, ss.str().c_str());
-        return grab_reference();
+        throw std::runtime_error(ss.str());
     }
     // Bytecode
     if (peek == 0x1B) {
         std::stringstream ss;
         ss << "File for " << chunkname << " is bytecode";
-        Logger::log()->warn(ss.str().c_str());
         lua_pushstring(m_l, ss.str().c_str());
-        return grab_reference();
+        throw std::runtime_error(ss.str());
     }
     int status;
     {
@@ -370,13 +367,10 @@ Regref load_lua_function(const char* filename, Regref environment,
         status = lua_load(m_l, file_reader, &closure, chunkname);
     }
     switch (status) {
-        case LUA_ERRSYNTAX: {
-            Logger::log()->warn("Lua syntax error");
-            break;
-        }
+        case LUA_ERRSYNTAX:
         case LUA_ERRMEM: {
-            Logger::log()->warn("Lua memory error");
-            break;
+            const char* errmsg = lua_tostring(m_l, -1);
+            throw std::runtime_error(errmsg);
         }
         default: break;
     }
@@ -413,19 +407,19 @@ Regref new_sandbox() {
     return ret_val;
 }
 
-void drop_reference(Regref reference) {
+void drop_reference(Regref ref) {
     assert(is_initialized());
-    luaL_unref(m_l, LUA_REGISTRYINDEX, reference);
+    luaL_unref(m_l, LUA_REGISTRYINDEX, ref);
 }
 
-void push_reference(Regref reference) {
+void push_reference(Regref ref) {
     assert(is_initialized());
-    lua_rawgeti(m_l, LUA_REGISTRYINDEX, reference);
+    lua_rawgeti(m_l, LUA_REGISTRYINDEX, ref);
 }
 
 Regref grab_reference() {
     assert(is_initialized());
-    luaL_ref(m_l, LUA_REGISTRYINDEX);
+    return luaL_ref(m_l, LUA_REGISTRYINDEX);
 }
 
 lua_State* get_lua_state() {

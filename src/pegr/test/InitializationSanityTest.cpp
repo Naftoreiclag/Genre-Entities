@@ -10,5 +10,5 @@ void test_0000_init_sanity() {
     }
 }
 
-}
-}
+} // namespace Test
+} // namespace pegr

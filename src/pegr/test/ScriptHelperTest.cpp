@@ -107,5 +107,5 @@ void test_0028_to_string() {
     }
 }
 
-}
-}
+} // namespace Test
+} // namespace pegr

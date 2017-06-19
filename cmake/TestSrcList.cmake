@@ -32,6 +32,7 @@ foreach(fname
 "test/GensysIntermediateTest.cpp"
 "test/InitializationSanityTest.cpp"
 "test/ScriptHelperTest.cpp"
+"test/ScriptTest.cpp"
 
 )
 list(APPEND PGLOCAL_SOURCES_LIST "${PGLOCAL_SOURCE_DIR}/pegr/${fname}")

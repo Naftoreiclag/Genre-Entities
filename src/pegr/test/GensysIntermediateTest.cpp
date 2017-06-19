@@ -165,5 +165,5 @@ void test_0030_gensys_primitive_multiple() {
     }
 }
 
-}
-}
+} // namespace Test
+} // namespace pegr
