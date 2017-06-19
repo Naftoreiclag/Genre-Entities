@@ -53,11 +53,13 @@ void run_simple_function(Script::Regref ref, int nresults);
  * value at most max_recusions times.
  * @param idx The location of the relevant value on the main stack. Can be
  * negative
+ * @param def The default string to use if there are too many tostring() layers.
  * @param max_recusions The max number of recusions that can be performed,
- * otherwise an exception is thrown
+ * otherwise an exception is thrown or the default string is returned
  * @return The string
  */
-std::string to_string(int idx, int max_recusions = 64);
+std::string to_string(int idx, const char* def = nullptr,
+        int max_recusions = 10);
 
 } // namespace Helper
 } // namespace Script

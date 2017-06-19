@@ -111,28 +111,55 @@ void test_0030_gensys_primitive_multiple() {
     lua_State* l = Script::get_lua_state();
     int stack_size = lua_gettop(l);
     
-    Gensys::Interm::Prim prim_fruit;
-    Gensys::Interm::Prim prim_military;
+    Gensys::Interm::Prim prim_foo;
+    Gensys::Interm::Prim prim_bar;
     
     Script::Regref_Guard sandbox(Script::new_sandbox());
-    Script::Regref_Shared func_fruit_table = Script::make_shared(
-            Script::load_lua_function("test/simple_table.lua", sandbox));
-    Script::Regref_Shared func_military_table = Script::make_shared(
-            Script::load_lua_function("test/simple_table_alt.lua", sandbox));
+    Script::Regref_Shared func_foo = Script::make_shared(
+            Script::load_lua_function("test/return_foo.lua", sandbox));
+    Script::Regref_Shared func_bar = Script::make_shared(
+            Script::load_lua_function("test/return_bar.lua", sandbox));
     
-    prim_fruit.set_function(func_fruit_table);
-    prim_military.set_function(func_military_table);
+    prim_foo.set_function(func_foo);
+    prim_bar.set_function(func_bar);
     
-    /*
-    Script::run_function(*prim_fruit.get_function(), 0, 1);
+    Script::Helper::run_simple_function(*prim_foo.get_function(), 1);
+    std::string str_foo = Script::Helper::to_string(-1);
+    lua_pop(l, 1);
     
-    lua_getfield(l, -1, "a");
-    std::size_t strsize;
-    const char* strdata = lua_tolstring(l, -1, &strsize);
-    std::string a_fruit(strdata, strsize);
+    Script::Helper::run_simple_function(*prim_bar.get_function(), 1);
+    std::string str_bar = Script::Helper::to_string(-1);
+    lua_pop(l, 1);
     
-    Script::run_function(*prim_military.get_function(), 0, 1);
-    */
+    if (str_foo != "foo") {
+        throw std::runtime_error("Expected \"foo\"");
+    }
+    
+    if (str_bar != "bar") {
+        throw std::runtime_error("Expected \"bar\"");
+    }
+    
+    Gensys::Interm::Prim prim_maybe_foo;
+    prim_maybe_foo.set_f32(2.718f);
+    
+    if (prim_maybe_foo.get_type() != Gensys::Interm::Prim::Type::F32) {
+        throw std::runtime_error("Expected F32");
+    }
+    
+    prim_maybe_foo = prim_foo;
+    
+    if (prim_maybe_foo.get_type() != Gensys::Interm::Prim::Type::FUNC) {
+        throw std::runtime_error("Expected FUNC");
+    }
+    
+    Script::Helper::run_simple_function(*prim_maybe_foo.get_function(), 1);
+    std::string str_maybe_foo = Script::Helper::to_string(-1);
+    lua_pop(l, 1);
+    
+    if (str_foo != str_maybe_foo) {
+        throw std::runtime_error("Wrong assignment of functions!");
+    }
+    
     if (lua_gettop(l) != stack_size) {
         throw std::runtime_error("Unbalanced!");
     }

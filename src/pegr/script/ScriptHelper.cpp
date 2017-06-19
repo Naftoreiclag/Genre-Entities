@@ -1,5 +1,6 @@
 #include "pegr/script/ScriptHelper.hpp"
 
+#include <stdexcept>
 #include <cassert>
 
 #include "pegr/script/Script.hpp"
@@ -64,21 +65,38 @@ void run_simple_function(Script::Regref ref, int nresults) {
     Script::run_function(0, nresults);
 }
 
-std::string to_string(int idx, int max_recusions) {
+std::string to_string(int idx, const char* def, int max_recusions) {
     lua_State* l = Script::get_lua_state();
     int original_size; assert(original_size = lua_gettop(l)); // Balance sanity
     idx = Script::absolute_idx(idx);
     
     Script::push_reference(Script::m_luaglob_tostring);
+    
     lua_pushvalue(l, idx);
-    
-    std::size_t strsize;
-    const char* strdata = lua_tolstring(l, -1, &strsize);
-    
-    if (!strdata) {
+    for (int count = 0; count <= max_recusions; ++count) {
+        std::size_t strsize;
+        const char* strdata = lua_tolstring(l, -1, &strsize);
+        
+        if (!strdata) {
+            lua_pushvalue(l, -2); // tostring() function
+            lua_pushvalue(l, -2); // the pesky string
+            Script::run_function(1, 1);
+            lua_remove(l, -2); // pop off the old pesky string
+            continue;
+        }
+        
+        lua_pop(l, 2); // remove cached tostring and the value
+        assert(original_size == lua_gettop(l)); // Balance sanity
+        return std::string(strdata, strsize);
     }
-    
-    assert(original_size + 1 == lua_gettop(l)); // Balance sanity
+    lua_pop(l, 2); // remove cached tostring and the value
+    assert(original_size == lua_gettop(l)); // Balance sanity
+    if (def) {
+        return def;
+    }
+    throw std::runtime_error(
+        "Maximum recusion depth reached when trying to convert a Lua "
+        "value into a string");
 }
 
 } // namespace Helper
