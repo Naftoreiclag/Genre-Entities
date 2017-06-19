@@ -34,14 +34,14 @@ public:
     bool is_error() const;
     
     const std::string& get_string() const;
-    const Script::Regref_Guard& get_function() const;
+    const Script::Regref_Shared& get_function() const;
     float get_f32() const;
     double get_f64() const;
     int32_t get_i32() const;
     int64_t get_i64() const;
     
     void set_string(std::string str);
-    void set_function(Script::Regref func);
+    void set_function(Script::Regref_Shared func);
     void set_f32(float f32);
     void set_f64(double f64);
     void set_i32(int32_t i32);
@@ -49,12 +49,15 @@ public:
 
 private:
     Type m_type = Type::ERROR;
+    std::string m_str;
+    Script::Regref_Shared m_func;
     union {
-        std::string m_str;
-        Script::Regref_Guard m_func;
         float m_f32; double m_f64;
         int32_t m_i32; int64_t m_i64;
     };
+    
+    void copy_from(const Prim& other_p);
+    void move_from(Prim&& other_p);
     
     void deconstruct_current();
 };

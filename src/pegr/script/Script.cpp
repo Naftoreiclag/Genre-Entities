@@ -35,9 +35,13 @@ Regref_Guard& Regref_Guard::operator =(Regref_Guard&& other) {
 
 // Assignment of value
 Regref_Guard& Regref_Guard::operator =(const Regref& value) {
+    replace(value);
+    return *this;
+}
+
+void Regref_Guard::replace(Regref value) {
     release_reference();
     m_reference = value;
-    return *this;
 }
 
 Regref_Guard::~Regref_Guard() {
@@ -54,6 +58,10 @@ Regref_Guard::operator Regref() const {
 
 void Regref_Guard::release_reference() {
     drop_reference(m_reference);
+}
+
+Regref_Shared make_shared(Regref ref) {
+    return std::make_shared<Regref_Guard>(ref);
 }
 
 const char* PEGR_MODULE_NAME = "pegr";

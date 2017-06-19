@@ -3,8 +3,8 @@
 namespace pegr {
 namespace Test {
 
-//@Test 000 Initialization Sanity Test
-bool init_sanity_test() {
+//@Test Initialization Sanity Test
+bool test_000_init_sanity() {
     return Script::is_initialized();
 }
 

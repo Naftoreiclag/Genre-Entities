@@ -11,7 +11,7 @@ namespace Test {
 typedef Script::Regref_Guard RG;
     
 //@Test Script Helper
-bool script_helper() {
+bool test_script_helper() {
     RG sandbox(Script::new_sandbox());
     RG table_fun(Script::load_lua_function("test/simple_table.lua", sandbox));
     

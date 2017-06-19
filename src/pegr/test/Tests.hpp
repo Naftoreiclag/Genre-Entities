@@ -6,9 +6,9 @@
 namespace pegr {
 namespace Test {
 
-bool gensys_primitive_test();
-bool init_sanity_test();
-bool script_helper();
+bool test_000_init_sanity();
+bool test_gensys_primitive_test();
+bool test_script_helper();
 
 struct NamedTest {
     const char* m_name;
@@ -19,9 +19,9 @@ const NamedTest m_tests[] = {
     
     {"Testing Framework", []()->bool{return true;}},
 
-    {"Gensys Intermediates", gensys_primitive_test},
-    {"000 Initialization Sanity Test", init_sanity_test},
-    {"Script Helper", script_helper},
+    {"Initialization Sanity Test", test_000_init_sanity},
+    {"Gensys Intermediates", test_gensys_primitive_test},
+    {"Script Helper", test_script_helper},
     
     // Sentinel
     {nullptr, std::function<bool()>()}

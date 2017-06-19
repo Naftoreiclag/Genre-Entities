@@ -1,6 +1,8 @@
 #ifndef PEGR_SCRIPT_SCRIPT_HPP
 #define PEGR_SCRIPT_SCRIPT_HPP
 
+#include <memory>
+
 #include <lua.hpp>
 
 namespace pegr {
@@ -71,6 +73,13 @@ public:
     Regref regref() const;
     
     /**
+     * @brief Replaces the currently guarded reference with this one. Properly
+     * release the previously guarded value
+     * @param value Reference to the new value to be guarded.
+     */
+    void replace(Regref value);
+    
+    /**
      * @brief Implicit conversion to the Regref type
      */
     operator Regref() const;
@@ -80,6 +89,19 @@ private:
     
     Regref m_reference;
 };
+
+/**
+ * @brief A shared pointer for a guard. Useful for having multiple references
+ * to the same Lua object. Uses reference counting.
+ */
+typedef std::shared_ptr<Regref_Guard> Regref_Shared;
+
+/**
+ * @brief Make a referenced Lua value into a shared RAII object
+ * @param ref The Lua reference to make shared
+ * @return A shared RAII object for the provided reference
+ */
+Regref_Shared make_shared(Regref ref);
 
 extern const char* PEGR_MODULE_NAME;
 

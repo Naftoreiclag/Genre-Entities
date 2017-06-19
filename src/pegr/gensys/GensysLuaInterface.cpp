@@ -119,7 +119,7 @@ Interm::Prim translate_primitive(int idx) {
                 return ret_val;
             }
             lua_pushvalue(l, -1);
-            ret_val.set_function(Script::grab_reference());
+            ret_val.set_function(Script::make_shared(Script::grab_reference()));
             break;
         }
         default: {
