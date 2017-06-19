@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "pegr/script/Script.hpp"
+#include "pegr/gensys/GensysIntermediate.hpp"
 
 namespace pegr {
 namespace Gensys {
@@ -17,6 +18,13 @@ namespace LI {
  * genres, archetypes, etc.
  */
 void initialize();
+
+/**
+ * @brief Produces a typed primitive value from a Lua value.
+ * @param idx the index of the input Lua value on the main stack
+ * @return a primitive value produced from the Lua value
+ */
+Interm::Prim translate_primitive(int idx);
 
 /**
  * @brief Translates all submitted Lua tables into their intermediate forms and

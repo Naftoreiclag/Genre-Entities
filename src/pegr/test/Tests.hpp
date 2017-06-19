@@ -14,6 +14,7 @@ void test_0028_for_pairs();
 void test_0028_to_string();
 void test_0030_gensys_primitive();
 void test_0030_gensys_primitive_multiple();
+void test_0080_00_gensys_primitive();
 
 struct NamedTest {
     const char* m_name;
@@ -32,6 +33,7 @@ const NamedTest m_tests[] = {
     {"Script Helper to_string", test_0028_to_string},
     {"Single gensys primitive", test_0030_gensys_primitive},
     {"Reassignment of gensys primitives", test_0030_gensys_primitive_multiple},
+    {"Gensys primitive from Lua values", test_0080_00_gensys_primitive},
     
     // Sentinel
     {nullptr, std::function<void()>()}

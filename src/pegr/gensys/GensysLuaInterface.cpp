@@ -7,7 +7,6 @@
 #include <map>
 
 #include "pegr/logger/Logger.hpp"
-#include "pegr/gensys/GensysIntermediate.hpp"
 #include "pegr/gensys/Gensys.hpp"
 #include "pegr/script/ScriptHelper.hpp"
 
@@ -31,15 +30,11 @@ void initialize() {
 }
 
 
-
-/**
- * @brief Produces a typed primitive value from a Lua value.
- * @param idx the index of the input Lua value on the main stack
- * @return a primitive value produced from the Lua value
- */
 Interm::Prim translate_primitive(int idx) {
     lua_State* l = Script::get_lua_state();
     int original_size; assert(original_size = lua_gettop(l)); // Balance sanity
+    
+    idx = Script::absolute_idx(idx);
     
     Interm::Prim ret_val;
     
@@ -52,7 +47,7 @@ Interm::Prim translate_primitive(int idx) {
     std::size_t strlen;
     const char* strdata;
     
-    lua_rawgeti(l, idx, 1); // First member of the table should be type
+    lua_rawgeti(l, idx, 1); // First member of the table should be type string
     strdata = lua_tolstring(l, -1, &strlen);
     if (!strdata) {
         Logger::log()->warn("Invalid type");
