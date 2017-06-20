@@ -122,6 +122,12 @@ public:
     int m_n;
     Pop_Guard(int n = 0);
     ~Pop_Guard();
+    
+    /**
+     * @brief Pops n values prematurely (before destructor is called)
+     * @param n The number of values to pop. Must be <= m_n
+     */
+    void pop(int n);
 };
 
 /**

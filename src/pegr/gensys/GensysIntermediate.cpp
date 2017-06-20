@@ -19,7 +19,7 @@ Prim::Type Prim::get_type() const {
 }
 
 bool Prim::is_error() const {
-    return m_type == Type::ERROR;
+    return m_type == Type::UNKNOWN;
 }
 
 const std::string& Prim::get_string() const {
@@ -49,7 +49,7 @@ int64_t Prim::get_i64() const {
 }
 
 Prim::Prim()
-: m_type(Type::ERROR) { }
+: m_type(Type::UNKNOWN) { }
 
 Prim::Prim(const Prim& other_p) {
     copy_from(other_p);
@@ -154,7 +154,7 @@ void Prim::deconstruct_current() {
             break;
         }
     }
-    m_type = Type::ERROR;
+    m_type = Type::UNKNOWN;
 }
 
 void Prim::set_string(std::string str) {

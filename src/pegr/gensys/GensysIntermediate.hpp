@@ -17,7 +17,7 @@ public:
         FUNC,
         F32, F64,
         I32, I64,
-        ERROR,
+        UNKNOWN,
         ENUM_SIZE
     };
     
@@ -48,7 +48,7 @@ public:
     void set_i64(int64_t i64);
 
 private:
-    Type m_type = Type::ERROR;
+    Type m_type = Type::UNKNOWN;
     std::string m_str;
     Script::Regref_Shared m_func;
     union {
@@ -65,16 +65,24 @@ private:
 typedef std::string Symbol;
 
 struct Comp_Def {
+    // Used only in error messages
+    std::string m_error_msg_name;
+    
     // Named members with primitive values
     std::map<Symbol, Prim> m_members;
 };
 
 struct Arche {
-    // Named members with primitive values
-    typedef std::map<Symbol, Prim> Default_Vals;
+    // Used only in error messages
+    std::string m_error_msg_name;
     
-    // Key: component, Value: implementations for the component's members
-    std::map<Comp_Def*, Default_Vals> m_implements;
+    struct Implement {
+        const Comp_Def* m_component;
+        std::map<Symbol, Prim> m_values;
+    };
+    
+    // Key: symbol, Value: implementations for the component's members
+    std::map<Symbol, Implement> m_implements;
 };
 
 struct Genre {

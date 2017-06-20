@@ -31,7 +31,32 @@ void initialize() {
     m_working_components = Script::grab_reference();
 }
 
-Interm::Prim translate_primitive(int idx) {
+/**
+ * @brief Converts a modder's table keys into strings, or die trying
+ * [BALANCED]
+ * @param idx The index of the key
+ * @param err_msg String to prefix error message with
+ * @return The string
+ */
+std::string assert_table_key_to_string(int idx, const char* err_msg) {
+    lua_State* l = Script::get_lua_state();
+    lua_pushvalue(l, idx); // Copy of key
+    Script::Pop_Guard pop_guard(1);
+    std::size_t strlen;
+    const char* strdata = lua_tolstring(l, -1, &strlen);
+    if (!strdata) {
+        std::string str_debug = 
+                Script::Helper::to_string(-1, 
+                        Script::Helper::GENERIC_TO_STRING_DEFAULT);
+        std::stringstream sss;
+        sss << err_msg << str_debug;
+        throw std::runtime_error(sss.str());
+    }
+    return std::string(strdata, strlen);
+}
+
+// TODO: enforce required_t
+Interm::Prim translate_primitive(int idx, Interm::Prim::Type required_t) {
     lua_State* l = Script::get_lua_state();
     int original_size; assert(original_size = lua_gettop(l)); // Balance sanity
     
@@ -113,7 +138,7 @@ Interm::Prim translate_primitive(int idx) {
                 lua_pop(l, 1); // Remove rawgeti
                 assert(original_size == lua_gettop(l)); // Balance sanity
                 std::stringstream ss;
-                ss << "Error while parsing primitive string: " << e.what();
+                ss << "Cannot parse string value for primitive: " << e.what();
                 throw std::runtime_error(ss.str());
             }
             break;
@@ -147,40 +172,26 @@ Interm::Comp_Def* translate_component_definition(int table_idx) {
     lua_State* l = Script::get_lua_state();
     int original_size; assert(original_size = lua_gettop(l)); // Balance sanity
     
-    std::size_t strlen;
-    const char* strdata;
-    
     Interm::Comp_Def comp_def;
     
-    Script::Helper::for_pairs(-1, [&]()->bool {
-        {
-            lua_pushvalue(l, -2); // Copy of key
-            Script::Pop_Guard pop_guard(1);
-            strdata = lua_tolstring(l, -1, &strlen);
-            if (!strdata) {
-                std::string str_debug = 
-                        Script::Helper::to_string(-1, 
-                                Script::Helper::GENERIC_TO_STRING_DEFAULT);
-                std::stringstream ss;
-                ss << "Invalid key in components cstr table" << str_debug;
-                throw std::runtime_error(ss.str());
-            }
-        }
-        Interm::Symbol symbol(strdata, strlen);
+    Script::Helper::for_pairs(table_idx, [&]()->bool {
+        Interm::Symbol symbol = 
+                assert_table_key_to_string(-2, 
+                        "Invalid key in components cstr table");
         Interm::Prim value;
         try {
             value = translate_primitive(-1);
         }
         catch (std::runtime_error e) {
-            std::stringstream ss;
-            ss << "Error while constructing primitive: " << e.what();
-            throw std::runtime_error(ss.str());
+            std::stringstream sss;
+            sss << "Cannot construct primitive: " << e.what();
+            throw std::runtime_error(sss.str());
         }
         // Check that no symbol is duplicated (possible through integer keys)
         if (comp_def.m_members.find(symbol) != comp_def.m_members.end()) {
             throw std::runtime_error("Duplicate symbol");
         }
-        comp_def.m_members[symbol] = value;
+        comp_def.m_members[symbol] = std::move(value);
         return true;
     }, false);
     
@@ -188,15 +199,91 @@ Interm::Comp_Def* translate_component_definition(int table_idx) {
     return new Interm::Comp_Def(std::move(comp_def));
 }
 
+Interm::Arche::Implement translate_archetype_implementation(int table_idx) {
+    lua_State* l = Script::get_lua_state();
+    int original_size; assert(original_size = lua_gettop(l)); // Balance sanity
+    
+    Interm::Arche::Implement implement;
+    
+    lua_getfield(l, table_idx, "__is");
+    Script::Pop_Guard pop_guard(1);
+    
+    if (lua_isnil(l, -1)) {
+        throw std::runtime_error("__is cannot be nil!");
+    }
+    
+    std::string comp_id;
+    try {
+        comp_id = Script::Helper::to_string(-1);
+    } catch (std::runtime_error e) {
+        std::stringstream sss;
+        sss << "Cannot convert __is value to string: " << e.what();
+        throw std::runtime_error(sss.str());
+    }
+    
+    pop_guard.pop(1); // Pop __is string
+    
+    implement.m_component = Gensys::get_staged_component(comp_id.c_str());
+    
+    if (!implement.m_component) {
+        std::stringstream sss;
+        sss << "Cannot find a component with id: " << comp_id;
+        throw std::runtime_error(sss.str());
+    }
+    
+    Script::Helper::for_pairs(table_idx, [&]()->bool {
+        Interm::Symbol symbol = 
+                assert_table_key_to_string(-2, 
+                        "Invalid key in component cstr table");
+        if (symbol == "__is") {
+            return true;
+        }
+        
+        auto iter = implement.m_component->m_members.find(symbol);
+        if (iter == implement.m_component->m_members.end()) {
+            std::stringstream sss;
+            sss << "Tried to assign to member \"" << symbol
+                << "\" in component \""
+                << implement.m_component->m_error_msg_name
+                << '"';
+            throw std::runtime_error(sss.str());
+        }
+        
+        const Interm::Prim& prim_def = iter->second;
+        
+        try {
+            implement.m_values[symbol] = 
+                    translate_primitive(-1, prim_def.get_type());
+        }
+        catch (std::runtime_error e) {
+            std::stringstream sss;
+            sss << "Error while parsing primitive in archetype cstr table: "
+                << e.what();
+            throw std::runtime_error(sss.str());
+        }
+    }, false);
+    return implement;
+}
+
 Interm::Arche* translate_archetype(int table_idx) {
     lua_State* l = Script::get_lua_state();
     int original_size; assert(original_size = lua_gettop(l)); // Balance sanity
     
-    std::size_t strlen;
-    const char* strdata;
-    
     Interm::Arche arche;
-    Script::Helper::for_pairs(-1, [&]()->bool {
+    Script::Helper::for_pairs(table_idx, [&]()->bool {
+        Interm::Symbol symbol = 
+                assert_table_key_to_string(-2, 
+                        "Invalid key in archetype cstr table");
+        Interm::Arche::Implement implement;
+        try {
+            implement = translate_archetype_implementation(-1);
+        } catch (std::runtime_error e) {
+            std::stringstream sss;
+            sss << "Cannot parse archetype implementation cstr table: "
+                << e.what();
+            throw std::runtime_error(sss.str());
+        }
+        
         return true;
     }, false);
     

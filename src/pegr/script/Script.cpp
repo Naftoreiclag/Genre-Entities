@@ -79,6 +79,13 @@ Pop_Guard::~Pop_Guard() {
     lua_pop(m_l, m_n);
 }
 
+void Pop_Guard::pop(int n) {
+    assert(n <= m_l);
+    assert(n >= 0);
+    lua_pop(m_l, m_n);
+    m_n -= n;
+}
+
 // Keeps track of how many registry keys we are holding
 int m_total_grab_delta = 0;
 

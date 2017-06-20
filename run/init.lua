@@ -22,20 +22,20 @@ pegr.add_component('circle.c', {
 
 pegr.add_archetype('cookie.at', {
     position = {
-        _is = 'position.c',
+        __is = 'position.c',
         
         -- Start at (10, 10) for no particular reason
-        x = 10,
-        y = 10
+        x = {'f64', 10},
+        y = {'f64', 10}
     },
     velocity = {
-        _is = 'velocity.c'
+        __is = 'velocity.c'
         -- Keep all default default values
     },
     body = {
-        _is = 'circle.c',
+        __is = 'circle.c',
         
         -- Cookies are small
-        radius = 0.5
+        radius = {'f32', 0.5}
     }
 })
