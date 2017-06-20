@@ -1,4 +1,5 @@
 #include <stdexcept>
+#include <sstream>
 
 #include "pegr/gensys/Gensys.hpp"
 #include "pegr/gensys/GensysLuaInterface.hpp"
@@ -53,7 +54,17 @@ void run() {
             test.m_test();
             
             if (lua_gettop(l) != original_stack_size) {
-                throw std::runtime_error("Mandatory: Unbalanced test!");
+                std::stringstream ss;
+                ss << "Mandatory: Unbalanced test! (";
+                int diff = lua_gettop(l) - original_stack_size;
+                if (diff < 0) {
+                    ss << diff;
+                } else {
+                    ss << '+' << diff;
+                    lua_pop(l, diff);
+                }
+                ss << ") Later tests may fail inexplicably!";
+                throw std::runtime_error(ss.str());
             }
             
             Logger::log()->info("\t...PASSED!");

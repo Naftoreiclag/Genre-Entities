@@ -21,10 +21,32 @@ void initialize();
 
 /**
  * @brief Produces a typed primitive value from a Lua value.
- * @param idx the index of the input Lua value on the main stack
+ * Can throw runtime errors. Guaranteed to return a non-error Prim.
+ * [BALANCED]
+ * @param table_idx the index of the input Lua value on the main stack
  * @return a primitive value produced from the Lua value
  */
-Interm::Prim translate_primitive(int idx);
+Interm::Prim translate_primitive(int table_idx);
+
+/**
+ * @brief Make a new component definition from the table at the given index.
+ * Can throw runtime errors. Guaranteed to return a valid Comp_Def pointer.
+ * User is responsible for calling delete.
+ * [BALANCED]
+ * @param table_idx The index on the main Lua stack to translate
+ * @return The component, or nullptr if failure
+ */
+Interm::Comp_Def* translate_component_definition(int table_idx);
+
+/**
+ * @brief Make a new archetype from the table at the given index.
+ * Can throw runtime errors. Guaranteed to return a valid Arche pointer.
+ * User is responsible for calling delete.
+ * [BALANCED]
+ * @param table_idx The index on the main Lua stack to translate
+ * @return The archetype, or nullptr if failure
+ */
+Interm::Arche* translate_archetype(int table_idx);
 
 /**
  * @brief Translates all submitted Lua tables into their intermediate forms and

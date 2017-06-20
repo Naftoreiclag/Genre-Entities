@@ -113,6 +113,18 @@ extern Regref m_luaglob__VERISON;
 extern Regref m_luaglob_print;
 
 /**
+ * @class Pop_Guard
+ * @brief RAII for stack size. When this object is destructed, the specified
+ * number of elements are popped off the main Lua stack (calls lua_pop)
+ */
+class Pop_Guard {
+public:
+    int m_n;
+    Pop_Guard(int n = 0);
+    ~Pop_Guard();
+};
+
+/**
  * @brief Creates the lua state and loads standard libraries
  */
 void initialize();

@@ -37,10 +37,34 @@ void cleanup();
 
 /**
  * @brief Stages an intermediate component definition for compilation
+ * @param id
  * @param comp_def the component definition
  */
-void stage_component(Interm::Comp_Def comp_def);
+void stage_component(const char* id, Interm::Comp_Def* comp_def);
 
+/**
+ * @brief Returns a currently staged component from the id. If the component
+ * cannot be found, nullptr is returned.
+ * @param id
+ * @return nullptr or staged Comp_Def
+ */
+Interm::Comp_Def* get_staged_component(const char* id);
+
+/**
+ * @brief Stages an intermediate archetype for compilation
+ * @param id
+ * @param arche the archetype
+ */
+void stage_archetype(const char* id, Interm::Arche* arche);
+
+/**
+ * @brief Returns a currently staged archetype from the id. If the archetype
+ * cannot be found, nullptr is returned.
+ * @param id
+ * @return nullptr or staged Arche
+ */
+Interm::Arche* get_staged_archetype(const char* id);
+ 
 } // namespace Gensys
 } // namespace pegr
 

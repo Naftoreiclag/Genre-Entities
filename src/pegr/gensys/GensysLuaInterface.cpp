@@ -1,5 +1,7 @@
 #include "pegr/gensys/GensysLuaInterface.hpp"
 
+#include <stdexcept>
+#include <sstream>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -29,19 +31,20 @@ void initialize() {
     m_working_components = Script::grab_reference();
 }
 
-
 Interm::Prim translate_primitive(int idx) {
     lua_State* l = Script::get_lua_state();
     int original_size; assert(original_size = lua_gettop(l)); // Balance sanity
     
     idx = Script::absolute_idx(idx);
     
-    Interm::Prim ret_val;
-    
     if (lua_type(l, idx) != LUA_TTABLE) {
-        Logger::log()->warn("Invalid primitive constructor");
+        std::string str_debug = 
+                Script::Helper::to_string(idx, 
+                        Script::Helper::GENERIC_TO_STRING_DEFAULT);
         assert(original_size == lua_gettop(l)); // Balance sanity
-        return ret_val;
+        std::stringstream ss;
+        ss << "Invalid primitive constructor: " << str_debug;
+        throw std::runtime_error(ss.str());
     }
     
     std::size_t strlen;
@@ -50,15 +53,20 @@ Interm::Prim translate_primitive(int idx) {
     lua_rawgeti(l, idx, 1); // First member of the table should be type string
     strdata = lua_tolstring(l, -1, &strlen);
     if (!strdata) {
-        Logger::log()->warn("Invalid type");
+        std::string str_debug = 
+                Script::Helper::to_string(-1, 
+                        Script::Helper::GENERIC_TO_STRING_DEFAULT);
         lua_pop(l, 1); // Remove rawgeti
         assert(original_size == lua_gettop(l)); // Balance sanity
-        return ret_val;
+        std::stringstream ss;
+        ss << "Invalid type: " << str_debug;
+        throw std::runtime_error(ss.str());
     }
     // TODO: light userdata instead of strings
     lua_pop(l, 1); // Remove type string
     std::string type_name(strdata, strlen);
     
+    Interm::Prim ret_val;
     if (type_name == "f32") {
         ret_val.set_type(Interm::Prim::Type::F32);
     } else if (type_name == "f64") {
@@ -72,13 +80,15 @@ Interm::Prim translate_primitive(int idx) {
     } else if (type_name == "func") {
         ret_val.set_type(Interm::Prim::Type::FUNC);
     } else {
-        Logger::log()->warn("Unknown type: %v", type_name);
         assert(original_size == lua_gettop(l)); // Balance sanity
-        return ret_val;
+        std::stringstream ss;
+        ss << "Unknown type: " << type_name;
+        throw std::runtime_error(ss.str());
     }
     
     lua_rawgeti(l, idx, 2); // Second member should be value
     switch (ret_val.get_type()) {
+        // TODO: check validity of number type
         case Interm::Prim::Type::F32: {
             ret_val.set_f32(lua_tonumber(l, -1));
             break;
@@ -96,22 +106,28 @@ Interm::Prim translate_primitive(int idx) {
             break;
         }
         case Interm::Prim::Type::STR: {
-            strdata = lua_tolstring(l, -1, &strlen);
-            if (!strdata) {
-                Logger::log()->warn("Invalid string");
+            try {
+                ret_val.set_string(Script::Helper::to_string(-1));
+            }
+            catch (std::runtime_error e) {
                 lua_pop(l, 1); // Remove rawgeti
                 assert(original_size == lua_gettop(l)); // Balance sanity
-                return ret_val;
+                std::stringstream ss;
+                ss << "Error while parsing primitive string: " << e.what();
+                throw std::runtime_error(ss.str());
             }
-            ret_val.set_string(std::string(strdata, strlen));
             break;
         }
         case Interm::Prim::Type::FUNC: {
             if (lua_type(l, -1) != LUA_TFUNCTION) {
-                Logger::log()->warn("Invalid function");
+                std::string str_debug = 
+                        Script::Helper::to_string(-1, 
+                                Script::Helper::GENERIC_TO_STRING_DEFAULT);
                 lua_pop(l, 1); // Remove rawgeti
                 assert(original_size == lua_gettop(l)); // Balance sanity
-                return ret_val;
+                std::stringstream ss;
+                ss << "Invalid function: " << str_debug;
+                throw std::runtime_error(ss.str());
             }
             lua_pushvalue(l, -1);
             ret_val.set_function(Script::make_shared(Script::grab_reference()));
@@ -127,11 +143,6 @@ Interm::Prim translate_primitive(int idx) {
     return ret_val;
 }
 
-/**
- * @brief Make a new component definition from the table at the given index.
- * @param table_idx The index on the main Lua stack to translate
- * @return The component, or nullptr if failure
- */
 Interm::Comp_Def* translate_component_definition(int table_idx) {
     lua_State* l = Script::get_lua_state();
     int original_size; assert(original_size = lua_gettop(l)); // Balance sanity
@@ -139,43 +150,58 @@ Interm::Comp_Def* translate_component_definition(int table_idx) {
     std::size_t strlen;
     const char* strdata;
     
-    std::map<Interm::Symbol, Interm::Prim> symbols;
+    Interm::Comp_Def comp_def;
     
     Script::Helper::for_pairs(-1, [&]()->bool {
-        lua_pushvalue(l, -2); // Copy of key
-        strdata = lua_tolstring(l, -1, &strlen);
-        if (!strdata) {
-            Logger::log()->warn("Invalid key in components cstr table");
-            lua_pop(l, 2); // Copy of key and table value
-            return true;
+        {
+            lua_pushvalue(l, -2); // Copy of key
+            Script::Pop_Guard pop_guard(1);
+            strdata = lua_tolstring(l, -1, &strlen);
+            if (!strdata) {
+                std::string str_debug = 
+                        Script::Helper::to_string(-1, 
+                                Script::Helper::GENERIC_TO_STRING_DEFAULT);
+                std::stringstream ss;
+                ss << "Invalid key in components cstr table" << str_debug;
+                throw std::runtime_error(ss.str());
+            }
         }
-        lua_pop(l, 1); // Copy of key
-        
         Interm::Symbol symbol(strdata, strlen);
-        Interm::Prim value = translate_primitive(-1);
-        
-        if (value.get_type() == Interm::Prim::Type::ERROR) {
-            Logger::log()->warn("Incorrect symbol");
-            lua_pop(l, 1); // Table value
-            return true;
+        Interm::Prim value;
+        try {
+            value = translate_primitive(-1);
         }
-        
+        catch (std::runtime_error e) {
+            std::stringstream ss;
+            ss << "Error while constructing primitive: " << e.what();
+            throw std::runtime_error(ss.str());
+        }
         // Check that no symbol is duplicated (possible through integer keys)
-        if (symbols.find(symbol) != symbols.end()) {
-            Logger::log()->warn("Duplicate symbol");
-            lua_pop(l, 1); // Table value
-            return true;
+        if (comp_def.m_members.find(symbol) != comp_def.m_members.end()) {
+            throw std::runtime_error("Duplicate symbol");
         }
-        
-        symbols[symbol] = value;
-        lua_pop(l, 1); // Table value
+        comp_def.m_members[symbol] = value;
         return true;
-    }, true);
+    }, false);
     
-    Interm::Comp_Def* ret_val = new Interm::Comp_Def();
-    ret_val->m_members = std::move(symbols);
     assert(original_size == lua_gettop(l)); // Balance sanity
-    return ret_val;
+    return new Interm::Comp_Def(std::move(comp_def));
+}
+
+Interm::Arche* translate_archetype(int table_idx) {
+    lua_State* l = Script::get_lua_state();
+    int original_size; assert(original_size = lua_gettop(l)); // Balance sanity
+    
+    std::size_t strlen;
+    const char* strdata;
+    
+    Interm::Arche arche;
+    Script::Helper::for_pairs(-1, [&]()->bool {
+        return true;
+    }, false);
+    
+    assert(original_size == lua_gettop(l)); // Balance sanity
+    return new Interm::Arche(std::move(arche));
 }
 
 void translate_working() {
@@ -196,15 +222,30 @@ void translate_working() {
             return true;
         }
         lua_pop(l, 1);
-        
-        std::string comp_id(strdata, strlen);
-        Logger::log()->info("Parsing comp: %v", comp_id);
-        
+        std::string id(strdata, strlen);
+        Logger::log()->info("Parsing comp: %v", id);
         Interm::Comp_Def* obj = translate_component_definition(-1);
-        
-        lua_pop(l, 1);
+        Gensys::stage_component(id.c_str(), obj);
         return true;
-    }, true);
+    }, false);
+    lua_pop(l, 1);
+    
+    Script::push_reference(m_working_archetypes);
+    Script::Helper::for_pairs(-1, [&]()->bool {
+        lua_pushvalue(l, -2); // Make a copy of the key
+        strdata = lua_tolstring(l, -1, &strlen);
+        if (!strdata) {
+            Logger::log()->warn("Invalid key in working archetype table");
+            lua_pop(l, 2);
+            return true;
+        }
+        lua_pop(l, 1);
+        std::string id(strdata, strlen);
+        Logger::log()->info("Parsing archetype: %v", id);
+        Interm::Arche* obj = translate_archetype(-1);
+        Gensys::stage_archetype(id.c_str(), obj);
+        return true;
+    }, false);
     lua_pop(l, 1);
     
     assert(original_size == lua_gettop(l)); // Balance sanity

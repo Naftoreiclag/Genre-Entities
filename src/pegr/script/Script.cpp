@@ -72,6 +72,13 @@ lua_State* m_l = nullptr;
 std::string m_lua_version;
 Regref m_pristine_sandbox;
 
+Pop_Guard::Pop_Guard(int n)
+: m_n(n) { }
+
+Pop_Guard::~Pop_Guard() {
+    lua_pop(m_l, m_n);
+}
+
 // Keeps track of how many registry keys we are holding
 int m_total_grab_delta = 0;
 

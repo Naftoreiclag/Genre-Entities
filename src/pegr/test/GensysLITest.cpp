@@ -28,8 +28,6 @@ void test_0080_00_gensys_primitive() {
     if (prim.get_type() != Gensys::Interm::Prim::Type::FUNC) {
         throw std::runtime_error("Expected FUNC!");
     }
-    
-    
 }
 
 } // namespace Test

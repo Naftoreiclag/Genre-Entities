@@ -11,23 +11,23 @@ namespace Helper {
 
 void for_pairs(int table_idx, std::function<bool()> func, bool pops_value) {
     lua_State* l = Script::get_lua_state();
-    int original_size; assert(original_size = lua_gettop(l)); // Balance sanity
-    
     table_idx = Script::absolute_idx(table_idx);
-    
     lua_pushnil(l);
     while (lua_next(l, table_idx) != 0) {
-        bool cont = func();
+        Script::Pop_Guard pg;
         if (!pops_value) {
-            lua_pop(l, 1); // Eat value
+            pg.m_n = 1; // Eat value ourselves
         }
+        // Assume we will need to eat the key ourselves
+        // in case the function rasies errors or breaks the loop
+        pg.m_n += 1;
+        bool cont = func();
         if (!cont) {
-            lua_pop(l, 1); // Eat key
             break;
         }
+        // If we got to this point, the key no longer needs to be eaten by us
+        pg.m_n -= 1;
     }
-    
-    assert(original_size == lua_gettop(l)); // Balance sanity
 }
 
 void simple_deep_copy(int table_idx) {
@@ -96,8 +96,11 @@ std::string to_string(int idx, const char* def, int max_recusions) {
     }
     throw std::runtime_error(
         "Maximum recusion depth reached when trying to convert a Lua "
-        "value into a string");
+        "value into a string through tostring()");
 }
+
+const char* GENERIC_TO_STRING_DEFAULT = 
+        "[MAX TOSTRING() RECURSION DEPTH EXCEEDED]";
 
 } // namespace Helper
 } // namespace Script

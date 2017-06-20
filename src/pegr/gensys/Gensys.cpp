@@ -31,7 +31,16 @@ void cleanup() {
     m_global_state = GlobalState::UNINITIALIZED;
 }
 
-void stage_component(Interm::Comp_Def comp_def) {
+void stage_component(const char* id, Interm::Comp_Def* comp_def) {
+    
+}
+Interm::Comp_Def* get_staged_component(const char* id) {
+    
+}
+void stage_archetype(const char* id, Interm::Arche* arche) {
+    
+}
+Interm::Arche* get_staged_archetype(const char* id) {
     
 }
 

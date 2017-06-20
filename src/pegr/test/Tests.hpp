@@ -9,8 +9,10 @@ namespace Test {
 void test_0000_init_sanity();
 void test_0010_check_guard_memory_leaks();
 void test_0010_check_guard_memory_leaks_shared();
+void test_0010_check_pop_guard();
 void test_0010_check_script_loading();
 void test_0028_for_pairs();
+void test_0028_for_pairs_exception();
 void test_0028_to_string();
 void test_0030_gensys_primitive();
 void test_0030_gensys_primitive_multiple();
@@ -28,8 +30,10 @@ const NamedTest m_tests[] = {
     {"Initialization Sanity Test", test_0000_init_sanity},
     {"Script Regref_Guard memory leaks", test_0010_check_guard_memory_leaks},
     {"Script Regref_Shared memory leaks", test_0010_check_guard_memory_leaks_shared},
+    {"Script Pop_Guard memory leaks", test_0010_check_pop_guard},
     {"Identifying syntax errors", test_0010_check_script_loading},
     {"Script Helper for_pairs", test_0028_for_pairs},
+    {"Script Helper for_pairs with exception", test_0028_for_pairs_exception},
     {"Script Helper to_string", test_0028_to_string},
     {"Single gensys primitive", test_0030_gensys_primitive},
     {"Reassignment of gensys primitives", test_0030_gensys_primitive_multiple},

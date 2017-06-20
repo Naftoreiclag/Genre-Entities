@@ -23,6 +23,14 @@ void test_0010_check_script_loading() {
     throw std::runtime_error("No syntax error");
 }
 
+//@Test Script Pop_Guard memory leaks
+void test_0010_check_pop_guard() {
+    lua_State* l = Script::get_lua_state();
+    lua_pushnil(l);
+    Script::Pop_Guard pg(1);
+}
+
+
 //@Test Script Regref_Guard memory leaks
 void test_0010_check_guard_memory_leaks() {
     lua_State* l = Script::get_lua_state();

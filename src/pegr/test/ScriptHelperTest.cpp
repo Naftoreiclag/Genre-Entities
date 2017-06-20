@@ -21,7 +21,6 @@ void test_0028_for_pairs() {
     
     Script::Helper::run_simple_function(table_fun, 1);
     
-    
     std::map<std::string, std::string> expected = {
         {"a", "apple"},
         {"b", "banana"},
@@ -85,6 +84,29 @@ void test_0028_for_pairs() {
     }
 }
 
+//@Test Script Helper for_pairs with exception
+void test_0028_for_pairs_exception() {
+    lua_State* l = Script::get_lua_state();
+    
+    RG sandbox(Script::new_sandbox());
+    RG table_fun(Script::load_lua_function("test/simple_table.lua", sandbox));
+    
+    Script::Helper::run_simple_function(table_fun, 1);
+    Script::Pop_Guard pop_guard(1);
+    
+    try {
+        Script::Helper::for_pairs(-1, []()->bool {
+            throw std::runtime_error("orange juice");
+        }, false);
+    }
+    catch (std::runtime_error e) {
+        if (std::string(e.what()) != "orange juice") {
+            throw e;
+        }
+        return;
+    }
+    throw std::runtime_error("Error did not bubble up!");
+}
 //@Test Script Helper to_string
 void test_0028_to_string() {
     lua_State* l = Script::get_lua_state();

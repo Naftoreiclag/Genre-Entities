@@ -16,10 +16,13 @@ namespace Helper {
  * at position -2 and the value at position -1. The loop breaks if the function
  * returns false. The provided function may not modify or remove the key from
  * the stack. Doing so may destroy the loop. The function may consume the value
- * associated with that key, but only if pops_value is true.
+ * associated with that key, but only if pops_value is true. Whether or not
+ * this function successfully balances itself is dependent on whether or not
+ * the provided function's balance agrees with the value of pops_value.
  * @param table_idx the location of the table on the lua stack. Can be negative.
  * Does not pop that value off the stack.
- * @param func The function to call for every pair in the table.
+ * @param func The function to call for every pair in the table. Allowed to
+ * throw exceptions
  * @param pops_value If true, the function may consume the value provided before
  * its execution (the stack is one element smaller after calling the function),
  * or otherwise the function is balanced (the stack size does not change after
@@ -59,7 +62,12 @@ void run_simple_function(Script::Regref ref, int nresults);
  * @return The string
  */
 std::string to_string(int idx, const char* def = nullptr,
-        int max_recusions = 10);
+        int max_recusions = 32);
+
+/**
+ * @brief Generic default string for calls to to_string()
+ */
+extern const char* GENERIC_TO_STRING_DEFAULT;
 
 } // namespace Helper
 } // namespace Script
