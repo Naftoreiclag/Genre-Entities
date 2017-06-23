@@ -80,7 +80,7 @@ Pop_Guard::~Pop_Guard() {
 }
 
 void Pop_Guard::pop(int n) {
-    assert(n <= m_l);
+    assert(n <= lua_gettop(m_l));
     assert(n >= 0);
     lua_pop(m_l, m_n);
     m_n -= n;
