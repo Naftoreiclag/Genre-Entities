@@ -23,6 +23,7 @@ Script::Regref m_working_components;
 
 void initialize() {
     assert(Script::is_initialized());
+    assert_balance(0);
     lua_State* l = Script::get_lua_state();
     lua_newtable(l);
     m_working_archetypes = Script::grab_reference();
@@ -40,6 +41,7 @@ void initialize() {
  * @return The string
  */
 std::string assert_table_key_to_string(int idx, const char* err_msg) {
+    assert_balance(0);
     lua_State* l = Script::get_lua_state();
     lua_pushvalue(l, idx); // Copy of key
     Script::Pop_Guard pop_guard(1);
@@ -104,9 +106,17 @@ Interm::Prim translate_primitive(int idx, Interm::Prim::Type required_t) {
     } else if (type_name == "func") {
         ret_val.set_type(Interm::Prim::Type::FUNC);
     } else {
-        std::stringstream ss;
-        ss << "Unknown type: " << type_name;
-        throw std::runtime_error(ss.str());
+        std::stringstream sss;
+        sss << "Unknown type: " << type_name;
+        throw std::runtime_error(sss.str());
+    }
+    
+    if (required_t != Interm::Prim::Type::UNKNOWN
+            && ret_val.get_type() != required_t) {
+        std::stringstream sss;
+        sss << "Type mismatch! Required: " << prim_type_to_debug_str(required_t)
+            << " Found:" << prim_type_to_debug_str(ret_val.get_type());
+        throw std::runtime_error(sss.str());
     }
     
     lua_rawgeti(l, idx, 2); // Second member should be value
@@ -237,7 +247,7 @@ Interm::Arche::Implement translate_archetype_implementation(int table_idx) {
         if (iter == implement.m_component->m_members.end()) {
             std::stringstream sss;
             sss << "Tried to assign to member \"" << symbol
-                << "\" in component \""
+                << "\" which does not exist in component \""
                 << implement.m_component->m_error_msg_name
                 << '"';
             throw std::runtime_error(sss.str());
@@ -255,6 +265,7 @@ Interm::Arche::Implement translate_archetype_implementation(int table_idx) {
                 << e.what();
             throw std::runtime_error(sss.str());
         }
+        return true;
     }, false);
     return implement;
 }
@@ -303,9 +314,15 @@ void translate_working() {
         }
         lua_pop(l, 1);
         std::string id(strdata, strlen);
-        Logger::log()->info("Parsing comp: %v", id);
-        Interm::Comp_Def* obj = translate_component_definition(-1);
-        Gensys::stage_component(id.c_str(), obj);
+        try {
+            Interm::Comp_Def* obj = translate_component_definition(-1);
+            Gensys::stage_component(id.c_str(), obj);
+            Logger::log()->info("Successfully parsed compnent: %v", id);
+        }
+        catch (std::runtime_error e) {
+            Logger::log()->warn("Failed to parse component %v: %v", 
+                    id, e.what());
+        }
         return true;
     }, false);
     lua_pop(l, 1);
@@ -321,13 +338,18 @@ void translate_working() {
         }
         lua_pop(l, 1);
         std::string id(strdata, strlen);
-        Logger::log()->info("Parsing archetype: %v", id);
-        Interm::Arche* obj = translate_archetype(-1);
-        Gensys::stage_archetype(id.c_str(), obj);
+        try {
+            Interm::Arche* obj = translate_archetype(-1);
+            Gensys::stage_archetype(id.c_str(), obj);
+            Logger::log()->info("Successfully parsed archetype: %v", id);
+        }
+        catch (std::runtime_error e) {
+            Logger::log()->warn("Failed to parse archetype %v: %v", 
+                    id, e.what());
+        }
         return true;
     }, false);
     lua_pop(l, 1);
-    
 }
 
 void cleanup() {

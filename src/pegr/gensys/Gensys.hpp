@@ -36,7 +36,8 @@ void compile();
 void cleanup();
 
 /**
- * @brief Stages an intermediate component definition for compilation
+ * @brief Stages an intermediate component definition for compilation. 
+ * This also hands off deletion responsibility to Gensys
  * @param id
  * @param comp_def the component definition
  */

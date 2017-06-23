@@ -62,6 +62,13 @@ private:
     void deconstruct_current();
 };
 
+/**
+ * @brief Converts the primitive type enum into a string for debug messages
+ * @param t the type
+ * @return the string
+ */
+const char* prim_type_to_debug_str(Prim::Type t);
+
 typedef std::string Symbol;
 
 struct Comp_Def {

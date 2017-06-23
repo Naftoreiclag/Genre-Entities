@@ -182,6 +182,28 @@ void Prim::set_i64(int64_t i64) {
     m_i64 = i64;
 }
 
+const char* prim_type_to_debug_str(Prim::Type t) {
+    switch(t) {
+        case Prim::Type::F32:
+            return "F32";
+        case Prim::Type::F64:
+            return "F64";
+        case Prim::Type::I32:
+            return "I32";
+        case Prim::Type::I64:
+            return "I64";
+        case Prim::Type::STR:
+            return "STR";
+        case Prim::Type::FUNC:
+            return "FUNC";
+        case Prim::Type::UNKNOWN:
+            return "UNKNOWN";
+        default:
+            assert(false);
+            return "ERROR";
+    }
+}
+
 } // namespace Interm
 } // namespace Gensys
 } // namespace pegr
