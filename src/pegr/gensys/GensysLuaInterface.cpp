@@ -8,6 +8,7 @@
 #include <iostream>
 #include <map>
 
+#include "pegr/debug/DebugMacros.hpp"
 #include "pegr/logger/Logger.hpp"
 #include "pegr/gensys/Gensys.hpp"
 #include "pegr/script/ScriptHelper.hpp"
@@ -57,8 +58,8 @@ std::string assert_table_key_to_string(int idx, const char* err_msg) {
 
 // TODO: enforce required_t
 Interm::Prim translate_primitive(int idx, Interm::Prim::Type required_t) {
+    assert_balance(0);
     lua_State* l = Script::get_lua_state();
-    int original_size; assert(original_size = lua_gettop(l)); // Balance sanity
     
     idx = Script::absolute_idx(idx);
     
@@ -66,7 +67,6 @@ Interm::Prim translate_primitive(int idx, Interm::Prim::Type required_t) {
         std::string str_debug = 
                 Script::Helper::to_string(idx, 
                         Script::Helper::GENERIC_TO_STRING_DEFAULT);
-        assert(original_size == lua_gettop(l)); // Balance sanity
         std::stringstream ss;
         ss << "Invalid primitive constructor: " << str_debug;
         throw std::runtime_error(ss.str());
@@ -82,7 +82,6 @@ Interm::Prim translate_primitive(int idx, Interm::Prim::Type required_t) {
                 Script::Helper::to_string(-1, 
                         Script::Helper::GENERIC_TO_STRING_DEFAULT);
         lua_pop(l, 1); // Remove rawgeti
-        assert(original_size == lua_gettop(l)); // Balance sanity
         std::stringstream ss;
         ss << "Invalid type: " << str_debug;
         throw std::runtime_error(ss.str());
@@ -105,7 +104,6 @@ Interm::Prim translate_primitive(int idx, Interm::Prim::Type required_t) {
     } else if (type_name == "func") {
         ret_val.set_type(Interm::Prim::Type::FUNC);
     } else {
-        assert(original_size == lua_gettop(l)); // Balance sanity
         std::stringstream ss;
         ss << "Unknown type: " << type_name;
         throw std::runtime_error(ss.str());
@@ -136,7 +134,6 @@ Interm::Prim translate_primitive(int idx, Interm::Prim::Type required_t) {
             }
             catch (std::runtime_error e) {
                 lua_pop(l, 1); // Remove rawgeti
-                assert(original_size == lua_gettop(l)); // Balance sanity
                 std::stringstream ss;
                 ss << "Cannot parse string value for primitive: " << e.what();
                 throw std::runtime_error(ss.str());
@@ -149,7 +146,6 @@ Interm::Prim translate_primitive(int idx, Interm::Prim::Type required_t) {
                         Script::Helper::to_string(-1, 
                                 Script::Helper::GENERIC_TO_STRING_DEFAULT);
                 lua_pop(l, 1); // Remove rawgeti
-                assert(original_size == lua_gettop(l)); // Balance sanity
                 std::stringstream ss;
                 ss << "Invalid function: " << str_debug;
                 throw std::runtime_error(ss.str());
@@ -164,13 +160,12 @@ Interm::Prim translate_primitive(int idx, Interm::Prim::Type required_t) {
     }
     lua_pop(l, 1); // Remove rawgeti
     
-    assert(original_size == lua_gettop(l)); // Balance sanity
     return ret_val;
 }
 
 Interm::Comp_Def* translate_component_definition(int table_idx) {
+    assert_balance(0);
     lua_State* l = Script::get_lua_state();
-    int original_size; assert(original_size = lua_gettop(l)); // Balance sanity
     
     Interm::Comp_Def comp_def;
     
@@ -195,13 +190,12 @@ Interm::Comp_Def* translate_component_definition(int table_idx) {
         return true;
     }, false);
     
-    assert(original_size == lua_gettop(l)); // Balance sanity
     return new Interm::Comp_Def(std::move(comp_def));
 }
 
 Interm::Arche::Implement translate_archetype_implementation(int table_idx) {
+    assert_balance(0);
     lua_State* l = Script::get_lua_state();
-    int original_size; assert(original_size = lua_gettop(l)); // Balance sanity
     
     Interm::Arche::Implement implement;
     
@@ -266,8 +260,8 @@ Interm::Arche::Implement translate_archetype_implementation(int table_idx) {
 }
 
 Interm::Arche* translate_archetype(int table_idx) {
+    assert_balance(0);
     lua_State* l = Script::get_lua_state();
-    int original_size; assert(original_size = lua_gettop(l)); // Balance sanity
     
     Interm::Arche arche;
     Script::Helper::for_pairs(table_idx, [&]()->bool {
@@ -287,14 +281,13 @@ Interm::Arche* translate_archetype(int table_idx) {
         return true;
     }, false);
     
-    assert(original_size == lua_gettop(l)); // Balance sanity
     return new Interm::Arche(std::move(arche));
 }
 
 void translate_working() {
+    assert_balance(0);
     Logger::log()->info("Parsing gensys data...");
     lua_State* l = Script::get_lua_state();
-    int original_size; assert(original_size = lua_gettop(l)); // Balance sanity
     
     std::size_t strlen;
     const char* strdata;
@@ -335,7 +328,6 @@ void translate_working() {
     }, false);
     lua_pop(l, 1);
     
-    assert(original_size == lua_gettop(l)); // Balance sanity
 }
 
 void cleanup() {

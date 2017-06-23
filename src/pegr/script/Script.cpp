@@ -8,6 +8,7 @@
 #include <sstream>
 #include <vector>
 
+#include "pegr/debug/DebugMacros.hpp"
 #include "pegr/logger/Logger.hpp"
 #include "pegr/script/ScriptHelper.hpp"
 
@@ -209,6 +210,7 @@ struct Lua_Global_Cacher{
 
 void create_state_and_open_libs() {
     m_l = luaL_newstate();
+    assert_balance(0);
     luaL_openlibs(m_l);
 }
 
@@ -217,6 +219,7 @@ Regref m_luaglob_tostring;
 Regref m_luaglob_print;
 
 void cache_lua_std_lib() {
+    assert_balance(0);
     const Lua_Global_Cacher cachers[] = {
         {"_VERSION",    &m_luaglob__VERISON},
         {"tostring",    &m_luaglob_tostring},
@@ -239,6 +242,7 @@ void cache_lua_std_lib() {
 }
 
 void get_and_print_lua_version() {
+    assert_balance(0);
     push_reference(m_luaglob__VERISON);
     std::size_t strlen;
     const char* luastr = lua_tolstring(m_l, -1, &strlen);
@@ -248,12 +252,14 @@ void get_and_print_lua_version() {
 }
 
 void replace_std_functions() {
+    assert_balance(0);
     push_reference(m_luaglob_tostring);
     lua_pushcclosure(m_l, li_print, 1);
     lua_setglobal(m_l, "print");
 }
 
 void setup_basic_pristine_sandbox() {
+    assert_balance(0);
     lua_newtable(m_l);
     for (const Whitelist_Entry& whitelisted_table : m_global_whitelist) {
         const char* module = whitelisted_table.first;
@@ -287,6 +293,7 @@ void setup_basic_pristine_sandbox() {
 }
 
 void setup_basic_pegr_module() {
+    assert_balance(0);
     lua_newtable(m_l);
     lua_pushvalue(m_l, -1);
     m_pegr_table = grab_reference();
@@ -304,8 +311,6 @@ void initialize() {
     replace_std_functions();
     setup_basic_pristine_sandbox();
     setup_basic_pegr_module();
-    
-    assert(lua_gettop(m_l) == 0);
 }
 
 bool is_initialized() {

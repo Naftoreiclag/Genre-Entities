@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include <cassert>
 
+#include "pegr/debug/DebugMacros.hpp"
 #include "pegr/script/Script.hpp"
 
 namespace pegr {
@@ -31,8 +32,9 @@ void for_pairs(int table_idx, std::function<bool()> func, bool pops_value) {
 }
 
 void simple_deep_copy(int table_idx) {
+    assert_balance(1);
+    
     lua_State* l = Script::get_lua_state();
-    int original_size; assert(original_size = lua_gettop(l)); // Balance sanity
     
     table_idx = Script::absolute_idx(table_idx);
     lua_newtable(l); // TODO: preallocate enough space
@@ -56,8 +58,6 @@ void simple_deep_copy(int table_idx) {
         
         // (A reference to the key is still on the stack for iteration)
     }
-    
-    assert(original_size + 1 == lua_gettop(l)); // Balance sanity
 }
 
 void run_simple_function(Script::Regref ref, int nresults) {
@@ -66,8 +66,8 @@ void run_simple_function(Script::Regref ref, int nresults) {
 }
 
 std::string to_string(int idx, const char* def, int max_recusions) {
+    assert_balance(0);
     lua_State* l = Script::get_lua_state();
-    int original_size; assert(original_size = lua_gettop(l)); // Balance sanity
     idx = Script::absolute_idx(idx);
     
     Script::push_reference(Script::m_luaglob_tostring);
@@ -86,11 +86,9 @@ std::string to_string(int idx, const char* def, int max_recusions) {
         }
         
         lua_pop(l, 2); // remove cached tostring and the value
-        assert(original_size == lua_gettop(l)); // Balance sanity
         return std::string(strdata, strsize);
     }
     lua_pop(l, 2); // remove cached tostring and the value
-    assert(original_size == lua_gettop(l)); // Balance sanity
     if (def) {
         return def;
     }
