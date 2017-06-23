@@ -22,8 +22,10 @@
 set(PGLOCAL_SOURCES_LIST "")
 foreach(fname 
 
+"debug/DebugAssertLuaBalance.cpp"
 "gensys/Gensys.cpp"
 "gensys/GensysIntermediate.cpp"
+"gensys/GensysLuaInterface.cpp"
 "logger/Logger.cpp"
 "main.cpp"
 "script/Script.cpp"

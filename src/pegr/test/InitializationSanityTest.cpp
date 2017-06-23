@@ -3,10 +3,12 @@
 namespace pegr {
 namespace Test {
 
-//@Test 000 Initialization Sanity Test
-bool init_sanity_test() {
-    return Script::is_initialized();
+//@Test Initialization Sanity Test
+void test_0000_init_sanity() {
+    if (!Script::is_initialized()) {
+        throw std::runtime_error("Script system not initialized!");
+    }
 }
 
-}
-}
+} // namespace Test
+} // namespace pegr

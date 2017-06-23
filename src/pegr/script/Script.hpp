@@ -1,6 +1,8 @@
 #ifndef PEGR_SCRIPT_SCRIPT_HPP
 #define PEGR_SCRIPT_SCRIPT_HPP
 
+#include <memory>
+
 #include <lua.hpp>
 
 namespace pegr {
@@ -26,12 +28,12 @@ public:
     /**
      * @brief Guards the given reference. When this guard is deleted (for
      * example, by going out of scope) the reference is freed from the lua
-     * registry, thus allowing that value to be gc'd.
+     * registry, possibly causing that value to be gc'd.
      */
     Regref_Guard(Regref ref);
     
     /**
-     * @brief Copy construction not allowed 
+     * @brief Copy construction not allowed
      * (there should only be one guard for a single reference)
      */
     Regref_Guard(const Regref_Guard& other) = delete;
@@ -40,8 +42,14 @@ public:
      * @brief Copy assignment not allowed 
      * (there should only be one guard for a single reference)
      */
-    Regref_Guard& operator=(const Regref_Guard& other) = delete;
+    Regref_Guard& operator =(const Regref_Guard& other) = delete;
     
+    /**
+     * @brief Allow assignment of references directly to the guard. The
+     * currently guarded object will be released.
+     * @param ref The reference to guard
+     */
+    Regref_Guard& operator =(const Regref& value);
     
     /**
      * @brief Move construction
@@ -54,21 +62,46 @@ public:
     Regref_Guard& operator=(Regref_Guard&& other);
     
     /**
-     * @brief Deconstructor. Releases whatever reference it is guarding.
+     * @brief Deconstructor. Drops whatever reference it is guarding.
      */
     ~Regref_Guard();
     
     /**
-     * @brief Get the lua reference that this is guarding
-     * @return the lua reference that this is guarding
+     * @brief Get the Lua reference that this is guarding
+     * @return the Lua reference that this is guarding
      */
-    Regref regref();
+    Regref regref() const;
+    
+    /**
+     * @brief Replaces the currently guarded reference with this one. Properly
+     * release the previously guarded value
+     * @param value Reference to the new value to be guarded.
+     */
+    void replace(Regref value);
+    
+    /**
+     * @brief Implicit conversion to the Regref type
+     */
+    operator Regref() const;
     
 private:
     void release_reference();
     
     Regref m_reference;
 };
+
+/**
+ * @brief A shared pointer for a guard. Useful for having multiple references
+ * to the same Lua object. Uses reference counting.
+ */
+typedef std::shared_ptr<Regref_Guard> Regref_Shared;
+
+/**
+ * @brief Make a referenced Lua value into a shared RAII object
+ * @param ref The Lua reference to make shared
+ * @return A shared RAII object for the provided reference
+ */
+Regref_Shared make_shared(Regref ref);
 
 extern const char* PEGR_MODULE_NAME;
 
@@ -78,6 +111,24 @@ extern Regref m_pristine_sandbox;
 extern Regref m_luaglob_tostring;
 extern Regref m_luaglob__VERISON;
 extern Regref m_luaglob_print;
+
+/**
+ * @class Pop_Guard
+ * @brief RAII for stack size. When this object is destructed, the specified
+ * number of elements are popped off the main Lua stack (calls lua_pop)
+ */
+class Pop_Guard {
+public:
+    int m_n;
+    Pop_Guard(int n = 0);
+    ~Pop_Guard();
+    
+    /**
+     * @brief Pops n values prematurely (before destructor is called)
+     * @param n The number of values to pop. Must be <= m_n
+     */
+    void pop(int n);
+};
 
 /**
  * @brief Creates the lua state and loads standard libraries
@@ -114,10 +165,14 @@ Regref load_lua_function(const char* filename, Regref environment,
                             const char* chunkname = nullptr);
 
 /**
- * @brief Executes a function given by a registry reference.
- * @param func The registry reference for this function
+ * @brief Runs the function on the stack. Behaves exactly like lua_pcall,
+ * except Lua errors are turned into thrown runtime exceptions.
+ * Guaranteed to pop off the expected number of values from the stack regardless
+ * of errors.
+ * @param nargs The number of arguments this function will consume
+ * @param nresults The number of values this function will return
  */
-void run_function(Regref func);
+void run_function(int nargs, int nresults);
 
 /**
  * @brief Produces a new sandbox environment for running user scripts in.
@@ -187,6 +242,13 @@ void multi_expose_c_functions(const luaL_Reg* api, bool safe = true);
  */
 int li_print(lua_State* l);
 
+/**
+ * @brief Turns an index relative to the top of the stack (negative indices)
+ * into ones relative to the bottom of the stack (absolute indices)
+ * @param idx The index, can be negative
+ * @return An index that points to the same position on the stack
+ */
+int absolute_idx(int idx);
 
 } // namespace Script
 } // namespace pegr

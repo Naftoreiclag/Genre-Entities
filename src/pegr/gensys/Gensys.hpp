@@ -1,21 +1,22 @@
-#ifndef PEGR_GENSYS_HPP
-#define PEGR_GENSYS_HPP
+#ifndef PEGR_GENSYS_GENSYS_HPP
+#define PEGR_GENSYS_GENSYS_HPP
 
-#include <cstdint>
-#include <map>
-#include <string>
-#include <vector>
-
-#include "pegr/script/Script.hpp"
+#include "pegr/gensys/GensysIntermediate.hpp"
 
 namespace pegr {
 namespace Gensys {
 
 enum struct GlobalState {
+    // Stage before initialize() is called for the first time
     UNINITIALIZED,
+    
+    // Stage where new elements can be added into the system
     MUTABLE,
+    
+    // Stage after "compiling," entities can be created and processed now
     EXECUTABLE,
-    ENUM_SIZE
+    
+    ENUM_SIZE /*Number of valid enum values*/
 };
 
 GlobalState get_global_state();
@@ -27,22 +28,45 @@ GlobalState get_global_state();
 void initialize();
 
 /**
- * @brief Transitions to executable mode, turning all of the lua tables into
- * their post-process types
+ * @brief Transitions to executable mode, turning all of the staged intermediate
+ * elements into their post-process types
  */
 void compile();
 
-int li_add_archetype(lua_State* l);
-int li_edit_archetype(lua_State* l);
-int li_find_archetype(lua_State* l);
-int li_add_genre(lua_State* l);
-int li_edit_genre(lua_State* l);
-int li_add_component(lua_State* l);
-int li_edit_component(lua_State* l);
+void cleanup();
 
-int li_entity_new(lua_State* l);
+/**
+ * @brief Stages an intermediate component definition for compilation. 
+ * This also hands off deletion responsibility to Gensys
+ * @param id
+ * @param comp_def the component definition
+ */
+void stage_component(const char* id, Interm::Comp_Def* comp_def);
 
+/**
+ * @brief Returns a currently staged component from the id. If the component
+ * cannot be found, nullptr is returned.
+ * @param id
+ * @return nullptr or staged Comp_Def
+ */
+Interm::Comp_Def* get_staged_component(const char* id);
+
+/**
+ * @brief Stages an intermediate archetype for compilation
+ * @param id
+ * @param arche the archetype
+ */
+void stage_archetype(const char* id, Interm::Arche* arche);
+
+/**
+ * @brief Returns a currently staged archetype from the id. If the archetype
+ * cannot be found, nullptr is returned.
+ * @param id
+ * @return nullptr or staged Arche
+ */
+Interm::Arche* get_staged_archetype(const char* id);
+ 
 } // namespace Gensys
 } // namespace pegr
 
-#endif // PEGR_GENSYS_HPP
+#endif // PEGR_GENSYS_GENSYS_HPP

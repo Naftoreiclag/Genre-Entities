@@ -31,6 +31,10 @@ void initialize() {
     assert(!m_common_logger);
     m_common_logger = el::Loggers::getLogger("pegr");
 }
+void cleanup() {
+    assert(m_common_logger);
+    m_common_logger = nullptr; // TODO: actually clean properly
+}
 
 // TODO: constexpr?
 el::Logger* log() {

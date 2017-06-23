@@ -10,17 +10,17 @@ namespace Test {
 
 struct NamedTest {
     const char* m_name;
-    std::function<bool()> m_test;
+    std::function<void()> m_test;
 };
 
 const NamedTest m_tests[] = {
     
-    {"Testing Framework", []()->bool{return true;}},
+    {"Testing Framework", [](){}},
 
 /*### TESTS LIST ###*/
     
     // Sentinel
-    {nullptr, std::function<bool()>()}
+    {nullptr, std::function<void()>()}
 };
 
 }

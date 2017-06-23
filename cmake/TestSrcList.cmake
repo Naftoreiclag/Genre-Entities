@@ -22,14 +22,20 @@
 set(PGLOCAL_SOURCES_LIST "")
 foreach(fname 
 
+"debug/DebugAssertLuaBalance.cpp"
 "gensys/Gensys.cpp"
 "gensys/GensysIntermediate.cpp"
+"gensys/GensysLuaInterface.cpp"
 "logger/Logger.cpp"
 "script/Script.cpp"
 "script/ScriptHelper.cpp"
 "test.cpp"
+"test/DebugTest.cpp"
+"test/GensysIntermediateTest.cpp"
+"test/GensysLITest.cpp"
 "test/InitializationSanityTest.cpp"
 "test/ScriptHelperTest.cpp"
+"test/ScriptTest.cpp"
 
 )
 list(APPEND PGLOCAL_SOURCES_LIST "${PGLOCAL_SOURCE_DIR}/pegr/${fname}")

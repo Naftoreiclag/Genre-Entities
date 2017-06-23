@@ -23,6 +23,7 @@ namespace pegr {
 namespace Logger {
 
 void initialize();
+void cleanup();
 
 el::Logger* log();
 el::Logger* alog(const char* addon_name);

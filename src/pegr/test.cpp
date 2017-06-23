@@ -1,7 +1,10 @@
+#include <stdexcept>
+#include <sstream>
+
 #include "pegr/gensys/Gensys.hpp"
+#include "pegr/gensys/GensysLuaInterface.hpp"
 #include "pegr/script/Script.hpp"
 #include "pegr/logger/Logger.hpp"
-
 #include "pegr/test/Tests.hpp"
 
 using namespace pegr;
@@ -17,12 +20,12 @@ void setup_scripting() {
 void setup_gensys() {
     Gensys::initialize();
     const luaL_Reg api_safe[] = {
-        {"add_archetype", Gensys::li_add_archetype},
-        {"edit_archetype", Gensys::li_edit_archetype},
-        {"add_genre", Gensys::li_add_genre},
-        {"edit_genre", Gensys::li_edit_genre},
-        {"add_component", Gensys::li_add_component},
-        {"edit_component", Gensys::li_edit_component},
+        {"add_archetype", Gensys::LI::add_archetype},
+        {"edit_archetype", Gensys::LI::edit_archetype},
+        {"add_genre", Gensys::LI::add_genre},
+        {"edit_genre", Gensys::LI::edit_genre},
+        {"add_component", Gensys::LI::add_component},
+        {"edit_component", Gensys::LI::edit_component},
         
         // End of the list
         {nullptr, nullptr}
@@ -39,26 +42,47 @@ void setup() {
 void run() {
     int num_passes = 0;
     int num_fails = 0;
+    lua_State* l = Script::get_lua_state();
     for (std::size_t idx = 0; /*Until sentiel reached*/; ++idx) {
+        int original_stack_size = lua_gettop(l);
         const Test::NamedTest& test = Test::m_tests[idx];
         if (!test.m_name) {
             break;
         }
         Logger::log()->info(test.m_name);
-        bool success = test.m_test();
-        if (success) {
+        try {
+            test.m_test();
+            
+            if (lua_gettop(l) != original_stack_size) {
+                std::stringstream ss;
+                ss << "Mandatory: Unbalanced test! (";
+                int diff = lua_gettop(l) - original_stack_size;
+                if (diff < 0) {
+                    ss << diff;
+                } else {
+                    ss << '+' << diff;
+                    lua_pop(l, diff);
+                }
+                ss << ") Later tests may fail inexplicably!";
+                throw std::runtime_error(ss.str());
+            }
+            
             Logger::log()->info("\t...PASSED!");
             ++num_passes;
-        } else {
-            Logger::log()->warn("\t...FAILED!");
+        }
+        catch (std::runtime_error e) {
+            Logger::log()->warn("\t...FAILED! %v", e.what());
             ++num_fails;
+            continue;
         }
     }
     Logger::log()->info("%v passed\t%v failed", num_passes, num_fails);
 }
 
 void cleanup() {
+    Gensys::cleanup();
     Script::cleanup();
+    Logger::cleanup();
 }
 
 int main() {

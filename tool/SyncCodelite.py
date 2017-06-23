@@ -26,16 +26,16 @@ projectEtree = ET.parse(projectFilename)
 projectRoot = projectEtree.getroot()
 virtualDirs = projectRoot.findall('VirtualDirectory')
 
-genreVirtualDir = None
+pegrVirtualDir = None
 for virtualDir in virtualDirs:
     if virtualDir.get('Name') == 'pegr':
-        genreVirtualDir = virtualDir
+        pegrVirtualDir = virtualDir
         break
-if not genreVirtualDir:
-    genreVirtualDir = ET.SubElement(projectRoot, 'VirtualDirectory')
+if not pegrVirtualDir:
+    pegrVirtualDir = ET.SubElement(projectRoot, 'VirtualDirectory')
 
-genreVirtualDir.clear()
-genreVirtualDir.set('Name', 'genre')
+pegrVirtualDir.clear()
+pegrVirtualDir.set('Name', 'pegr')
 
 for sourcePath in sourceList:
     
@@ -58,7 +58,7 @@ for sourcePath in sourceList:
     
     path = decomposePath(sourcePath)
     
-    parentElem = genreVirtualDir
+    parentElem = pegrVirtualDir
     for dirName in path:
         parentChildren = parentElem.findall('VirtualDirectory')
         

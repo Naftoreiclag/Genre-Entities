@@ -1,5 +1,6 @@
 #include "pegr/script/Script.hpp"
 
+#include <stdexcept>
 #include <cassert>
 #include <cstddef>
 #include <fstream>
@@ -7,6 +8,7 @@
 #include <sstream>
 #include <vector>
 
+#include "pegr/debug/DebugMacros.hpp"
 #include "pegr/logger/Logger.hpp"
 #include "pegr/script/ScriptHelper.hpp"
 
@@ -25,24 +27,43 @@ Regref_Guard::Regref_Guard(Regref_Guard&& other) {
     other.m_reference = LUA_REFNIL;
 }
 
-Regref_Guard& Regref_Guard::operator=(Regref_Guard&& other) {
+// Move assignment
+Regref_Guard& Regref_Guard::operator =(Regref_Guard&& other) {
     release_reference();
     m_reference = other.m_reference;
     other.m_reference = LUA_REFNIL;
-    
     return *this;
+}
+
+// Assignment of value
+Regref_Guard& Regref_Guard::operator =(const Regref& value) {
+    replace(value);
+    return *this;
+}
+
+void Regref_Guard::replace(Regref value) {
+    release_reference();
+    m_reference = value;
 }
 
 Regref_Guard::~Regref_Guard() {
     release_reference();
 }
 
-Regref Regref_Guard::regref() {
+Regref Regref_Guard::regref() const {
     return m_reference;
+}
+    
+Regref_Guard::operator Regref() const {
+    return regref();
 }
 
 void Regref_Guard::release_reference() {
     drop_reference(m_reference);
+}
+
+Regref_Shared make_shared(Regref ref) {
+    return std::make_shared<Regref_Guard>(ref);
 }
 
 const char* PEGR_MODULE_NAME = "pegr";
@@ -51,6 +72,23 @@ bool m_torndown = false;
 lua_State* m_l = nullptr;
 std::string m_lua_version;
 Regref m_pristine_sandbox;
+
+Pop_Guard::Pop_Guard(int n)
+: m_n(n) { }
+
+Pop_Guard::~Pop_Guard() {
+    lua_pop(m_l, m_n);
+}
+
+void Pop_Guard::pop(int n) {
+    assert(n <= lua_gettop(m_l));
+    assert(n >= 0);
+    lua_pop(m_l, m_n);
+    m_n -= n;
+}
+
+// Keeps track of how many registry keys we are holding
+int m_total_grab_delta = 0;
 
 Regref m_pegr_table;
 Regref m_pegr_table_safe;
@@ -172,6 +210,7 @@ struct Lua_Global_Cacher{
 
 void create_state_and_open_libs() {
     m_l = luaL_newstate();
+    assert_balance(0);
     luaL_openlibs(m_l);
 }
 
@@ -180,6 +219,7 @@ Regref m_luaglob_tostring;
 Regref m_luaglob_print;
 
 void cache_lua_std_lib() {
+    assert_balance(0);
     const Lua_Global_Cacher cachers[] = {
         {"_VERSION",    &m_luaglob__VERISON},
         {"tostring",    &m_luaglob_tostring},
@@ -197,10 +237,12 @@ void cache_lua_std_lib() {
         lua_getglobal(m_l, cacher.m_name);
         Logger::log()->verbose(1, "Caching %v", cacher.m_name);
         (*cacher.m_cache) = grab_reference();
+        m_total_grab_delta -= 1; /*Ignore these grabs*/
     }
 }
 
 void get_and_print_lua_version() {
+    assert_balance(0);
     push_reference(m_luaglob__VERISON);
     std::size_t strlen;
     const char* luastr = lua_tolstring(m_l, -1, &strlen);
@@ -210,12 +252,14 @@ void get_and_print_lua_version() {
 }
 
 void replace_std_functions() {
+    assert_balance(0);
     push_reference(m_luaglob_tostring);
     lua_pushcclosure(m_l, li_print, 1);
     lua_setglobal(m_l, "print");
 }
 
 void setup_basic_pristine_sandbox() {
+    assert_balance(0);
     lua_newtable(m_l);
     for (const Whitelist_Entry& whitelisted_table : m_global_whitelist) {
         const char* module = whitelisted_table.first;
@@ -245,12 +289,15 @@ void setup_basic_pristine_sandbox() {
     m_pegr_table_safe = grab_reference();
     lua_setfield(m_l, -2, PEGR_MODULE_NAME);
     m_pristine_sandbox = grab_reference();
+    m_total_grab_delta -= 2; /*Ignore these grabs*/
 }
 
 void setup_basic_pegr_module() {
+    assert_balance(0);
     lua_newtable(m_l);
     lua_pushvalue(m_l, -1);
     m_pegr_table = grab_reference();
+    m_total_grab_delta -= 1; /*Ignore these grabs*/
     lua_setglobal(m_l, PEGR_MODULE_NAME);
 }
 
@@ -264,8 +311,6 @@ void initialize() {
     replace_std_functions();
     setup_basic_pristine_sandbox();
     setup_basic_pegr_module();
-    
-    assert(lua_gettop(m_l) == 0);
 }
 
 bool is_initialized() {
@@ -277,6 +322,9 @@ bool is_initialized() {
 void cleanup() {
     assert(is_initialized());
     assert(!m_torndown);
+    if (m_total_grab_delta != 0) {
+        Logger::log()->warn("Non-zero grab delta: %v", m_total_grab_delta);
+    }
     lua_close(m_l);
     m_l = nullptr;
     m_torndown = true;
@@ -311,6 +359,7 @@ const char* file_reader(lua_State* L, void* data, size_t* size) {
     return closure.m_block;
 }
 
+// TODO: check if this file has already been loaded ... ?
 Regref load_lua_function(const char* filename, Regref environment,
                             const char* chunkname) {
     assert(is_initialized());
@@ -322,26 +371,23 @@ Regref load_lua_function(const char* filename, Regref environment,
     if (!file.is_open()) {
         std::stringstream ss;
         ss << "Could not open file for " << chunkname;
-        Logger::log()->warn(ss.str().c_str());
         lua_pushstring(m_l, ss.str().c_str());
-        return grab_reference();
+        throw std::runtime_error(ss.str());
     }
     int peek = file.peek();
     // File is empty
     if (peek == std::char_traits<char>::eof()) {
         std::stringstream ss;
         ss << "File for " << chunkname << " is empty";
-        Logger::log()->warn(ss.str().c_str());
         lua_pushstring(m_l, ss.str().c_str());
-        return grab_reference();
+        throw std::runtime_error(ss.str());
     }
     // Bytecode
     if (peek == 0x1B) {
         std::stringstream ss;
         ss << "File for " << chunkname << " is bytecode";
-        Logger::log()->warn(ss.str().c_str());
         lua_pushstring(m_l, ss.str().c_str());
-        return grab_reference();
+        throw std::runtime_error(ss.str());
     }
     int status;
     {
@@ -349,13 +395,10 @@ Regref load_lua_function(const char* filename, Regref environment,
         status = lua_load(m_l, file_reader, &closure, chunkname);
     }
     switch (status) {
-        case LUA_ERRSYNTAX: {
-            Logger::log()->warn("Lua syntax error");
-            break;
-        }
+        case LUA_ERRSYNTAX:
         case LUA_ERRMEM: {
-            Logger::log()->warn("Lua memory error");
-            break;
+            const char* errmsg = lua_tostring(m_l, -1);
+            throw std::runtime_error(errmsg);
         }
         default: break;
     }
@@ -366,18 +409,15 @@ Regref load_lua_function(const char* filename, Regref environment,
     return grab_reference();
 }
 
-void run_function(Regref func) {
+void run_function(int nargs, int nresults) {
     assert(is_initialized());
-    push_reference(func);
-    int status = lua_pcall(m_l, 0, LUA_MULTRET, 0);
-    
-    switch (status) {
+    switch (lua_pcall(m_l, nargs, nresults, 0)) {
         case LUA_ERRRUN:
         case LUA_ERRMEM:
         case LUA_ERRERR: {
             size_t strlen;
             const char* luastr = lua_tolstring(m_l, -1, &strlen);
-            Logger::log()->warn("LUA ERROR: %v", std::string(luastr, strlen));
+            throw std::runtime_error(std::string(luastr, strlen));
         }
     }
 }
@@ -395,19 +435,21 @@ Regref new_sandbox() {
     return ret_val;
 }
 
-void drop_reference(Regref reference) {
+void drop_reference(Regref ref) {
     assert(is_initialized());
-    luaL_unref(m_l, LUA_REGISTRYINDEX, reference);
+    --m_total_grab_delta;
+    luaL_unref(m_l, LUA_REGISTRYINDEX, ref);
 }
 
-void push_reference(Regref reference) {
+void push_reference(Regref ref) {
     assert(is_initialized());
-    lua_rawgeti(m_l, LUA_REGISTRYINDEX, reference);
+    lua_rawgeti(m_l, LUA_REGISTRYINDEX, ref);
 }
 
 Regref grab_reference() {
     assert(is_initialized());
-    luaL_ref(m_l, LUA_REGISTRYINDEX);
+    ++m_total_grab_delta;
+    return luaL_ref(m_l, LUA_REGISTRYINDEX);
 }
 
 lua_State* get_lua_state() {
@@ -497,6 +539,13 @@ int li_print(lua_State* l) {
     }
     Logger::alog("addon")->info(log.str());
     return 0;
+}
+
+int absolute_idx(int idx) {
+    if (idx < 0) {
+        idx = lua_gettop(m_l) + idx + 1;
+    }
+    return idx;
 }
 
 } // namespace Script

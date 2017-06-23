@@ -2,3 +2,4 @@ docs/*
 ide/*
 *__pycache__*
 run/ignore/*
+run/logs/*

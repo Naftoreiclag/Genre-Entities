@@ -27,7 +27,7 @@ testCpps, _, __ = indexFiles(testSourcesDir, ['.cpp'], [], True)
 import re
 
 testAnnotationPattern = re.compile('\s*//@Test\s+(.*)')
-testFuncPattern = re.compile('\s*bool\s+(\S+)\s*\(\s*\).*')
+testFuncPattern = re.compile('\s*void\s+(\S+)\s*\(\s*\).*')
 
 funcs = {}
 
@@ -44,7 +44,6 @@ for item in testCpps:
                 match = testFuncPattern.match(line)
                 if match:
                     funcName = match.group(1)
-                    print('\t' + funcName)
                     if funcName in funcs:
                         print('WARNING: That function is duplicated')
                     funcs[funcName] = annotName
@@ -59,7 +58,8 @@ for funcName in funcs:
 funcNamesSorted.sort()
 
 for funcName in funcNamesSorted:
-    testsFwdDecls.append('bool ' + funcName + '();')
+    print('\t' + funcName)
+    testsFwdDecls.append('void ' + funcName + '();')
     testsList.append('    {"' + funcs[funcName] + '", ' + funcName + '},')
 
 replacements = {}
