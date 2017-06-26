@@ -72,6 +72,16 @@ pegr.add_genre('physical.g', {
     position = {
       group = {'pos_x', 'pos_y', 'is_at_origin'},
       patterns = {
+        --[[function(arche)
+          pos_symb = arche:get_symbol('position.c')
+          if pos_symb then
+            return {
+              pos_x = {'alias', pos_symb .. '.x'},
+              pos_y = {'alias', pos_symb .. '.y'},
+              is_at_origin = {'alias', pos_symb .. '.is_at_origin'},
+            }
+          end
+        end,]]
         {
           __if = 'position.c',
           pos_x = {'alias', 'x'},
@@ -83,6 +93,16 @@ pegr.add_genre('physical.g', {
     velocity = {
       group = {'vel_x', 'vel_y', 'is_stationary'},
       patterns = {
+        --[[function(arche)
+          vel_symb = arche:get_symbol('velocity.c')
+          if vel_symb then
+            return {
+              vel_x = {'alias', vel_symb .. '.x'},
+              vel_y = {'alias', vel_symb .. '.y'},
+              is_stationary = {'alias', vel_symb .. '.is_stationary'},
+            }
+          end
+        end,]]
         {
           __if = 'velocity.c',
           vel_x = {'alias', 'x'},
@@ -94,6 +114,14 @@ pegr.add_genre('physical.g', {
     edible = {
       group = {'on_eaten'},
       patterns = {
+        --[[function(arche)
+          edible_symb = arche:get_symbol('edible.c')
+          if edible_symb then
+            return {
+              on_eaten = {'alias', edible_symb .. '.on_eaten'},
+            }
+          end
+        end,]]
         {
           __if = {'alias', 'edible.c'},
           on_eaten = {'alias', 'food_value'},
