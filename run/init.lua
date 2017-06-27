@@ -1,3 +1,5 @@
+-------------------------------------------------------------------------------
+
 print('init')
 
 pegr.add_component('position.c', {
@@ -57,7 +59,7 @@ pegr.add_archetype('cookie.at', {
     For example, 'fany' can accept 'f32' or 'f64'
                  'iany' can accept 'i32' or 'i64'
 ]]
-pegr.add_genre('physical.g', {
+pegr.add_genre('food.g', {
   interface = {
     pos_x = 'f64',
     pos_y = 'f64',
@@ -65,6 +67,7 @@ pegr.add_genre('physical.g', {
     vel_x = 'f64',
     vel_y = 'f64',
     is_stationary = 'func',
+    food_value = 'f32',
     on_eaten = 'func',
   },
   
@@ -112,7 +115,7 @@ pegr.add_genre('physical.g', {
       },
     },
     edible = {
-      group = {'on_eaten'},
+      group = {'on_eaten', 'food_value'},
       patterns = {
         --[[function(arche)
           edible_symb = arche:get_symbol('edible.c')
@@ -123,8 +126,9 @@ pegr.add_genre('physical.g', {
           end
         end,]]
         {
-          __if = {'alias', 'edible.c'},
-          on_eaten = {'alias', 'food_value'},
+          __if = 'edible.c',
+          on_eaten = {'alias', 'on_eaten'},
+          food_value = {'alias', 'food_value'},
         }
       },
       -- If none of the patterns match, use this instead.
@@ -134,6 +138,7 @@ pegr.add_genre('physical.g', {
           print(string.format(
               'I was eaten at x: %f y:%f', self.pos_x, self.pos_y))
         end},
+        food_value = {'f32', 0},
       },
     },
   },
