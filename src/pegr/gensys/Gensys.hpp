@@ -41,7 +41,7 @@ void cleanup();
  * @param id
  * @param comp_def the component definition
  */
-void stage_component(const char* id, Interm::Comp_Def* comp_def);
+void stage_component(std::string id, Interm::Comp_Def* comp_def);
 
 /**
  * @brief Returns a currently staged component from the id. If the component
@@ -49,14 +49,14 @@ void stage_component(const char* id, Interm::Comp_Def* comp_def);
  * @param id
  * @return nullptr or staged Comp_Def
  */
-Interm::Comp_Def* get_staged_component(const char* id);
+Interm::Comp_Def* get_staged_component(std::string id);
 
 /**
  * @brief Stages an intermediate archetype for compilation
  * @param id
  * @param arche the archetype
  */
-void stage_archetype(const char* id, Interm::Arche* arche);
+void stage_archetype(std::string id, Interm::Arche* arche);
 
 /**
  * @brief Returns a currently staged archetype from the id. If the archetype
@@ -64,8 +64,23 @@ void stage_archetype(const char* id, Interm::Arche* arche);
  * @param id
  * @return nullptr or staged Arche
  */
-Interm::Arche* get_staged_archetype(const char* id);
- 
+Interm::Arche* get_staged_archetype(std::string id);
+
+/**
+ * @brief Stages an intermediate genre for compilation
+ * @param id
+ * @param genre
+ */
+void stage_genre(std::string id, Interm::Genre* genre);
+
+/**
+ * @brief Returns a currently staged genre from the id. If the genre
+ * cannot be found, nullptr is returned.
+ * @param id
+ * @return nullptr or staged Genre
+ */
+Interm::Genre* get_staged_genre(std::string id);
+
 } // namespace Gensys
 } // namespace pegr
 

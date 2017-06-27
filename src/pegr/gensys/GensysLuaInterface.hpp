@@ -61,10 +61,20 @@ Interm::Arche::Implement translate_archetype_implementation(int table_idx);
 Interm::Arche* translate_archetype(int table_idx);
 
 /**
+ * @brief Make a new genre from the table at the given index.
+ * Can throw runtime errors. Guaranteed to return a valid Genre pointer.
+ * User is responsible for calling delete.
+ * [BALANCED]
+ * @param table_idx The index on the main Lua stack to translate
+ * @return The genre
+ */
+Interm::Genre* translate_genre(int table_idx);
+
+/**
  * @brief Translates all submitted Lua tables into their intermediate forms and
  * submits to the gensys pipeline.
  */
-void translate_working();
+void stage_all();
 
 void cleanup();
 

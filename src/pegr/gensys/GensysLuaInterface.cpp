@@ -58,7 +58,6 @@ std::string assert_table_key_to_string(int idx, const char* err_msg) {
     return std::string(strdata, strlen);
 }
 
-// TODO: enforce required_t
 Interm::Prim translate_primitive(int idx, Interm::Prim::Type required_t) {
     assert_balance(0);
     lua_State* l = Script::get_lua_state();
@@ -227,7 +226,7 @@ Interm::Arche::Implement translate_archetype_implementation(int table_idx) {
     
     pop_guard.pop(1); // Pop __is string
     
-    implement.m_component = Gensys::get_staged_component(comp_id.c_str());
+    implement.m_component = Gensys::get_staged_component(comp_id);
     
     if (!implement.m_component) {
         std::stringstream sss;
@@ -295,7 +294,15 @@ Interm::Arche* translate_archetype(int table_idx) {
     return new Interm::Arche(std::move(arche));
 }
 
-void translate_working() {
+Interm::Genre* translate_genre(int table_idx) {
+    assert_balance(0);
+    lua_State* l = Script::get_lua_state();
+    
+    Interm::Genre genre;
+    return new Interm::Genre(std::move(genre));
+}
+
+void stage_all() {
     assert_balance(0);
     Logger::log()->info("Parsing gensys data...");
     lua_State* l = Script::get_lua_state();
@@ -304,19 +311,20 @@ void translate_working() {
     const char* strdata;
     
     Script::push_reference(m_working_components);
+    Script::Pop_Guard pop_guard(1);
     Script::Helper::for_pairs(-1, [&]()->bool {
         lua_pushvalue(l, -2); // Make a copy of the key
+        Script::Pop_Guard pop_guard2(1);
         strdata = lua_tolstring(l, -1, &strlen);
         if (!strdata) {
             Logger::log()->warn("Invalid key in working components table");
-            lua_pop(l, 2);
             return true;
         }
-        lua_pop(l, 1);
+        pop_guard2.pop(1);
         std::string id(strdata, strlen);
         try {
             Interm::Comp_Def* obj = translate_component_definition(-1);
-            Gensys::stage_component(id.c_str(), obj);
+            Gensys::stage_component(id, obj);
             Logger::log()->info("Successfully parsed compnent: %v", id);
         }
         catch (std::runtime_error e) {
@@ -325,22 +333,23 @@ void translate_working() {
         }
         return true;
     }, false);
-    lua_pop(l, 1);
+    pop_guard.pop(1);
     
     Script::push_reference(m_working_archetypes);
+    pop_guard.on_push(1);
     Script::Helper::for_pairs(-1, [&]()->bool {
         lua_pushvalue(l, -2); // Make a copy of the key
+        Script::Pop_Guard pop_guard2(1);
         strdata = lua_tolstring(l, -1, &strlen);
         if (!strdata) {
             Logger::log()->warn("Invalid key in working archetype table");
-            lua_pop(l, 2);
             return true;
         }
-        lua_pop(l, 1);
+        pop_guard2.pop(1);
         std::string id(strdata, strlen);
         try {
             Interm::Arche* obj = translate_archetype(-1);
-            Gensys::stage_archetype(id.c_str(), obj);
+            Gensys::stage_archetype(id, obj);
             Logger::log()->info("Successfully parsed archetype: %v", id);
         }
         catch (std::runtime_error e) {
@@ -349,7 +358,32 @@ void translate_working() {
         }
         return true;
     }, false);
-    lua_pop(l, 1);
+    pop_guard.pop(1);
+    
+    Script::push_reference(m_working_genres);
+    pop_guard.on_push(1);
+    Script::Helper::for_pairs(-1, [&]()->bool {
+        lua_pushvalue(l, -2); // Make a copy of the key
+        Script::Pop_Guard pop_guard2(1);
+        strdata = lua_tolstring(l, -1, &strlen);
+        if (!strdata) {
+            Logger::log()->warn("Invalid key in working genres table");
+            return true;
+        }
+        pop_guard2.pop(1);
+        std::string id(strdata, strlen);
+        try {
+            Interm::Genre* obj = translate_genre(-1);
+            Gensys::stage_genre(id, obj);
+            Logger::log()->info("Successfully parsed genre: %v", id);
+        }
+        catch (std::runtime_error e) {
+            Logger::log()->warn("Failed to parse genre %v: %v", 
+                    id, e.what());
+        }
+        return true;
+    }, false);
+    pop_guard.pop(1);
 }
 
 void cleanup() {
@@ -400,6 +434,10 @@ int find_archetype(lua_State* l) {
 }
 
 int add_genre(lua_State* l) {
+    if (Gensys::get_global_state() != GlobalState::MUTABLE) {
+        luaL_error(l, "add_genre is only available during setup.");
+    }
+    // TODO: resolve namespace issues
     const char* key = luaL_checklstring(l, 1, nullptr);
     luaL_checktype(l, 2, LUA_TTABLE);
     Script::push_reference(m_working_genres);

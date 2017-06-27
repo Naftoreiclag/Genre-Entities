@@ -17,17 +17,17 @@ void for_pairs(int table_idx, std::function<bool()> func, bool pops_value) {
     while (lua_next(l, table_idx) != 0) {
         Script::Pop_Guard pg;
         if (!pops_value) {
-            pg.m_n = 1; // Eat value ourselves
+            pg.on_push(1); // We will eat the value ourselves
         }
         // Assume we will need to eat the key ourselves
-        // in case the function rasies errors or breaks the loop
-        pg.m_n += 1;
+        // in case the function raises errors or breaks the loop
+        pg.on_push(1);
         bool cont = func();
         if (!cont) {
             break;
         }
         // If we got to this point, the key no longer needs to be eaten by us
-        pg.m_n -= 1;
+        pg.on_pop(1);
     }
 }
 
