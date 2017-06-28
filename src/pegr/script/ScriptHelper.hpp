@@ -30,10 +30,11 @@ namespace Helper {
  */
 void for_pairs(int table_idx, std::function<bool()> func, 
                 bool pops_value = false);
-    
+
 /**
  * @brief Makes a "semi-deep" copy of the table at given index:
- * Does try to copy the keys. Only tries to copy the values if they are tables.
+ * Does not try to copy the keys. 
+ * Only tries to copy the values if they are tables.
  * The copy is pushed onto the stack at position -1.
  * @param idx The index in the stack of the table you want to copy. Can be 
  * negative. Does not pop that value off the stack.
@@ -54,6 +55,7 @@ void run_simple_function(Script::Regref ref, int nresults);
  * a string. If the value returned by tostring() is not convertable to a Lua
  * string by lua_tolstring(), then this process is repeated on that returned
  * value at most max_recusions times.
+ * [BALANCED]
  * @param idx The location of the relevant value on the main stack. Can be
  * negative
  * @param def The default string to use if there are too many tostring() layers.

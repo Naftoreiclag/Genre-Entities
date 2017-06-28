@@ -10,21 +10,90 @@ namespace pegr {
 namespace Test {
 
 typedef Script::Regref_Guard RG;
+
+void assert_expected_string_table(
+        lua_State* l,
+        std::vector<std::pair<std::string, std::string> >& expected) {
+    for (auto const& iter : expected) {
+        lua_getfield(l, -1, iter.first.c_str());
+        Script::Pop_Guard pop_guard(1);
+        if (lua_isnil(l, -1)) {
+            std::stringstream sss;
+            sss << "No value for key \"" << iter.first << '"';
+            throw std::runtime_error(sss.str());
+        }
+        
+        std::size_t strlen;
+        const char* strdata = lua_tolstring(l, -1, &strlen);
+        std::string val(strdata, strlen);
+        if (iter.second != val) {
+            std::stringstream sss;
+            sss << "Wrong value for key \""
+                << iter.first
+                << "\": Expected: \""
+                << iter.second
+                << "\" got: \""
+                << val
+                << '"';
+            throw std::runtime_error(sss.str());
+        }
+    }
+}
+
+//@Test Script simple_deep_copy
+void test_0028_simple_deep_copy() {
+    lua_State* l = Script::get_lua_state();
     
+    RG sandbox(Script::new_sandbox());
+    RG table_fun(Script::load_lua_function("test/simple_table.lua", sandbox));
+    
+    std::vector<std::pair<std::string, std::string> > expected = {
+        {"a", "apple"},
+        {"b", "banana"},
+        {"c", "cherry"},
+        {"d", "durian"}
+    };
+    
+    Script::Helper::run_simple_function(table_fun, 1);
+    Script::Pop_Guard pop_guard(1);
+    
+    assert_expected_string_table(l, expected);
+    
+    Script::Helper::simple_deep_copy(-1);
+    pop_guard.on_push(1);
+    
+    assert_expected_string_table(l, expected);
+}
+
+//@Test Script simple_deep_copy_recursive
+void test_0028_simple_deep_copy_recursive() {
+    lua_State* l = Script::get_lua_state();
+    RG sandbox(Script::new_sandbox());
+    RG table_fun(
+            Script::load_lua_function("test/recursive_table.lua", sandbox));
+    Script::Helper::run_simple_function(table_fun, 1);
+    Script::Pop_Guard pop_guard(1);
+    Logger::log()->info("Beginning copy...");
+    Script::Helper::simple_deep_copy(-1);
+    pop_guard.on_push(1);
+    Logger::log()->info("Copy completed in finite time");
+}
+
 //@Test Script Helper for_pairs
 void test_0028_for_pairs() {
     lua_State* l = Script::get_lua_state();
-    int original_size = lua_gettop(l);
     
     RG sandbox(Script::new_sandbox());
     RG table_fun(Script::load_lua_function("test/simple_table.lua", sandbox));
     
     Script::Helper::run_simple_function(table_fun, 1);
+    Script::Pop_Guard pop_guard(1);
     
     std::map<std::string, std::string> expected = {
         {"a", "apple"},
         {"b", "banana"},
-        {"c", "cherry"}
+        {"c", "cherry"},
+        {"d", "durian"}
     };
     
     std::map<std::string, std::string> got;
@@ -36,6 +105,7 @@ void test_0028_for_pairs() {
         
         lua_pushvalue(l, -2);
         lua_pushvalue(l, -2);
+        Script::Pop_Guard pg2(2);
         strdata = lua_tolstring(l, -2, &strlen);
         std::string key(strdata, strlen);
         strdata = lua_tolstring(l, -1, &strlen);
@@ -44,8 +114,6 @@ void test_0028_for_pairs() {
         got[key] = val;
         
         Logger::log()->verbose(1, "%v\t%v", key, val);
-        
-        lua_pop(l, 2);
     };
     
     Script::Helper::for_pairs(-1, [body, l]()->bool {
@@ -76,11 +144,6 @@ void test_0028_for_pairs() {
             ss << (*iter).second;
             throw std::runtime_error(ss.str());
         }
-    }
-    lua_pop(l, 1);
-    
-    if (original_size != lua_gettop(l)) {
-        throw std::runtime_error("Unbalanced");
     }
 }
 

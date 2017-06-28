@@ -31,27 +31,50 @@ void for_pairs(int table_idx, std::function<bool()> func, bool pops_value) {
     }
 }
 
-void simple_deep_copy(int table_idx) {
+/**
+ * @brief Recursive helper for simple_deep_copy
+ * @param l The Lua state to use
+ * @param table_idx Absolute index for the table to be copied
+ * @param dupe_idx Absolute index for a table that maps originals to copies
+ */
+void simple_deep_copy_helper(lua_State* l, int table_idx, int dupe_idx) {
     assert_balance(1);
     
-    lua_State* l = Script::get_lua_state();
+    // Don't copy non-tables
+    if (!lua_istable(l, table_idx)) {
+        lua_pushvalue(l, table_idx);
+        return;
+    }
     
-    table_idx = Script::absolute_idx(table_idx);
+    // Check if we already made a copy before doing anything
+    lua_pushvalue(l, table_idx);
+    lua_rawget(l, dupe_idx);
+    if (lua_istable(l, -1)) {
+        return;
+    }
+    lua_pop(l, 1);
+    
     lua_newtable(l); // TODO: preallocate enough space
+    int copy_idx = lua_gettop(l);
+    
+    // Store this table as a copy of the table at table_idx, even though
+    // we aren't finished making it yet. (If we try to wait until we
+    // are finished, it's possible that we will be waiting forever.)
+    lua_pushvalue(l, table_idx);
+    lua_pushvalue(l, copy_idx);
+    lua_rawset(l, dupe_idx);
+    
     lua_pushnil(l);
     while (lua_next(l, table_idx) != 0) {
+        int val_idx = lua_gettop(l);
+        
         // Copy the reference to the key so there is one for iterating with
         lua_pushvalue(l, -2);
         
-        // Copy the value if it is a table
-        if (lua_type(l, -2) == LUA_TTABLE) {
-            simple_deep_copy(-2);
-        } else {
-            lua_pushvalue(l, -2);
-        }
+        simple_deep_copy_helper(l, val_idx, dupe_idx);
         
         // Set the key-value pair
-        lua_settable(l, -5);
+        lua_settable(l, copy_idx);
         
         // Remove the original value reference
         lua_pop(l, 1);
@@ -60,7 +83,25 @@ void simple_deep_copy(int table_idx) {
     }
 }
 
+void simple_deep_copy(int table_idx) {
+    assert_balance(1);
+    lua_State* l = Script::get_lua_state();
+    table_idx = Script::absolute_idx(table_idx);
+    
+    /* This table maps original tables to the copied forms.
+     * This allows for duplicate reference values to be preserved and 
+     * avoids crashing for recursive cases.
+     */
+    lua_newtable(l);
+    int dupe_idx = lua_gettop(l);
+    
+    simple_deep_copy_helper(l, table_idx, dupe_idx);
+    
+    lua_remove(l, dupe_idx);
+}
+
 void run_simple_function(Script::Regref ref, int nresults) {
+    assert_balance(nresults);
     Script::push_reference(ref);
     Script::run_function(0, nresults);
 }
