@@ -47,9 +47,13 @@ public:
     void set_f64(double f64);
     void set_i32(int32_t i32);
     void set_i64(int64_t i64);
+    
+    bool is_empty();
+    void set_empty();
 
 private:
     Type m_type = Type::UNKNOWN;
+    bool m_empty;
     union {
         float m_f32; double m_f64;
         int32_t m_i32; int64_t m_i64;
