@@ -139,7 +139,7 @@ std::string to_string(int idx, const char* def, int max_recusions) {
 }
 
 const char* GENERIC_TO_STRING_DEFAULT = 
-        "[MAX TOSTRING() RECURSION DEPTH EXCEEDED]";
+        "[MAX tostring() RECURSION DEPTH EXCEEDED]";
 
 } // namespace Helper
 } // namespace Script
