@@ -78,13 +78,12 @@ void stage_all();
 
 void cleanup();
 
+int add_component(lua_State* l);
+int edit_component(lua_State* l);
 int add_archetype(lua_State* l);
 int edit_archetype(lua_State* l);
 int find_archetype(lua_State* l);
 int add_genre(lua_State* l);
-int edit_genre(lua_State* l);
-int add_component(lua_State* l);
-int edit_component(lua_State* l);
 
 int entity_new(lua_State* l);
 

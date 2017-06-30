@@ -23,7 +23,6 @@ void setup_gensys() {
         {"add_archetype", Gensys::LI::add_archetype},
         {"edit_archetype", Gensys::LI::edit_archetype},
         {"add_genre", Gensys::LI::add_genre},
-        {"edit_genre", Gensys::LI::edit_genre},
         {"add_component", Gensys::LI::add_component},
         {"edit_component", Gensys::LI::edit_component},
         

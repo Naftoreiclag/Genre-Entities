@@ -61,7 +61,6 @@ std::string assert_table_key_to_string(int idx, const char* err_msg) {
 Interm::Prim translate_primitive(int idx, Interm::Prim::Type required_t) {
     assert_balance(0);
     lua_State* l = Script::get_lua_state();
-    
     idx = Script::absolute_idx(idx);
     
     if (lua_type(l, idx) != LUA_TTABLE) {
@@ -77,18 +76,18 @@ Interm::Prim translate_primitive(int idx, Interm::Prim::Type required_t) {
     const char* strdata;
     
     lua_rawgeti(l, idx, 1); // First member of the table should be type string
+    Script::Pop_Guard pop_guard(1);
     strdata = lua_tolstring(l, -1, &strlen);
     if (!strdata) {
         std::string str_debug = 
                 Script::Helper::to_string(-1, 
                         Script::Helper::GENERIC_TO_STRING_DEFAULT);
-        lua_pop(l, 1); // Remove rawgeti
         std::stringstream ss;
         ss << "Invalid type: " << str_debug;
         throw std::runtime_error(ss.str());
     }
     // TODO: light userdata instead of strings
-    lua_pop(l, 1); // Remove type string
+    pop_guard.pop(1);
     std::string type_name(strdata, strlen);
     
     Interm::Prim ret_val;
@@ -119,6 +118,12 @@ Interm::Prim translate_primitive(int idx, Interm::Prim::Type required_t) {
     }
     
     lua_rawgeti(l, idx, 2); // Second member should be value
+    pop_guard.on_push(1);
+    if (lua_isnil(l, -1)) {
+        ret_val.set_empty();
+    }
+    
+    
     switch (ret_val.get_type()) {
         // TODO: check validity of number type
         case Interm::Prim::Type::F32: {
@@ -142,7 +147,6 @@ Interm::Prim translate_primitive(int idx, Interm::Prim::Type required_t) {
                 ret_val.set_string(Script::Helper::to_string(-1));
             }
             catch (std::runtime_error e) {
-                lua_pop(l, 1); // Remove rawgeti
                 std::stringstream ss;
                 ss << "Cannot parse string value for primitive: " << e.what();
                 throw std::runtime_error(ss.str());
@@ -154,7 +158,6 @@ Interm::Prim translate_primitive(int idx, Interm::Prim::Type required_t) {
                 std::string str_debug = 
                         Script::Helper::to_string(-1, 
                                 Script::Helper::GENERIC_TO_STRING_DEFAULT);
-                lua_pop(l, 1); // Remove rawgeti
                 std::stringstream ss;
                 ss << "Invalid function: " << str_debug;
                 throw std::runtime_error(ss.str());
@@ -167,7 +170,6 @@ Interm::Prim translate_primitive(int idx, Interm::Prim::Type required_t) {
             assert(false && "Unhandled primitive type");
         }
     }
-    lua_pop(l, 1); // Remove rawgeti
     
     return ret_val;
 }
@@ -175,6 +177,7 @@ Interm::Prim translate_primitive(int idx, Interm::Prim::Type required_t) {
 Interm::Comp_Def* translate_component_definition(int table_idx) {
     assert_balance(0);
     lua_State* l = Script::get_lua_state();
+    table_idx = Script::absolute_idx(table_idx);
     
     Interm::Comp_Def comp_def;
     
@@ -205,6 +208,7 @@ Interm::Comp_Def* translate_component_definition(int table_idx) {
 Interm::Arche::Implement translate_archetype_implementation(int table_idx) {
     assert_balance(0);
     lua_State* l = Script::get_lua_state();
+    table_idx = Script::absolute_idx(table_idx);
     
     Interm::Arche::Implement implement;
     
@@ -272,6 +276,7 @@ Interm::Arche::Implement translate_archetype_implementation(int table_idx) {
 Interm::Arche* translate_archetype(int table_idx) {
     assert_balance(0);
     lua_State* l = Script::get_lua_state();
+    table_idx = Script::absolute_idx(table_idx);
     
     Interm::Arche arche;
     Script::Helper::for_pairs(table_idx, [&]()->bool {
@@ -287,6 +292,11 @@ Interm::Arche* translate_archetype(int table_idx) {
                 << e.what();
             throw std::runtime_error(sss.str());
         }
+        // Check that no symbol is duplicated (possible through integer keys)
+        if (arche.m_implements.find(symbol) != arche.m_implements.end()) {
+            throw std::runtime_error("Duplicate symbol");
+        }
+        arche.m_implements[symbol] = std::move(implement);
         
         return true;
     }, false);
@@ -297,8 +307,41 @@ Interm::Arche* translate_archetype(int table_idx) {
 Interm::Genre* translate_genre(int table_idx) {
     assert_balance(0);
     lua_State* l = Script::get_lua_state();
+    table_idx = Script::absolute_idx(table_idx);
     
     Interm::Genre genre;
+    lua_getfield(l, table_idx, "interface"); // Field guaranteed to exist
+    Script::Pop_Guard pop_guard(1);
+    Script::Helper::for_pairs(-1, [&]()->bool {
+        Interm::Symbol symbol = 
+                assert_table_key_to_string(-2, 
+                        "Invalid key in genre interface table");
+        Interm::Prim value;
+        try {
+            value = translate_primitive(-1);
+        }
+        catch (std::runtime_error e) {
+            std::stringstream sss;
+            sss << "Cannot parse default interface primitive: " << e.what();
+            throw std::runtime_error(sss.str());
+        }
+        // Check that no symbol is duplicated (possible through integer keys)
+        if (genre.m_interface.find(symbol) != genre.m_interface.end()) {
+            throw std::runtime_error("Duplicate symbol");
+        }
+        genre.m_interface[symbol] = std::move(value);
+    }, false);
+    pop_guard.pop(1);
+    
+    /*
+    lua_getfield(l, table_idx, "patterns"); // Field guaranteed to exist
+    pop_guard.on_push(1);
+    Script::Helper::for_pairs(-1 [&]()->bool {
+        
+    }, false);
+    pop_guard.pop(1);
+    */
+    
     return new Interm::Genre(std::move(genre));
 }
 
@@ -392,16 +435,42 @@ void cleanup() {
     Script::drop_reference(m_working_genres);
 }
 
+int add_component(lua_State* l) {
+    luaL_checktype(l, 2, LUA_TTABLE);
+    std::size_t strlen;
+    const char* strdata = luaL_checklstring(l, 1, &strlen);
+    std::string key(strdata, strlen);
+    // TODO: resolve namespace issues in key
+    Script::push_reference(m_working_components);
+    lua_pushstring(l, key.c_str());
+    Script::Helper::simple_deep_copy(2);
+    lua_settable(l, 3);
+    return 0;
+}
+
+int edit_component(lua_State* l) {
+    std::size_t strlen;
+    const char* strdata = luaL_checklstring(l, 1, &strlen);
+    std::string key(strdata, strlen);
+    // TODO: resolve namespace issues in key
+    Script::push_reference(m_working_components);
+    lua_pushvalue(l, 1);
+    lua_gettable(l, 2);
+    return 1;
+}
+
 int add_archetype(lua_State* l) {
     if (Gensys::get_global_state() != GlobalState::MUTABLE) {
         luaL_error(l, "add_archetype is only available during setup.");
     }
-    // TODO: resolve namespace issues
-    const char* key = luaL_checklstring(l, 1, nullptr);
     luaL_checktype(l, 2, LUA_TTABLE);
+    std::size_t strlen;
+    const char* strdata = luaL_checklstring(l, 1, &strlen);
+    std::string key(strdata, strlen);
+    // TODO: resolve namespace issues in key
     Script::push_reference(m_working_archetypes);
-    lua_pushvalue(l, 1);
-    lua_pushvalue(l, 2);
+    lua_pushstring(l, key.c_str());
+    Script::Helper::simple_deep_copy(2);
     lua_settable(l, 3);
     return 0;
 }
@@ -410,9 +479,12 @@ int edit_archetype(lua_State* l) {
     if (Gensys::get_global_state() != GlobalState::MUTABLE) {
         luaL_error(l, "edit_archetype is only available during setup.");
     }
-    const char* key = luaL_checklstring(l, 1, nullptr);
+    std::size_t strlen;
+    const char* strdata = luaL_checklstring(l, 1, &strlen);
+    std::string key(strdata, strlen);
+    // TODO: resolve namespace issues in key
     Script::push_reference(m_working_archetypes);
-    lua_pushvalue(l, 1);
+    lua_pushstring(l, key.c_str());
     lua_gettable(l, 2);
     return 1;
 }
@@ -424,6 +496,7 @@ int find_archetype(lua_State* l) {
     std::size_t strlen;
     const char* strdata = luaL_checklstring(l, 1, &strlen);
     std::string key(strdata, strlen);
+    // TODO: resolve namespace issues in key
     
     /*
     auto iter = m_archetypes.find(key);
@@ -433,44 +506,25 @@ int find_archetype(lua_State* l) {
     */
 }
 
+void fix_genre_table(lua_State* l) {
+    
+}
+
 int add_genre(lua_State* l) {
     if (Gensys::get_global_state() != GlobalState::MUTABLE) {
         luaL_error(l, "add_genre is only available during setup.");
     }
-    // TODO: resolve namespace issues
-    const char* key = luaL_checklstring(l, 1, nullptr);
     luaL_checktype(l, 2, LUA_TTABLE);
+    std::size_t strlen;
+    const char* strdata = luaL_checklstring(l, 1, &strlen);
+    std::string key(strdata, strlen);
+    // TODO: resolve namespace issues in key
     Script::push_reference(m_working_genres);
-    lua_pushvalue(l, 1);
-    lua_pushvalue(l, 2);
+    lua_pushstring(l, key.c_str());
+    Script::Helper::simple_deep_copy(2);
+    
     lua_settable(l, 3);
     return 0;
-}
-
-int edit_genre(lua_State* l) {
-    const char* key = luaL_checklstring(l, 1, nullptr);
-    Script::push_reference(m_working_genres);
-    lua_pushvalue(l, 1);
-    lua_gettable(l, 2);
-    return 1;
-}
-
-int add_component(lua_State* l) {
-    const char* key = luaL_checklstring(l, 1, nullptr);
-    luaL_checktype(l, 2, LUA_TTABLE);
-    Script::push_reference(m_working_components);
-    lua_pushvalue(l, 1);
-    lua_pushvalue(l, 2);
-    lua_settable(l, 3);
-    return 0;
-}
-
-int edit_component(lua_State* l) {
-    const char* key = luaL_checklstring(l, 1, nullptr);
-    Script::push_reference(m_working_components);
-    lua_pushvalue(l, 1);
-    lua_gettable(l, 2);
-    return 1;
 }
 
 int entity_new(lua_State* l) {
