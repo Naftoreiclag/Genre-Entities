@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
+#include <vector>
 #include <map>
 
 #include "pegr/debug/DebugMacros.hpp"
@@ -304,6 +305,71 @@ Interm::Arche* translate_archetype(int table_idx) {
     return new Interm::Arche(std::move(arche));
 }
 
+Interm::Genre::Pattern translate_genre_pattern(int value_idx) {
+    assert_balance(0);
+    lua_State* l = Script::get_lua_state();
+    
+    int value_type = lua_type(l, value_idx);
+    switch (value_type) {
+        case LUA_TTABLE: {
+            Interm::Genre::Pattern pattern;
+            pattern.m_type = Interm::Genre::Pattern::Type::FROM_ALIAS;
+            lua_getfield(l, value_idx, "__from");
+            Script::Pop_Guard pop_guard(1);
+            if (lua_isnil(l, -1)) {
+                throw std::runtime_error(
+                        "\"__from\" field missing from pattern table!");
+            }
+            
+            try {
+                Interm::Symbol id = Script::Helper::to_string(-1);
+                
+                
+            } catch (std::runtime_error e) {
+                std::stringstream sss;
+                sss << "Could not retrieve string from \"__from\" field"
+                    << e.what();
+                throw std::runtime_error(sss.str());
+            }
+            pop_guard.pop(1);
+            
+            Script::Helper::for_pairs(value_idx, [&]()->bool {
+                Interm::Symbol symbol = 
+                        assert_table_key_to_string(-2, 
+                                "Invalid key in pattern table");
+                if (symbol == "__from") {
+                    return true;
+                }
+                
+                // Check that no symbol is duplicated
+                if (pattern.m_aliases.find(symbol) != pattern.m_aliases.end()) {
+                    throw std::runtime_error("Duplicate symbol");
+                }
+                
+                pattern.m_aliases[symbol] = 
+                        Script::Helper::to_string(-1);
+                
+                return true;
+            }, false);
+            
+            
+            return pattern;
+        }
+        case LUA_TFUNCTION: {
+            Interm::Genre::Pattern pattern;
+            pattern.m_type = Interm::Genre::Pattern::Type::FUNC;
+            lua_pushvalue(l, value_idx);
+            pattern.m_function = Script::make_shared(Script::grab_reference());
+            return pattern;
+        }
+        default: {
+            std::stringstream sss;
+            sss << "Pattern cannot be a " << lua_typename(l, value_type);
+            throw std::runtime_error(sss.str());
+        }
+    }
+}
+
 Interm::Genre* translate_genre(int table_idx) {
     assert_balance(0);
     lua_State* l = Script::get_lua_state();
@@ -330,17 +396,22 @@ Interm::Genre* translate_genre(int table_idx) {
             throw std::runtime_error("Duplicate symbol");
         }
         genre.m_interface[symbol] = std::move(value);
+        return true;
     }, false);
     pop_guard.pop(1);
     
-    /*
     lua_getfield(l, table_idx, "patterns"); // Field guaranteed to exist
     pop_guard.on_push(1);
-    Script::Helper::for_pairs(-1 [&]()->bool {
+    
+    Script::Helper::for_number_pairs_sorted(-1, [&]()->bool {
+        Interm::Genre::Pattern pattern;
         
+        pattern = translate_genre_pattern(-1);
+        
+        genre.m_patterns.push_back(pattern);
+        return true;
     }, false);
     pop_guard.pop(1);
-    */
     
     return new Interm::Genre(std::move(genre));
 }
@@ -507,7 +578,16 @@ int find_archetype(lua_State* l) {
 }
 
 void fix_genre_table(lua_State* l) {
-    
+    assert_balance(0);
+    for (const char* key : {"interface", "patterns"}) {
+        lua_getfield(l, -1, key);
+        if (!lua_istable(l, -1)) {
+            lua_pop(l, 1);
+            lua_newtable(l);
+            lua_setfield(l, -2, key);
+        }
+        lua_pop(l, 1);
+    }
 }
 
 int add_genre(lua_State* l) {
@@ -522,6 +602,8 @@ int add_genre(lua_State* l) {
     Script::push_reference(m_working_genres);
     lua_pushstring(l, key.c_str());
     Script::Helper::simple_deep_copy(2);
+    
+    fix_genre_table(l);
     
     lua_settable(l, 3);
     return 0;

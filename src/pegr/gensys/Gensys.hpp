@@ -37,7 +37,7 @@ void cleanup();
 
 /**
  * @brief Stages an intermediate component definition for compilation. 
- * This also hands off deletion responsibility to Gensys
+ * This also hands off deletion responsibility to Gensys.
  * @param id
  * @param comp_def the component definition
  */
@@ -50,6 +50,13 @@ void stage_component(std::string id, Interm::Comp_Def* comp_def);
  * @return nullptr or staged Comp_Def
  */
 Interm::Comp_Def* get_staged_component(std::string id);
+
+/**
+ * @brief Unstages an intermediate component definition for compilation.
+ * Also deletes it.
+ * @param id
+ */
+void unstage_component(std::string id);
 
 /**
  * @brief Stages an intermediate archetype for compilation
@@ -67,6 +74,13 @@ void stage_archetype(std::string id, Interm::Arche* arche);
 Interm::Arche* get_staged_archetype(std::string id);
 
 /**
+ * @brief Unstages an intermediate archetype for compilation.
+ * Also deletes it.
+ * @param id
+ */
+void unstage_archetype(std::string id);
+
+/**
  * @brief Stages an intermediate genre for compilation
  * @param id
  * @param genre
@@ -80,6 +94,30 @@ void stage_genre(std::string id, Interm::Genre* genre);
  * @return nullptr or staged Genre
  */
 Interm::Genre* get_staged_genre(std::string id);
+
+/**
+ * @brief Unstages an intermediate genre for compilation.
+ * Also deletes it.
+ * @param id
+ */
+void unstage_genre(std::string id);
+
+enum struct ObjectType {
+    NOT_FOUND,
+    COMP_DEF,
+    ARCHETYPE,
+    GENRE,
+    
+    ENUM_SIZE /*Number of valid enum values*/
+};
+
+/**
+ * @brief Returns what type of object is pointed to by this id. Returns 
+ * NOT_FOUND enum value if the object was not found
+ * @param id
+ * @return The type of the object pointed to by this id.
+ */
+ObjectType get_type(std::string id);
 
 } // namespace Gensys
 } // namespace pegr

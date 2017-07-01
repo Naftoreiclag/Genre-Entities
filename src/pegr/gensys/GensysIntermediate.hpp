@@ -107,14 +107,14 @@ struct Genre {
     struct Pattern {
         enum struct Type {
             FUNC,
-            FROM_COMP,
+            FROM_ALIAS,
             FROM_GENRE
         };
         
         // TODO: unionize?
         Type m_type;
         
-        Script::Regref_Guard m_function;
+        Script::Regref_Shared m_function;
         Comp_Def* m_from_component;
         Genre* m_from_genre;
         std::map<Symbol, Symbol> m_aliases;

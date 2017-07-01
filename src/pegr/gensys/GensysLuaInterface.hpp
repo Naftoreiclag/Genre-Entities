@@ -61,6 +61,15 @@ Interm::Arche::Implement translate_archetype_implementation(int table_idx);
 Interm::Arche* translate_archetype(int table_idx);
 
 /**
+ * @brief Make a genre pattern from the given Lua value.
+ * Can throw runtime errors. Guaranteed to return a valid pattern.
+ * [BALANCED]
+ * @param table_idx The index on the main Lua stack to translate
+ * @return The pattern
+ */
+Interm::Genre::Pattern translate_genre_pattern(int idx);
+
+/**
  * @brief Make a new genre from the table at the given index.
  * Can throw runtime errors. Guaranteed to return a valid Genre pointer.
  * User is responsible for calling delete.
