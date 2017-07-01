@@ -14,6 +14,7 @@ void test_0010_check_pop_guard();
 void test_0010_check_script_loading();
 void test_0028_for_pairs();
 void test_0028_for_pairs_exception();
+void test_0028_for_pairs_number_sorted();
 void test_0028_simple_deep_copy();
 void test_0028_simple_deep_copy_recursive();
 void test_0028_to_string();
@@ -38,6 +39,7 @@ const NamedTest m_tests[] = {
     {"Identifying syntax errors", test_0010_check_script_loading},
     {"Script Helper for_pairs", test_0028_for_pairs},
     {"Script Helper for_pairs with exception", test_0028_for_pairs_exception},
+    {"Script Helper for_number_pairs_sorted", test_0028_for_pairs_number_sorted},
     {"Script simple_deep_copy", test_0028_simple_deep_copy},
     {"Script simple_deep_copy_recursive", test_0028_simple_deep_copy_recursive},
     {"Script Helper to_string", test_0028_to_string},

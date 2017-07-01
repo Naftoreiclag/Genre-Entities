@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <string>
+#include <vector>
 
 #include "pegr/script/Script.hpp"
 
@@ -30,6 +31,27 @@ namespace Helper {
  */
 void for_pairs(int table_idx, std::function<bool()> func, 
                 bool pops_value = false);
+
+/**
+ * @brief Retrieves all of the number keys in the table stored at table_idx.
+ * There are no guarantees on the order of these keys.
+ * [BALANCED]
+ * @param table_idx the location of the table on the Lua stack. Can be negative.
+ * Does not pop that value off the stack.
+ * @return A vector of the number keys, in any order.
+ */
+std::vector<lua_Number> get_number_keys(int table_idx);
+
+/**
+ * @brief Same as for_pairs, except it only iterates over number keys, and those
+ * numebers are first sorted in order from least to greatest.
+ * @param table_idx Same as for_pairs
+ * @param func Same as for_pairs
+ * @param pops_value Same as for_pairs
+ * @param reversed_order If true, iterate from greatest to least.
+ */
+void for_number_pairs_sorted(int table_idx, std::function<bool()> func, 
+                bool pops_value = false, bool reversed_order = false);
 
 /**
  * @brief Makes a "semi-deep" copy of the table at given index:

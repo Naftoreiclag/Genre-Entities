@@ -192,5 +192,55 @@ void test_0028_to_string() {
     }
 }
 
+//@Test Script Helper for_number_pairs_sorted
+void test_0028_for_pairs_number_sorted() {
+    lua_State* l = Script::get_lua_state();
+    
+    RG sandbox(Script::new_sandbox());
+    RG table_fun(Script::load_lua_function("test/sparse_array.lua", sandbox));
+    
+    Script::Helper::run_simple_function(table_fun, 1);
+    Script::Pop_Guard pop_guard(1);
+    
+    std::string expected = "Shall I compare thee to a summer's day?";
+    
+    std::stringstream got;
+    
+    auto body = [&]()->bool {
+        std::size_t strlen;
+        const char* strdata = lua_tolstring(l, -1, &strlen);
+        std::string str(strdata, strlen);
+        got << str;
+        return true;
+    };
+    
+    Script::Helper::for_number_pairs_sorted(-1, body, false);
+    
+    Logger::log()->info(expected);
+    
+    if (expected != got.str()) {
+        std::stringstream sss;
+        sss << "Expected shakespeare, got: \""
+            << got.str()
+            << '"';
+        throw std::runtime_error(sss.str());
+    }
+    
+    expected = "day?summer's a to thee compare I Shall ";
+    got = std::stringstream();
+    
+    Script::Helper::for_number_pairs_sorted(-1, body, false, true);
+    
+    Logger::log()->info(expected);
+    
+    if (expected != got.str()) {
+        std::stringstream sss;
+        sss << "Expected shakespeare, got: \""
+            << got.str()
+            << '"';
+        throw std::runtime_error(sss.str());
+    }
+}
+
 } // namespace Test
 } // namespace pegr

@@ -1,16 +1,19 @@
 #include "pegr/script/ScriptHelper.hpp"
 
+#include <algorithm>
 #include <stdexcept>
 #include <cassert>
 
 #include "pegr/debug/DebugMacros.hpp"
 #include "pegr/script/Script.hpp"
+#include "pegr/logger/Logger.hpp"
 
 namespace pegr {
 namespace Script {
 namespace Helper {
 
 void for_pairs(int table_idx, std::function<bool()> func, bool pops_value) {
+    assert_balance(0);
     lua_State* l = Script::get_lua_state();
     table_idx = Script::absolute_idx(table_idx);
     lua_pushnil(l);
@@ -22,12 +25,54 @@ void for_pairs(int table_idx, std::function<bool()> func, bool pops_value) {
         // Assume we will need to eat the key ourselves
         // in case the function raises errors or breaks the loop
         pg.on_push(1);
-        bool cont = func();
-        if (!cont) {
+        if (!func()) {
             break;
         }
         // If we got to this point, the key no longer needs to be eaten by us
         pg.on_pop(1);
+    }
+}
+
+std::vector<lua_Number> get_number_keys(int table_idx) {
+    assert_balance(0);
+    lua_State* l = Script::get_lua_state();
+    table_idx = Script::absolute_idx(table_idx);
+    lua_pushnil(l);
+    std::vector<lua_Number> retval;
+    while (lua_next(l, table_idx) != 0) {
+        lua_pop(l, 1);
+        if (!lua_isnumber(l, -1)) {
+            continue;
+        }
+        lua_Number num = lua_tonumber(l, -1);
+        retval.push_back(num);
+    }
+    return retval;
+}
+
+void for_number_pairs_sorted(int table_idx, std::function<bool()> func, 
+        bool pops_value, bool reversed_order) {
+    assert_balance(0);
+    lua_State* l = Script::get_lua_state();
+    table_idx = Script::absolute_idx(table_idx);
+    std::vector<lua_Number> keys = get_number_keys(table_idx);
+    if (reversed_order) {
+        std::sort(keys.begin(), keys.end(), std::greater<lua_Number>());
+    } else {
+        std::sort(keys.begin(), keys.end());
+    }
+    for (lua_Number key : keys) {
+        Script::Pop_Guard pg;
+        lua_pushnumber(l, key);
+        pg.on_push(1);
+        lua_pushnumber(l, key);
+        lua_gettable(l, table_idx);
+        if (!pops_value) {
+            pg.on_push(1); // We will eat the value ourselves
+        }
+        if (!func()) {
+            break;
+        }
     }
 }
 
