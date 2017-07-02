@@ -93,6 +93,16 @@ std::string to_string(int idx, const char* def = nullptr,
  */
 extern const char* GENERIC_TO_STRING_DEFAULT;
 
+/**
+ * @brief Returns the number value of the value on the Lua stack at given index.
+ * Should be identical to lua_tonumber(), except it returns success rather than
+ * silently returning zero on error.
+ * @param idx Value to parse as number
+ * @param num Where to store the interpreted number
+ * @return Success
+ */
+bool to_number_safe(int idx, lua_Number& num);
+
 } // namespace Helper
 } // namespace Script
 } // namespace pegr

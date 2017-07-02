@@ -186,6 +186,45 @@ std::string to_string(int idx, const char* def, int max_recusions) {
 const char* GENERIC_TO_STRING_DEFAULT = 
         "[MAX tostring() RECURSION DEPTH EXCEEDED]";
 
+bool to_number_safe(int idx, lua_Number& num) {
+    assert_balance(0);
+    lua_State* l = Script::get_lua_state();
+    if (lua_isnumber(l, idx)) {
+        num = lua_tonumber(l, idx);
+        return true;
+    }
+    return false;
+    /*
+    // This is pretty much how Lua converts strings under the hood:
+    int val_type = lua_type(l, idx);
+    if (val_type == LUA_TNUMBER) {
+        num = lua_tonumber(l, idx);
+        return true;
+    }
+    if (val_type == LUA_TSTRING) {
+        const char* str = lua_tostring(l, idx);
+        Logger::log()->info(str);
+        char* str_end;
+        double c_result = std::strtod(str, &str_end);
+        if (str_end == str) {
+            return false;
+        }
+        // Hexadecimal
+        if (*str_end == 'X' || *str_end == 'x') {
+            c_result = std::strtoul(str, &str_end, 16);
+        }
+        while (std::isspace(*str_end)) {
+            ++str_end;
+        }
+        if (*str_end != '\0') {
+            return false;
+        }
+        num = c_result;
+        return true;
+    }
+    */
+}
+
 } // namespace Helper
 } // namespace Script
 } // namespace pegr

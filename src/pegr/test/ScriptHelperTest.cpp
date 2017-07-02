@@ -1,6 +1,7 @@
 #include <cstddef>
 #include <sstream>
 #include <map>
+#include <cassert>
 
 #include "pegr/script/ScriptHelper.hpp"
 #include "pegr/script/Script.hpp"
@@ -35,6 +36,74 @@ void assert_expected_string_table(
                 << "\" got: \""
                 << val
                 << '"';
+            throw std::runtime_error(sss.str());
+        }
+    }
+}
+
+//@Test Script to_number_safe
+void test_0028_to_number_safe() {
+    lua_State* l = Script::get_lua_state();
+    
+    std::vector<const char*> success_tests = {
+        
+        // DO NOT PUT 0 IN THIS LIST
+        // zero is indistinguishable from error
+        "1",
+        "2",
+        "-4",
+        "3.5",
+        "2.718281828459",
+        "0xDAFF0D11",
+        "60",
+        "315"
+    };
+    
+    for (const char* str : success_tests) {
+        lua_pushstring(l, str);
+        Script::Pop_Guard pg(1);
+        lua_Number expected = lua_tonumber(l, -1);
+        lua_Number result;
+        bool success = Script::Helper::to_number_safe(-1, result);
+        
+        assert(expected != 0);
+        
+        if (!success) {
+            std::stringstream sss;
+            sss << "Fail to parse: " << str;
+            throw std::runtime_error(sss.str());
+        }
+        
+        if (expected != result) {
+            std::stringstream sss;
+            sss << "Expected: " << expected << " Got: " << result;
+            throw std::runtime_error(sss.str());
+        }
+    }
+    
+    std::vector<const char*> fail_tests = {
+        "Garlic",
+        "four",
+        "......",
+        "1.2.3.4.5",
+        "xXxXxXx"
+    };
+    
+    for (const char* str : fail_tests) {
+        lua_pushstring(l, str);
+        Script::Pop_Guard pg(1);
+        lua_Number expected = lua_tonumber(l, -1);
+        lua_Number result = 12345;
+        bool success = Script::Helper::to_number_safe(-1, result);
+        
+        assert(expected == 0);
+        
+        if (success) {
+            std::stringstream sss;
+            sss << "Supposed to fail, but didnt't: " << str
+                << " got: " << result
+                << " (Note, if it says \"12345\""
+                    "then something is really wrong.)";
             throw std::runtime_error(sss.str());
         }
     }

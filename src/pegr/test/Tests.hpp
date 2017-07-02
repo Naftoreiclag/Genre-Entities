@@ -17,6 +17,7 @@ void test_0028_for_pairs_exception();
 void test_0028_for_pairs_number_sorted();
 void test_0028_simple_deep_copy();
 void test_0028_simple_deep_copy_recursive();
+void test_0028_to_number_safe();
 void test_0028_to_string();
 void test_0030_gensys_primitive();
 void test_0030_gensys_primitive_multiple();
@@ -42,6 +43,7 @@ const NamedTest m_tests[] = {
     {"Script Helper for_number_pairs_sorted", test_0028_for_pairs_number_sorted},
     {"Script simple_deep_copy", test_0028_simple_deep_copy},
     {"Script simple_deep_copy_recursive", test_0028_simple_deep_copy_recursive},
+    {"Script to_number_safe", test_0028_to_number_safe},
     {"Script Helper to_string", test_0028_to_string},
     {"Single gensys primitive", test_0030_gensys_primitive},
     {"Reassignment of gensys primitives", test_0030_gensys_primitive_multiple},
