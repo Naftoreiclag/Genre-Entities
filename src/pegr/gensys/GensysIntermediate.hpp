@@ -106,9 +106,9 @@ struct Genre {
     std::map<Symbol, Prim> m_interface;
     struct Pattern {
         enum struct Type {
-            FUNC,
-            FROM_ALIAS,
-            FROM_GENRE
+            FROM_COMP,
+            FROM_GENRE,
+            FUNC
         };
         
         // TODO: unionize?

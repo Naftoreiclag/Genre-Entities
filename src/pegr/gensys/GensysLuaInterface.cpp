@@ -65,12 +65,11 @@ Interm::Prim translate_primitive(int idx, Interm::Prim::Type required_t) {
     idx = Script::absolute_idx(idx);
     
     if (lua_type(l, idx) != LUA_TTABLE) {
-        std::string str_debug = 
-                Script::Helper::to_string(idx, 
-                        Script::Helper::GENERIC_TO_STRING_DEFAULT);
-        std::stringstream ss;
-        ss << "Invalid primitive constructor: " << str_debug;
-        throw std::runtime_error(ss.str());
+        std::stringstream sss;
+        sss << "Invalid primitive constructor: "
+            << Script::Helper::to_string(idx, 
+                    Script::Helper::GENERIC_TO_STRING_DEFAULT);
+        throw std::runtime_error(sss.str());
     }
     
     std::size_t strlen;
@@ -80,12 +79,11 @@ Interm::Prim translate_primitive(int idx, Interm::Prim::Type required_t) {
     Script::Pop_Guard pop_guard(1);
     strdata = lua_tolstring(l, -1, &strlen);
     if (!strdata) {
-        std::string str_debug = 
-                Script::Helper::to_string(-1, 
-                        Script::Helper::GENERIC_TO_STRING_DEFAULT);
-        std::stringstream ss;
-        ss << "Invalid type: " << str_debug;
-        throw std::runtime_error(ss.str());
+        std::stringstream sss;
+        sss << "Invalid type: "
+            << Script::Helper::to_string(-1, 
+                    Script::Helper::GENERIC_TO_STRING_DEFAULT);
+        throw std::runtime_error(sss.str());
     }
     // TODO: light userdata instead of strings
     pop_guard.pop(1);
@@ -156,12 +154,11 @@ Interm::Prim translate_primitive(int idx, Interm::Prim::Type required_t) {
         }
         case Interm::Prim::Type::FUNC: {
             if (lua_type(l, -1) != LUA_TFUNCTION) {
-                std::string str_debug = 
-                        Script::Helper::to_string(-1, 
+                std::stringstream sss;
+                sss << "Invalid function: "
+                    << Script::Helper::to_string(-1, 
                                 Script::Helper::GENERIC_TO_STRING_DEFAULT);
-                std::stringstream ss;
-                ss << "Invalid function: " << str_debug;
-                throw std::runtime_error(ss.str());
+                throw std::runtime_error(sss.str());
             }
             lua_pushvalue(l, -1);
             ret_val.set_function(Script::make_shared(Script::grab_reference()));
@@ -247,6 +244,11 @@ Interm::Arche::Implement translate_archetype_implementation(int table_idx) {
             return true;
         }
         
+        // Check that no symbol is duplicated (possible through integer keys)
+        if (implement.m_values.find(symbol) != implement.m_values.end()) {
+            throw std::runtime_error("Duplicate symbol");
+        }
+        
         auto iter = implement.m_component->m_members.find(symbol);
         if (iter == implement.m_component->m_members.end()) {
             std::stringstream sss;
@@ -305,15 +307,54 @@ Interm::Arche* translate_archetype(int table_idx) {
     return new Interm::Arche(std::move(arche));
 }
 
+void assert_pattern_source_has_symbol(
+        const Interm::Genre::Pattern& pattern, const Interm::Symbol& symbol) {
+    switch (pattern.m_type) {
+        case Interm::Genre::Pattern::Type::FROM_COMP: {
+            assert(pattern.m_from_component);
+            if (pattern.m_from_component->m_members.find(symbol)
+                    == pattern.m_from_component->m_members.end()) {
+                std::stringstream sss;
+                sss << "Alias pattern references symbol \""
+                    << symbol
+                    << "\" which does not exist in component \""
+                    << pattern.m_from_component->m_error_msg_name
+                    << '"';
+                throw std::runtime_error(sss.str());
+            }
+            break;
+        }
+        case Interm::Genre::Pattern::Type::FROM_GENRE: {
+            assert(pattern.m_from_genre);
+            if (pattern.m_from_genre->m_interface.find(symbol)
+                    == pattern.m_from_genre->m_interface.end()) {
+                std::stringstream sss;
+                sss << "Alias pattern references symbol \""
+                    << symbol
+                    << "\" which does not exist in genre \""
+                    << pattern.m_from_genre->m_error_msg_name
+                    << '"';
+                throw std::runtime_error(sss.str());
+            }
+            break;
+        }
+        default: {
+            assert(false);
+            break;
+        }
+    }
+}
+
 Interm::Genre::Pattern translate_genre_pattern(int value_idx) {
     assert_balance(0);
     lua_State* l = Script::get_lua_state();
     
     int value_type = lua_type(l, value_idx);
     switch (value_type) {
+        
+        // Pattern is a table
         case LUA_TTABLE: {
             Interm::Genre::Pattern pattern;
-            pattern.m_type = Interm::Genre::Pattern::Type::FROM_ALIAS;
             lua_getfield(l, value_idx, "__from");
             Script::Pop_Guard pop_guard(1);
             if (lua_isnil(l, -1)) {
@@ -321,33 +362,92 @@ Interm::Genre::Pattern translate_genre_pattern(int value_idx) {
                         "\"__from\" field missing from pattern table!");
             }
             
+            std::string id;
             try {
-                Interm::Symbol id = Script::Helper::to_string(-1);
-                
-                
+                id = Script::Helper::to_string(-1);
             } catch (std::runtime_error e) {
                 std::stringstream sss;
                 sss << "Could not retrieve string from \"__from\" field"
                     << e.what();
                 throw std::runtime_error(sss.str());
             }
-            pop_guard.pop(1);
+            pop_guard.pop(1); // Remove __from string
             
+            // Determine what we are drawing data from
+            switch (Gensys::get_type(id)) {
+                // Object does not exist
+                case Gensys::ObjectType::NOT_FOUND: {
+                    std::stringstream sss;
+                    sss << "No component or genre with id ["
+                        << id << ']';
+                    throw std::runtime_error(sss.str());
+                }
+                // Object is an archetype (not allowed)
+                case Gensys::ObjectType::ARCHETYPE: {
+                    std::stringstream sss;
+                    sss << "Genres cannot depend on the existence of "
+                            "particular archetypes, id: "
+                        << id << ']';
+                    throw std::runtime_error(sss.str());
+                }
+                // Object is a component
+                case Gensys::ObjectType::COMP_DEF: {
+                    pattern.m_type = 
+                            Interm::Genre::Pattern::Type::FROM_COMP;
+                    pattern.m_from_component = 
+                            Gensys::get_staged_component(id);
+                    assert(pattern.m_from_component);
+                    break;
+                }
+                // Object is a genre
+                case Gensys::ObjectType::GENRE: {
+                    pattern.m_type = 
+                            Interm::Genre::Pattern::Type::FROM_GENRE;
+                    pattern.m_from_genre =
+                            Gensys::get_staged_genre(id);
+                    assert(pattern.m_from_genre);
+                    break;
+                }
+                // All cases should have been handled already
+                default: {
+                    assert(false);
+                    break;
+                }
+            }
+            
+            // Store and check all provided aliases
             Script::Helper::for_pairs(value_idx, [&]()->bool {
-                Interm::Symbol symbol = 
+                Interm::Symbol alias_symbol = 
                         assert_table_key_to_string(-2, 
                                 "Invalid key in pattern table");
-                if (symbol == "__from") {
+                
+                // Ignore the from key
+                if (alias_symbol == "__from") {
                     return true;
                 }
                 
                 // Check that no symbol is duplicated
-                if (pattern.m_aliases.find(symbol) != pattern.m_aliases.end()) {
+                if (pattern.m_aliases.find(alias_symbol) 
+                        != pattern.m_aliases.end()) {
                     throw std::runtime_error("Duplicate symbol");
                 }
                 
-                pattern.m_aliases[symbol] = 
-                        Script::Helper::to_string(-1);
+                std::string source_symbol;
+                try {
+                    source_symbol = Script::Helper::to_string(-1);
+                } catch (std::runtime_error e) {
+                    std::stringstream sss;
+                    sss << "Could not retrieve string from alias \""
+                        << alias_symbol
+                        << "\": "
+                        << e.what();
+                    throw std::runtime_error(sss.str());
+                }
+                
+                // Ensure that the source is available in that resource
+                assert_pattern_source_has_symbol(pattern, source_symbol);
+                
+                pattern.m_aliases[alias_symbol] = std::move(source_symbol);
                 
                 return true;
             }, false);
@@ -355,13 +455,20 @@ Interm::Genre::Pattern translate_genre_pattern(int value_idx) {
             
             return pattern;
         }
+        
+        // Pattern is a function
         case LUA_TFUNCTION: {
             Interm::Genre::Pattern pattern;
             pattern.m_type = Interm::Genre::Pattern::Type::FUNC;
             lua_pushvalue(l, value_idx);
+            
+            // No need to to a function type check, that was done already
+            
             pattern.m_function = Script::make_shared(Script::grab_reference());
             return pattern;
         }
+        
+        // Pattern is a ???
         default: {
             std::stringstream sss;
             sss << "Pattern cannot be a " << lua_typename(l, value_type);
@@ -577,6 +684,11 @@ int find_archetype(lua_State* l) {
     */
 }
 
+/**
+ * @brief Ensures that all invariants are satisfied for a genre cstr table
+ * The table is at position -1 on the stack
+ * @param l
+ */
 void fix_genre_table(lua_State* l) {
     assert_balance(0);
     for (const char* key : {"interface", "patterns"}) {
