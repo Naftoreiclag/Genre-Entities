@@ -73,17 +73,31 @@ lua_State* m_l = nullptr;
 std::string m_lua_version;
 Regref m_pristine_sandbox;
 
-Pop_Guard::Pop_Guard(int n)
-: m_n(n) { }
+Pop_Guard::Pop_Guard(int n, lua_State* l)
+: m_n(n)
+, m_lstate(l ? l : Script::get_lua_state()) {
+    assert(m_n >= 0);
+}
 
 Pop_Guard::~Pop_Guard() {
-    lua_pop(m_l, m_n);
+    assert(m_n >= 0);
+    lua_pop(m_lstate, m_n);
+}
+
+void Pop_Guard::on_push(int n) {
+    assert(n >= 0);
+    m_n += n;
+}
+
+void Pop_Guard::on_pop(int n) {
+    m_n -= n;
+    assert(n >= 0);
 }
 
 void Pop_Guard::pop(int n) {
-    assert(n <= lua_gettop(m_l));
+    assert(n <= lua_gettop(m_lstate));
     assert(n >= 0);
-    lua_pop(m_l, m_n);
+    lua_pop(m_lstate, m_n);
     m_n -= n;
 }
 

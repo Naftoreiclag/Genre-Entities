@@ -115,12 +115,11 @@ extern Regref m_luaglob_print;
 /**
  * @class Pop_Guard
  * @brief RAII for stack size. When this object is destructed, the specified
- * number of elements are popped off the main Lua stack (calls lua_pop)
+ * number of elements are popped off the Lua stack (calls lua_pop)
  */
 class Pop_Guard {
 public:
-    int m_n;
-    Pop_Guard(int n = 0);
+    Pop_Guard(int n = 0, lua_State* l = nullptr);
     ~Pop_Guard();
     
     /**
@@ -128,6 +127,27 @@ public:
      * @param n The number of values to pop. Must be <= m_n
      */
     void pop(int n);
+    
+    /**
+     * @brief Increases total number of values to pop when the destructor
+     * is called. Effectively increases how many stack entries are 
+     * being guarded.
+     * @param n The number of unguarded values that have just been pushed 
+     * onto the stack.
+     */
+    void on_push(int n);
+    
+    /**
+     * @brief Decreases total number of values to pop when the destructor
+     * is called. Effectively decreases how many stack entries are 
+     * being guarded.
+     * @param n The number of previously guarded values that have just 
+     * been popped off the stack.
+     */
+    void on_pop(int n);
+private:
+    int m_n;
+    lua_State* m_lstate;
 };
 
 /**

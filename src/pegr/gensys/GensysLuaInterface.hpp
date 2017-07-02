@@ -28,7 +28,7 @@ void initialize();
  * If this is Type::UNKNOWN, then the returned primitive can be of any type
  * @return a primitive value produced from the Lua value
  */
-Interm::Prim translate_primitive(int table_idx, 
+Interm::Prim parse_primitive(int table_idx, 
         Interm::Prim::Type required_t = Interm::Prim::Type::UNKNOWN);
 
 /**
@@ -39,7 +39,7 @@ Interm::Prim translate_primitive(int table_idx,
  * @param table_idx The index on the main Lua stack to translate
  * @return The component
  */
-Interm::Comp_Def* translate_component_definition(int table_idx);
+Interm::Comp_Def* parse_component_definition(int table_idx);
 
 /**
  * @brief Make an archetype implementation from the table at the given index.
@@ -48,7 +48,7 @@ Interm::Comp_Def* translate_component_definition(int table_idx);
  * @param table_idx The index on the main Lua stack to translate
  * @return The archetype implementation
  */
-Interm::Arche::Implement translate_archetype_implementation(int table_idx);
+Interm::Arche::Implement parse_archetype_implementation(int table_idx);
 
 /**
  * @brief Make a new archetype from the table at the given index.
@@ -58,23 +58,41 @@ Interm::Arche::Implement translate_archetype_implementation(int table_idx);
  * @param table_idx The index on the main Lua stack to translate
  * @return The archetype
  */
-Interm::Arche* translate_archetype(int table_idx);
+Interm::Arche* parse_archetype(int table_idx);
+
+/**
+ * @brief Make a genre pattern from the given Lua value.
+ * Can throw runtime errors. Guaranteed to return a valid pattern.
+ * [BALANCED]
+ * @param table_idx The index on the main Lua stack to translate
+ * @return The pattern
+ */
+Interm::Genre::Pattern parse_genre_pattern(int idx);
+
+/**
+ * @brief Make a new genre from the table at the given index.
+ * Can throw runtime errors. Guaranteed to return a valid Genre pointer.
+ * User is responsible for calling delete.
+ * [BALANCED]
+ * @param table_idx The index on the main Lua stack to translate
+ * @return The genre
+ */
+Interm::Genre* parse_genre(int table_idx);
 
 /**
  * @brief Translates all submitted Lua tables into their intermediate forms and
  * submits to the gensys pipeline.
  */
-void translate_working();
+void stage_all();
 
 void cleanup();
 
+int add_component(lua_State* l);
+int edit_component(lua_State* l);
 int add_archetype(lua_State* l);
 int edit_archetype(lua_State* l);
 int find_archetype(lua_State* l);
 int add_genre(lua_State* l);
-int edit_genre(lua_State* l);
-int add_component(lua_State* l);
-int edit_component(lua_State* l);
 
 int entity_new(lua_State* l);
 

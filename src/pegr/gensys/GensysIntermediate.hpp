@@ -2,6 +2,7 @@
 #define PEGR_GENSYS_INTERM_HPP
 
 #include <cstdint>
+#include <vector>
 #include <map>
 
 #include "pegr/script/Script.hpp"
@@ -46,15 +47,21 @@ public:
     void set_f64(double f64);
     void set_i32(int32_t i32);
     void set_i64(int64_t i64);
+    
+    bool is_empty();
+    void set_empty();
 
 private:
     Type m_type = Type::UNKNOWN;
-    std::string m_str;
-    Script::Regref_Shared m_func;
+    bool m_empty;
     union {
         float m_f32; double m_f64;
         int32_t m_i32; int64_t m_i64;
     };
+    
+    // TODO: add to union
+    std::string m_str;
+    Script::Regref_Shared m_func;
     
     void copy_from(const Prim& other_p);
     void move_from(Prim&& other_p);
@@ -84,6 +91,8 @@ struct Arche {
     std::string m_error_msg_name;
     
     struct Implement {
+        std::string m_error_msg_name;
+        
         const Comp_Def* m_component;
         std::map<Symbol, Prim> m_values;
     };
@@ -93,33 +102,30 @@ struct Arche {
 };
 
 struct Genre {
-    // The interface
-    std::map<Symbol, Prim::Type> m_interface;
+    // Used only in error messages
+    std::string m_error_msg_name;
     
-    enum Alias_T {
-        RENAME,
-        GETSET
-    };
-    
-    struct Getset {
-        Script::Regref m_getter;
-        Script::Regref m_setter;
-    };
-    
-    struct Alias_V {
-        Alias_T m_type;
-        union {
-            Symbol m_symbol;
-            Getset m_getset;
-        };
-    };
-    
-    // All patterns are applied
+    std::map<Symbol, Prim> m_interface;
     struct Pattern {
-        std::map<Symbol, Alias_V> m_aliases;
+        // Used only in error messages
+        double m_error_msg_idx;
+        
+        enum struct Type {
+            FROM_COMP,
+            FROM_GENRE,
+            FUNC
+        };
+        
+        // TODO: unionize?
+        Type m_type;
+        
+        Script::Regref_Shared m_function;
+        Comp_Def* m_from_component;
+        Genre* m_from_genre;
+        std::map<Symbol, Symbol> m_aliases;
     };
     
-    std::map<Comp_Def*, Pattern> m_patterns;
+    std::vector<Pattern> m_patterns;
 };
 
 } // namespace Interm

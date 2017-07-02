@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <string>
+#include <vector>
 
 #include "pegr/script/Script.hpp"
 
@@ -30,10 +31,32 @@ namespace Helper {
  */
 void for_pairs(int table_idx, std::function<bool()> func, 
                 bool pops_value = false);
-    
+
+/**
+ * @brief Retrieves all of the number keys in the table stored at table_idx.
+ * There are no guarantees on the order of these keys.
+ * [BALANCED]
+ * @param table_idx the location of the table on the Lua stack. Can be negative.
+ * Does not pop that value off the stack.
+ * @return A vector of the number keys, in any order.
+ */
+std::vector<lua_Number> get_number_keys(int table_idx);
+
+/**
+ * @brief Same as for_pairs, except it only iterates over number keys, and those
+ * numebers are first sorted in order from least to greatest.
+ * @param table_idx Same as for_pairs
+ * @param func Same as for_pairs
+ * @param pops_value Same as for_pairs
+ * @param reversed_order If true, iterate from greatest to least.
+ */
+void for_number_pairs_sorted(int table_idx, std::function<bool()> func, 
+                bool pops_value = false, bool reversed_order = false);
+
 /**
  * @brief Makes a "semi-deep" copy of the table at given index:
- * Does try to copy the keys. Only tries to copy the values if they are tables.
+ * Does not try to copy the keys. 
+ * Only tries to copy the values if they are tables.
  * The copy is pushed onto the stack at position -1.
  * @param idx The index in the stack of the table you want to copy. Can be 
  * negative. Does not pop that value off the stack.
@@ -54,6 +77,7 @@ void run_simple_function(Script::Regref ref, int nresults);
  * a string. If the value returned by tostring() is not convertable to a Lua
  * string by lua_tolstring(), then this process is repeated on that returned
  * value at most max_recusions times.
+ * [BALANCED]
  * @param idx The location of the relevant value on the main stack. Can be
  * negative
  * @param def The default string to use if there are too many tostring() layers.
@@ -68,6 +92,16 @@ std::string to_string(int idx, const char* def = nullptr,
  * @brief Generic default string for calls to to_string()
  */
 extern const char* GENERIC_TO_STRING_DEFAULT;
+
+/**
+ * @brief Returns the number value of the value on the Lua stack at given index.
+ * Should be identical to lua_tonumber(), except it returns success rather than
+ * silently returning zero on error.
+ * @param idx Value to parse as number
+ * @param num Where to store the interpreted number
+ * @return Success
+ */
+bool to_number_safe(int idx, lua_Number& num);
 
 } // namespace Helper
 } // namespace Script

@@ -1,6 +1,6 @@
 return {
-    a = "alpha",
-    b = "beta",
-    c = "charlie",
-    d = "delta"
+  a = "alpha",
+  b = "beta",
+  c = "charlie",
+  d = "delta",
 }
