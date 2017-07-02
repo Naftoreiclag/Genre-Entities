@@ -59,7 +59,7 @@ std::string assert_table_key_to_string(int idx, const char* err_msg) {
     return std::string(strdata, strlen);
 }
 
-Interm::Prim translate_primitive(int idx, Interm::Prim::Type required_t) {
+Interm::Prim parse_primitive(int idx, Interm::Prim::Type required_t) {
     assert_balance(0);
     lua_State* l = Script::get_lua_state();
     idx = Script::absolute_idx(idx);
@@ -216,7 +216,7 @@ Interm::Prim translate_primitive(int idx, Interm::Prim::Type required_t) {
     return ret_val;
 }
 
-Interm::Comp_Def* translate_component_definition(int table_idx) {
+Interm::Comp_Def* parse_component_definition(int table_idx) {
     assert_balance(0);
     lua_State* l = Script::get_lua_state();
     table_idx = Script::absolute_idx(table_idx);
@@ -229,7 +229,7 @@ Interm::Comp_Def* translate_component_definition(int table_idx) {
                         "Invalid key in component table");
         Interm::Prim value;
         try {
-            value = translate_primitive(-1);
+            value = parse_primitive(-1);
         }
         catch (std::runtime_error e) {
             std::stringstream sss;
@@ -251,7 +251,7 @@ Interm::Comp_Def* translate_component_definition(int table_idx) {
     return new Interm::Comp_Def(std::move(comp_def));
 }
 
-Interm::Arche::Implement translate_archetype_implementation(int table_idx) {
+Interm::Arche::Implement parse_archetype_implementation(int table_idx) {
     assert_balance(0);
     lua_State* l = Script::get_lua_state();
     table_idx = Script::absolute_idx(table_idx);
@@ -314,7 +314,7 @@ Interm::Arche::Implement translate_archetype_implementation(int table_idx) {
         
         try {
             implement.m_values[symbol] = 
-                    translate_primitive(-1, prim_def.get_type());
+                    parse_primitive(-1, prim_def.get_type());
         }
         catch (std::runtime_error e) {
             std::stringstream sss;
@@ -327,7 +327,7 @@ Interm::Arche::Implement translate_archetype_implementation(int table_idx) {
     return implement;
 }
 
-Interm::Arche* translate_archetype(int table_idx) {
+Interm::Arche* parse_archetype(int table_idx) {
     assert_balance(0);
     lua_State* l = Script::get_lua_state();
     table_idx = Script::absolute_idx(table_idx);
@@ -340,7 +340,7 @@ Interm::Arche* translate_archetype(int table_idx) {
                         "Invalid key in archetype table: ");
         Interm::Arche::Implement implement;
         try {
-            implement = translate_archetype_implementation(-1);
+            implement = parse_archetype_implementation(-1);
             implement.m_error_msg_name = symbol;
         } catch (std::runtime_error e) {
             std::stringstream sss;
@@ -402,7 +402,7 @@ void assert_pattern_source_has_symbol(
     }
 }
 
-Interm::Genre::Pattern translate_genre_pattern(int value_idx) {
+Interm::Genre::Pattern parse_genre_pattern(int value_idx) {
     assert_balance(0);
     lua_State* l = Script::get_lua_state();
     
@@ -537,7 +537,7 @@ Interm::Genre::Pattern translate_genre_pattern(int value_idx) {
     }
 }
 
-Interm::Genre* translate_genre(int table_idx) {
+Interm::Genre* parse_genre(int table_idx) {
     assert_balance(0);
     lua_State* l = Script::get_lua_state();
     table_idx = Script::absolute_idx(table_idx);
@@ -551,7 +551,7 @@ Interm::Genre* translate_genre(int table_idx) {
                         "Invalid key in interface table: ");
         Interm::Prim value;
         try {
-            value = translate_primitive(-1);
+            value = parse_primitive(-1);
         }
         catch (std::runtime_error e) {
             std::stringstream sss;
@@ -577,7 +577,7 @@ Interm::Genre* translate_genre(int table_idx) {
     Script::Helper::for_number_pairs_sorted(-1, [&]()->bool {
         lua_Number idx = lua_tonumber(l, -2);
         try {
-            Interm::Genre::Pattern pattern = translate_genre_pattern(-1);
+            Interm::Genre::Pattern pattern = parse_genre_pattern(-1);
             pattern.m_error_msg_idx = idx;
             genre.m_patterns.push_back(pattern);
         }
@@ -615,7 +615,7 @@ void stage_all() {
         pop_guard2.pop(1);
         std::string id(strdata, strlen);
         try {
-            Interm::Comp_Def* obj = translate_component_definition(-1);
+            Interm::Comp_Def* obj = parse_component_definition(-1);
             obj->m_error_msg_name = id;
             Gensys::stage_component(id, obj);
             Logger::log()->info("Successfully parsed compnent [%v]", id);
@@ -641,7 +641,7 @@ void stage_all() {
         pop_guard2.pop(1);
         std::string id(strdata, strlen);
         try {
-            Interm::Arche* obj = translate_archetype(-1);
+            Interm::Arche* obj = parse_archetype(-1);
             obj->m_error_msg_name = id;
             Gensys::stage_archetype(id, obj);
             Logger::log()->info("Successfully parsed archetype [%v]", id);
@@ -667,7 +667,7 @@ void stage_all() {
         pop_guard2.pop(1);
         std::string id(strdata, strlen);
         try {
-            Interm::Genre* obj = translate_genre(-1);
+            Interm::Genre* obj = parse_genre(-1);
             obj->m_error_msg_name = id;
             Gensys::stage_genre(id, obj);
             Logger::log()->info("Successfully parsed genre [%v]", id);

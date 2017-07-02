@@ -22,7 +22,7 @@ void test_0080_00_gensys_primitive() {
         
     Script::Helper::run_simple_function(func, 1);
     
-    prim = Gensys::LI::translate_primitive(-1);
+    prim = Gensys::LI::parse_primitive(-1);
     lua_pop(l, 1);
     
     if (prim.get_type() != Gensys::Interm::Prim::Type::FUNC) {
