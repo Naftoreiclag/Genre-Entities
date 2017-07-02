@@ -24,6 +24,7 @@ pegr.add_component('circle.c', {
 
 pegr.add_component('edible.c', {
   food_value = {'f32', 0},
+  on_eaten = {'func', function(self) end}
 })
 
 pegr.add_archetype('cookie.at', {
@@ -71,11 +72,11 @@ pegr.add_genre('food.g', {
     vel_x = {'f64', nil},
     vel_y = {'f64', nil},
     is_stationary = {'func', nil},
-    food_value = {'f32', function(self)
+    food_value = {'f32', nil},
+    on_eaten = {'func', function(self)
       print(string.format(
           'I was eaten at x: %f y:%f', self.pos_x, self.pos_y))
-    end},
-    on_eaten = {'func', 0}
+    end}
   },
   patterns = {
     {

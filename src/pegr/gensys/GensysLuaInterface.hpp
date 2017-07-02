@@ -37,18 +37,22 @@ Interm::Prim translate_primitive(int table_idx,
  * User is responsible for calling delete.
  * [BALANCED]
  * @param table_idx The index on the main Lua stack to translate
+ * @param debug_name The name to use in debug messages
  * @return The component
  */
-Interm::Comp_Def* translate_component_definition(int table_idx);
+Interm::Comp_Def* translate_component_definition(int table_idx, 
+        std::string debug_name);
 
 /**
  * @brief Make an archetype implementation from the table at the given index.
  * Can throw runtime errors. Guaranteed to return a valid implementation.
  * [BALANCED]
  * @param table_idx The index on the main Lua stack to translate
+ * @param debug_name The name to use in debug messages
  * @return The archetype implementation
  */
-Interm::Arche::Implement translate_archetype_implementation(int table_idx);
+Interm::Arche::Implement translate_archetype_implementation(int table_idx, 
+        std::string debug_name);
 
 /**
  * @brief Make a new archetype from the table at the given index.
@@ -56,18 +60,22 @@ Interm::Arche::Implement translate_archetype_implementation(int table_idx);
  * User is responsible for calling delete.
  * [BALANCED]
  * @param table_idx The index on the main Lua stack to translate
+ * @param debug_name The name to use in debug messages
  * @return The archetype
  */
-Interm::Arche* translate_archetype(int table_idx);
+Interm::Arche* translate_archetype(int table_idx, 
+        std::string debug_name);
 
 /**
  * @brief Make a genre pattern from the given Lua value.
  * Can throw runtime errors. Guaranteed to return a valid pattern.
  * [BALANCED]
  * @param table_idx The index on the main Lua stack to translate
+ * @param debug_name The name to use in debug messages
  * @return The pattern
  */
-Interm::Genre::Pattern translate_genre_pattern(int idx);
+Interm::Genre::Pattern translate_genre_pattern(int idx, 
+        double debug_index);
 
 /**
  * @brief Make a new genre from the table at the given index.
@@ -75,9 +83,11 @@ Interm::Genre::Pattern translate_genre_pattern(int idx);
  * User is responsible for calling delete.
  * [BALANCED]
  * @param table_idx The index on the main Lua stack to translate
+ * @param debug_name The name to use in debug messages
  * @return The genre
  */
-Interm::Genre* translate_genre(int table_idx);
+Interm::Genre* translate_genre(int table_idx, 
+        std::string debug_name);
 
 /**
  * @brief Translates all submitted Lua tables into their intermediate forms and

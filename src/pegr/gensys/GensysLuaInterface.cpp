@@ -121,80 +121,88 @@ Interm::Prim translate_primitive(int idx, Interm::Prim::Type required_t) {
     if (lua_isnil(l, -1)) {
         ret_val.set_empty();
     }
-    
-    
-    switch (ret_val.get_type()) {
-        // TODO: check validity of number type
-        case Interm::Prim::Type::F32: {
-            ret_val.set_f32(lua_tonumber(l, -1));
-            break;
-        }
-        case Interm::Prim::Type::F64: {
-            ret_val.set_f64(lua_tonumber(l, -1));
-            break;
-        }
-        case Interm::Prim::Type::I32: {
-            ret_val.set_i32(lua_tonumber(l, -1));
-            break;
-        }
-        case Interm::Prim::Type::I64: {
-            ret_val.set_i64(lua_tonumber(l, -1));
-            break;
-        }
-        case Interm::Prim::Type::STR: {
-            try {
-                ret_val.set_string(Script::Helper::to_string(-1));
+    else {
+        switch (ret_val.get_type()) {
+            // TODO: check validity of number type
+            case Interm::Prim::Type::F32: {
+                ret_val.set_f32(lua_tonumber(l, -1));
+                break;
             }
-            catch (std::runtime_error e) {
-                std::stringstream ss;
-                ss << "Cannot parse string value for primitive: " << e.what();
-                throw std::runtime_error(ss.str());
+            case Interm::Prim::Type::F64: {
+                ret_val.set_f64(lua_tonumber(l, -1));
+                break;
             }
-            break;
-        }
-        case Interm::Prim::Type::FUNC: {
-            if (lua_type(l, -1) != LUA_TFUNCTION) {
-                std::stringstream sss;
-                sss << "Invalid function: "
-                    << Script::Helper::to_string(-1, 
-                                Script::Helper::GENERIC_TO_STRING_DEFAULT);
-                throw std::runtime_error(sss.str());
+            case Interm::Prim::Type::I32: {
+                ret_val.set_i32(lua_tonumber(l, -1));
+                break;
             }
-            lua_pushvalue(l, -1);
-            ret_val.set_function(Script::make_shared(Script::grab_reference()));
-            break;
-        }
-        default: {
-            assert(false && "Unhandled primitive type");
+            case Interm::Prim::Type::I64: {
+                ret_val.set_i64(lua_tonumber(l, -1));
+                break;
+            }
+            case Interm::Prim::Type::STR: {
+                try {
+                    ret_val.set_string(Script::Helper::to_string(-1));
+                }
+                catch (std::runtime_error e) {
+                    std::stringstream sss;
+                    sss << "Cannot parse string value for primitive: "
+                        << e.what();
+                    throw std::runtime_error(sss.str());
+                }
+                break;
+            }
+            case Interm::Prim::Type::FUNC: {
+                if (lua_type(l, -1) != LUA_TFUNCTION) {
+                    std::stringstream sss;
+                    sss << "Invalid function: "
+                        << Script::Helper::to_string(-1, 
+                                    Script::Helper::GENERIC_TO_STRING_DEFAULT);
+                    throw std::runtime_error(sss.str());
+                }
+                lua_pushvalue(l, -1);
+                ret_val.set_function(
+                        Script::make_shared(Script::grab_reference()));
+                break;
+            }
+            default: {
+                assert(false && "Unhandled primitive type");
+            }
         }
     }
     
     return ret_val;
 }
 
-Interm::Comp_Def* translate_component_definition(int table_idx) {
+Interm::Comp_Def* translate_component_definition(int table_idx,
+        std::string debug_name) {
     assert_balance(0);
     lua_State* l = Script::get_lua_state();
     table_idx = Script::absolute_idx(table_idx);
     
     Interm::Comp_Def comp_def;
+    comp_def.m_error_msg_name = debug_name;
     
     Script::Helper::for_pairs(table_idx, [&]()->bool {
         Interm::Symbol symbol = 
                 assert_table_key_to_string(-2, 
-                        "Invalid key in components cstr table");
+                        "Invalid key in component table");
         Interm::Prim value;
         try {
             value = translate_primitive(-1);
         }
         catch (std::runtime_error e) {
             std::stringstream sss;
-            sss << "Cannot construct primitive: " << e.what();
+            sss << "Cannot parse primitive for member \""
+                << symbol << "\": " << e.what();
             throw std::runtime_error(sss.str());
         }
         // Check that no symbol is duplicated (possible through integer keys)
         if (comp_def.m_members.find(symbol) != comp_def.m_members.end()) {
-            throw std::runtime_error("Duplicate symbol");
+            std::stringstream sss;
+            sss << "Symbol \"" << symbol
+                << "\" occurs multiple times in component table";
+            throw std::runtime_error(sss.str());
         }
         comp_def.m_members[symbol] = std::move(value);
         return true;
@@ -203,18 +211,20 @@ Interm::Comp_Def* translate_component_definition(int table_idx) {
     return new Interm::Comp_Def(std::move(comp_def));
 }
 
-Interm::Arche::Implement translate_archetype_implementation(int table_idx) {
+Interm::Arche::Implement translate_archetype_implementation(int table_idx,
+        std::string debug_name) {
     assert_balance(0);
     lua_State* l = Script::get_lua_state();
     table_idx = Script::absolute_idx(table_idx);
     
     Interm::Arche::Implement implement;
+    implement.m_error_msg_name = debug_name;
     
     lua_getfield(l, table_idx, "__is");
     Script::Pop_Guard pop_guard(1);
     
     if (lua_isnil(l, -1)) {
-        throw std::runtime_error("__is cannot be nil!");
+        throw std::runtime_error("Key __is cannot be nil!");
     }
     
     std::string comp_id;
@@ -232,21 +242,24 @@ Interm::Arche::Implement translate_archetype_implementation(int table_idx) {
     
     if (!implement.m_component) {
         std::stringstream sss;
-        sss << "Cannot find a component with id: " << comp_id;
+        sss << "Cannot find a component with id [" << comp_id << ']';
         throw std::runtime_error(sss.str());
     }
     
     Script::Helper::for_pairs(table_idx, [&]()->bool {
         Interm::Symbol symbol = 
                 assert_table_key_to_string(-2, 
-                        "Invalid key in component cstr table");
+                        "Invalid key in archetype table: ");
         if (symbol == "__is") {
             return true;
         }
         
         // Check that no symbol is duplicated (possible through integer keys)
         if (implement.m_values.find(symbol) != implement.m_values.end()) {
-            throw std::runtime_error("Duplicate symbol");
+            std::stringstream sss;
+            sss << "Symbol \"" << symbol
+                << "\" occurs multiple times in archetype table";
+            throw std::runtime_error(sss.str());
         }
         
         auto iter = implement.m_component->m_members.find(symbol);
@@ -267,7 +280,7 @@ Interm::Arche::Implement translate_archetype_implementation(int table_idx) {
         }
         catch (std::runtime_error e) {
             std::stringstream sss;
-            sss << "Error while parsing primitive in archetype cstr table: "
+            sss << "Error while parsing primitive in implementation: "
                 << e.what();
             throw std::runtime_error(sss.str());
         }
@@ -276,28 +289,35 @@ Interm::Arche::Implement translate_archetype_implementation(int table_idx) {
     return implement;
 }
 
-Interm::Arche* translate_archetype(int table_idx) {
+Interm::Arche* translate_archetype(int table_idx,
+        std::string debug_name) {
     assert_balance(0);
     lua_State* l = Script::get_lua_state();
     table_idx = Script::absolute_idx(table_idx);
     
     Interm::Arche arche;
+    arche.m_error_msg_name = debug_name;
+    
     Script::Helper::for_pairs(table_idx, [&]()->bool {
         Interm::Symbol symbol = 
                 assert_table_key_to_string(-2, 
-                        "Invalid key in archetype cstr table");
+                        "Invalid key in archetype table: ");
         Interm::Arche::Implement implement;
         try {
-            implement = translate_archetype_implementation(-1);
+            implement = translate_archetype_implementation(-1, symbol);
         } catch (std::runtime_error e) {
             std::stringstream sss;
-            sss << "Cannot parse archetype implementation cstr table: "
+            sss << "Cannot parse archetype implementation \""
+                << symbol << "\": "
                 << e.what();
             throw std::runtime_error(sss.str());
         }
         // Check that no symbol is duplicated (possible through integer keys)
         if (arche.m_implements.find(symbol) != arche.m_implements.end()) {
-            throw std::runtime_error("Duplicate symbol");
+            std::stringstream sss;
+            sss << "Symbol \"" << symbol
+                << "\" occurs multiple times in archetype table";
+            throw std::runtime_error(sss.str());
         }
         arche.m_implements[symbol] = std::move(implement);
         
@@ -315,7 +335,7 @@ void assert_pattern_source_has_symbol(
             if (pattern.m_from_component->m_members.find(symbol)
                     == pattern.m_from_component->m_members.end()) {
                 std::stringstream sss;
-                sss << "Alias pattern references symbol \""
+                sss << "Alias pattern references member \""
                     << symbol
                     << "\" which does not exist in component \""
                     << pattern.m_from_component->m_error_msg_name
@@ -329,7 +349,7 @@ void assert_pattern_source_has_symbol(
             if (pattern.m_from_genre->m_interface.find(symbol)
                     == pattern.m_from_genre->m_interface.end()) {
                 std::stringstream sss;
-                sss << "Alias pattern references symbol \""
+                sss << "Alias pattern references member \""
                     << symbol
                     << "\" which does not exist in genre \""
                     << pattern.m_from_genre->m_error_msg_name
@@ -345,7 +365,8 @@ void assert_pattern_source_has_symbol(
     }
 }
 
-Interm::Genre::Pattern translate_genre_pattern(int value_idx) {
+Interm::Genre::Pattern translate_genre_pattern(int value_idx,
+        double debug_idx) {
     assert_balance(0);
     lua_State* l = Script::get_lua_state();
     
@@ -355,11 +376,12 @@ Interm::Genre::Pattern translate_genre_pattern(int value_idx) {
         // Pattern is a table
         case LUA_TTABLE: {
             Interm::Genre::Pattern pattern;
+            pattern.m_error_msg_idx = debug_idx;
             lua_getfield(l, value_idx, "__from");
             Script::Pop_Guard pop_guard(1);
             if (lua_isnil(l, -1)) {
                 throw std::runtime_error(
-                        "\"__from\" field missing from pattern table!");
+                        "\"__from\" field missing from pattern table");
             }
             
             std::string id;
@@ -367,7 +389,7 @@ Interm::Genre::Pattern translate_genre_pattern(int value_idx) {
                 id = Script::Helper::to_string(-1);
             } catch (std::runtime_error e) {
                 std::stringstream sss;
-                sss << "Could not retrieve string from \"__from\" field"
+                sss << "Could not retrieve string from \"__from\" field: "
                     << e.what();
                 throw std::runtime_error(sss.str());
             }
@@ -386,7 +408,7 @@ Interm::Genre::Pattern translate_genre_pattern(int value_idx) {
                 case Gensys::ObjectType::ARCHETYPE: {
                     std::stringstream sss;
                     sss << "Genres cannot depend on the existence of "
-                            "particular archetypes, id: "
+                            "particular archetypes, such as ["
                         << id << ']';
                     throw std::runtime_error(sss.str());
                 }
@@ -419,7 +441,7 @@ Interm::Genre::Pattern translate_genre_pattern(int value_idx) {
             Script::Helper::for_pairs(value_idx, [&]()->bool {
                 Interm::Symbol alias_symbol = 
                         assert_table_key_to_string(-2, 
-                                "Invalid key in pattern table");
+                                "Invalid key in pattern table: ");
                 
                 // Ignore the from key
                 if (alias_symbol == "__from") {
@@ -429,7 +451,10 @@ Interm::Genre::Pattern translate_genre_pattern(int value_idx) {
                 // Check that no symbol is duplicated
                 if (pattern.m_aliases.find(alias_symbol) 
                         != pattern.m_aliases.end()) {
-                    throw std::runtime_error("Duplicate symbol");
+                    std::stringstream sss;
+                    sss << "Symbol \"" << alias_symbol
+                        << "\" occurs multiple times in pattern table";
+                    throw std::runtime_error(sss.str());
                 }
                 
                 std::string source_symbol;
@@ -459,6 +484,7 @@ Interm::Genre::Pattern translate_genre_pattern(int value_idx) {
         // Pattern is a function
         case LUA_TFUNCTION: {
             Interm::Genre::Pattern pattern;
+            pattern.m_error_msg_idx = debug_idx;
             pattern.m_type = Interm::Genre::Pattern::Type::FUNC;
             lua_pushvalue(l, value_idx);
             
@@ -471,36 +497,42 @@ Interm::Genre::Pattern translate_genre_pattern(int value_idx) {
         // Pattern is a ???
         default: {
             std::stringstream sss;
-            sss << "Pattern cannot be a " << lua_typename(l, value_type);
+            sss << "Pattern cannot be type " << lua_typename(l, value_type);
             throw std::runtime_error(sss.str());
         }
     }
 }
 
-Interm::Genre* translate_genre(int table_idx) {
+Interm::Genre* translate_genre(int table_idx,
+        std::string debug_name) {
     assert_balance(0);
     lua_State* l = Script::get_lua_state();
     table_idx = Script::absolute_idx(table_idx);
     
     Interm::Genre genre;
+    genre.m_error_msg_name = debug_name;
     lua_getfield(l, table_idx, "interface"); // Field guaranteed to exist
     Script::Pop_Guard pop_guard(1);
     Script::Helper::for_pairs(-1, [&]()->bool {
         Interm::Symbol symbol = 
                 assert_table_key_to_string(-2, 
-                        "Invalid key in genre interface table");
+                        "Invalid key in interface table: ");
         Interm::Prim value;
         try {
             value = translate_primitive(-1);
         }
         catch (std::runtime_error e) {
             std::stringstream sss;
-            sss << "Cannot parse default interface primitive: " << e.what();
+            sss << "Cannot parse interface's default primitive for member \""
+                << symbol << "\": " << e.what();
             throw std::runtime_error(sss.str());
         }
         // Check that no symbol is duplicated (possible through integer keys)
         if (genre.m_interface.find(symbol) != genre.m_interface.end()) {
-            throw std::runtime_error("Duplicate symbol");
+            std::stringstream sss;
+            sss << "Symbol \"" << symbol
+                << "\" occurs multiple times in interface table";
+            throw std::runtime_error(sss.str());
         }
         genre.m_interface[symbol] = std::move(value);
         return true;
@@ -511,11 +543,16 @@ Interm::Genre* translate_genre(int table_idx) {
     pop_guard.on_push(1);
     
     Script::Helper::for_number_pairs_sorted(-1, [&]()->bool {
-        Interm::Genre::Pattern pattern;
-        
-        pattern = translate_genre_pattern(-1);
-        
-        genre.m_patterns.push_back(pattern);
+        lua_Number idx = lua_tonumber(l, -2);
+        try {
+            Interm::Genre::Pattern pattern = translate_genre_pattern(-1, idx);
+            genre.m_patterns.push_back(pattern);
+        }
+        catch (std::runtime_error e) {
+            std::stringstream sss;
+            sss << "Cannot parse pattern #" << idx << ": " << e.what();
+            throw std::runtime_error(sss.str());
+        }
         return true;
     }, false);
     pop_guard.pop(1);
@@ -537,6 +574,7 @@ void stage_all() {
         lua_pushvalue(l, -2); // Make a copy of the key
         Script::Pop_Guard pop_guard2(1);
         strdata = lua_tolstring(l, -1, &strlen);
+        // This should never happen
         if (!strdata) {
             Logger::log()->warn("Invalid key in working components table");
             return true;
@@ -544,12 +582,12 @@ void stage_all() {
         pop_guard2.pop(1);
         std::string id(strdata, strlen);
         try {
-            Interm::Comp_Def* obj = translate_component_definition(-1);
+            Interm::Comp_Def* obj = translate_component_definition(-1, id);
             Gensys::stage_component(id, obj);
-            Logger::log()->info("Successfully parsed compnent: %v", id);
+            Logger::log()->info("Successfully parsed compnent [%v]", id);
         }
         catch (std::runtime_error e) {
-            Logger::log()->warn("Failed to parse component %v: %v", 
+            Logger::log()->warn("Failed to parse component [%v]: %v", 
                     id, e.what());
         }
         return true;
@@ -569,12 +607,12 @@ void stage_all() {
         pop_guard2.pop(1);
         std::string id(strdata, strlen);
         try {
-            Interm::Arche* obj = translate_archetype(-1);
+            Interm::Arche* obj = translate_archetype(-1, id);
             Gensys::stage_archetype(id, obj);
-            Logger::log()->info("Successfully parsed archetype: %v", id);
+            Logger::log()->info("Successfully parsed archetype [%v]", id);
         }
         catch (std::runtime_error e) {
-            Logger::log()->warn("Failed to parse archetype %v: %v", 
+            Logger::log()->warn("Failed to parse archetype [%v]: %v", 
                     id, e.what());
         }
         return true;
@@ -594,12 +632,12 @@ void stage_all() {
         pop_guard2.pop(1);
         std::string id(strdata, strlen);
         try {
-            Interm::Genre* obj = translate_genre(-1);
+            Interm::Genre* obj = translate_genre(-1, id);
             Gensys::stage_genre(id, obj);
-            Logger::log()->info("Successfully parsed genre: %v", id);
+            Logger::log()->info("Successfully parsed genre [%v]", id);
         }
         catch (std::runtime_error e) {
-            Logger::log()->warn("Failed to parse genre %v: %v", 
+            Logger::log()->warn("Failed to parse genre [%v]: %v", 
                     id, e.what());
         }
         return true;
@@ -639,7 +677,7 @@ int edit_component(lua_State* l) {
 
 int add_archetype(lua_State* l) {
     if (Gensys::get_global_state() != GlobalState::MUTABLE) {
-        luaL_error(l, "add_archetype is only available during setup.");
+        luaL_error(l, "add_archetype is only available during setup");
     }
     luaL_checktype(l, 2, LUA_TTABLE);
     std::size_t strlen;
@@ -655,7 +693,7 @@ int add_archetype(lua_State* l) {
 
 int edit_archetype(lua_State* l) {
     if (Gensys::get_global_state() != GlobalState::MUTABLE) {
-        luaL_error(l, "edit_archetype is only available during setup.");
+        luaL_error(l, "edit_archetype is only available during setup");
     }
     std::size_t strlen;
     const char* strdata = luaL_checklstring(l, 1, &strlen);
@@ -669,7 +707,7 @@ int edit_archetype(lua_State* l) {
 
 int find_archetype(lua_State* l) {
     if (Gensys::get_global_state() != GlobalState::EXECUTABLE) {
-        luaL_error(l, "find_archetype is only available during execution.");
+        luaL_error(l, "find_archetype is only available during execution");
     }
     std::size_t strlen;
     const char* strdata = luaL_checklstring(l, 1, &strlen);
@@ -685,7 +723,7 @@ int find_archetype(lua_State* l) {
 }
 
 /**
- * @brief Ensures that all invariants are satisfied for a genre cstr table
+ * @brief Ensures that all invariants are satisfied for a genre table
  * The table is at position -1 on the stack
  * @param l
  */

@@ -91,6 +91,8 @@ struct Arche {
     std::string m_error_msg_name;
     
     struct Implement {
+        std::string m_error_msg_name;
+        
         const Comp_Def* m_component;
         std::map<Symbol, Prim> m_values;
     };
@@ -105,6 +107,9 @@ struct Genre {
     
     std::map<Symbol, Prim> m_interface;
     struct Pattern {
+        // Used only in error messages
+        double m_error_msg_idx;
+        
         enum struct Type {
             FROM_COMP,
             FROM_GENRE,
