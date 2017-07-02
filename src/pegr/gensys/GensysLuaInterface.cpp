@@ -123,21 +123,59 @@ Interm::Prim translate_primitive(int idx, Interm::Prim::Type required_t) {
     }
     else {
         switch (ret_val.get_type()) {
-            // TODO: check validity of number type
-            case Interm::Prim::Type::F32: {
-                ret_val.set_f32(lua_tonumber(l, -1));
-                break;
-            }
-            case Interm::Prim::Type::F64: {
-                ret_val.set_f64(lua_tonumber(l, -1));
-                break;
-            }
-            case Interm::Prim::Type::I32: {
-                ret_val.set_i32(lua_tonumber(l, -1));
-                break;
-            }
+            case Interm::Prim::Type::F32: 
+            case Interm::Prim::Type::F64: 
+            case Interm::Prim::Type::I32: 
             case Interm::Prim::Type::I64: {
-                ret_val.set_i64(lua_tonumber(l, -1));
+                // Check that the type is either string or number
+                int val_type = lua_type(l, -1);
+                if (val_type != LUA_TNUMBER && val_type != LUA_TSTRING) {
+                    std::stringstream sss;
+                    sss << "Numeric primitive value cannot be type "
+                        << lua_typename(l, val_type)
+                        << ", (\""
+                        << Script::Helper::to_string(-1, 
+                                    Script::Helper::GENERIC_TO_STRING_DEFAULT)
+                        << "\")";
+                    throw std::runtime_error(sss.str());
+                }
+                
+                // Try convert the value into a number
+                lua_Number val;
+                if (!Script::Helper::to_number_safe(-1, val)) {
+                    std::stringstream sss;
+                    sss << "Cannot convert value to number "
+                        << " (\""
+                        << Script::Helper::to_string(-1, 
+                                    Script::Helper::GENERIC_TO_STRING_DEFAULT)
+                        << "\")";
+                    throw std::runtime_error(sss.str());
+                }
+                
+                switch (ret_val.get_type()) {
+                    case Interm::Prim::Type::F32: {
+                        ret_val.set_f32(val);
+                        break;
+                    }
+                    case Interm::Prim::Type::F64: {
+                        ret_val.set_f64(val);
+                        break;
+                    }
+                    case Interm::Prim::Type::I32: {
+                        ret_val.set_i32(val);
+                        break;
+                    }
+                    case Interm::Prim::Type::I64: {
+                        ret_val.set_i64(val);
+                        break;
+                    }
+                    // Should not be possible since the type must be one
+                    // of the above cases
+                    default: {
+                        assert(false);
+                        break;
+                    }
+                }
                 break;
             }
             case Interm::Prim::Type::STR: {
@@ -153,11 +191,15 @@ Interm::Prim translate_primitive(int idx, Interm::Prim::Type required_t) {
                 break;
             }
             case Interm::Prim::Type::FUNC: {
-                if (lua_type(l, -1) != LUA_TFUNCTION) {
+                int val_type = lua_type(l, -1);
+                if (val_type != LUA_TFUNCTION) {
                     std::stringstream sss;
-                    sss << "Invalid function: "
+                    sss << "Function primitive value cannot be type "
+                        << lua_typename(l, val_type)
+                        << ", (\""
                         << Script::Helper::to_string(-1, 
-                                    Script::Helper::GENERIC_TO_STRING_DEFAULT);
+                                    Script::Helper::GENERIC_TO_STRING_DEFAULT)
+                        << "\")";
                     throw std::runtime_error(sss.str());
                 }
                 lua_pushvalue(l, -1);
