@@ -25,7 +25,7 @@ foreach(fname
 "debug/DebugAssertLuaBalance.cpp"
 "gensys/Gensys.cpp"
 "gensys/GensysIntermediate.cpp"
-"gensys/GensysLuaInterface.cpp"
+"gensys/GensysLuaInterfaceSetup.cpp"
 "logger/Logger.cpp"
 "main.cpp"
 "scheduler/SchedLuaInterface.cpp"
