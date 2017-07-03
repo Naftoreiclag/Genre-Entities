@@ -101,12 +101,16 @@ int add_genre(lua_State* l);
 
 //// RUNTIME ////
 
+// MTI = metatable id
+extern const char* MTI_COMPONENT;
+extern const char* MTI_ARCHETYPE;
+extern const char* MTI_GENRE;
+extern const char* MTI_ENTITY;
+
+int archetype_mt_tostring(lua_State* l);
+
 // ...
 int find_archetype(lua_State* l);
-
-// MTI = metatable id
-extern const char* MTI_ARCHETYPE;
-extern const char* MTI_ENTITY;
 
 int new_entity(lua_State* l);
 

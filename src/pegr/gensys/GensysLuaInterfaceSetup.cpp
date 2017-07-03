@@ -22,8 +22,7 @@ Script::Regref m_working_archetypes;
 Script::Regref m_working_genres;
 Script::Regref m_working_components;
 
-void initialize() {
-    assert(Script::is_initialized());
+void initialize_working_tables() {
     assert_balance(0);
     lua_State* l = Script::get_lua_state();
     lua_newtable(l);
@@ -32,6 +31,56 @@ void initialize() {
     m_working_genres = Script::grab_reference();
     lua_newtable(l);
     m_working_components = Script::grab_reference();
+}
+
+void initialize_userdata_metatables() {
+    assert_balance(0);
+    lua_State* l = Script::get_lua_state();
+    
+    int success = luaL_newmetatable(l, MTI_COMPONENT);
+    Script::Pop_Guard popg(1);
+    assert(success && "Component metatable id already taken!");
+    
+    popg.pop(1);
+    
+    success = luaL_newmetatable(l, MTI_ARCHETYPE);
+    popg.on_push(1);
+    assert(success && "Archetype metatable id already taken!");
+    
+    const luaL_Reg archetype_metatable[] = {
+        {"__tostring", archetype_mt_tostring},
+        
+        // End of the list
+        {nullptr, nullptr}
+    };
+    luaL_register(l, nullptr, archetype_metatable);
+    
+    popg.pop(1);
+}
+
+void initialize_expose_global_functions() {
+    assert_balance(0);
+    lua_State* l = Script::get_lua_state();
+    const luaL_Reg api_safe[] = {
+        {"add_archetype", add_archetype},
+        {"add_genre", add_genre},
+        {"add_component", add_component},
+        
+        {"find_archetype", find_archetype},
+        {"new_entity", new_entity},
+        
+        // End of the list
+        {nullptr, nullptr}
+    };
+    Script::multi_expose_c_functions(api_safe);
+}
+
+void initialize() {
+    assert(Script::is_initialized());
+    assert_balance(0);
+    initialize_working_tables();
+    initialize_userdata_metatables();
+    initialize_expose_global_functions();
 }
 
 void cleanup() {

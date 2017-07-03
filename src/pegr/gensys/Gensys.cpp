@@ -10,6 +10,8 @@
 
 namespace pegr {
 namespace Gensys {
+    
+std::map<std::string, Runtime::Arche*> m_runtime_archetypes;
 
 std::map<std::string, Interm::Comp_Def*> m_staged_components;
 std::map<std::string, Interm::Arche*> m_staged_archetypes;
@@ -159,6 +161,19 @@ ObjectType get_type(std::string id) {
         return ObjectType::GENRE;
     }
     return ObjectType::NOT_FOUND;
+}
+
+Runtime::Arche* find_archetype(std::string id_str) {
+    // temp
+    return new Runtime::Arche();
+    /*
+    auto iter = m_runtime_archetypes.find(id_str);
+    if (iter == m_runtime_archetypes.end()) {
+        Logger::log()->warn("Could not find archetype: %v", id_str);
+        return nullptr;
+    }
+    return iter->second;
+    */
 }
 
 } // namespace Gensys

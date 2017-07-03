@@ -20,17 +20,6 @@ void setup_scripting() {
 
 void setup_gensys() {
     Gensys::initialize();
-    const luaL_Reg api_safe[] = {
-        {"add_archetype", Gensys::LI::add_archetype},
-        {"edit_archetype", Gensys::LI::edit_archetype},
-        {"add_genre", Gensys::LI::add_genre},
-        {"add_component", Gensys::LI::add_component},
-        {"edit_component", Gensys::LI::edit_component},
-        
-        // End of the list
-        {nullptr, nullptr}
-    };
-    Script::multi_expose_c_functions(api_safe);
 }
 
 void setup() {

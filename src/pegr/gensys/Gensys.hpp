@@ -2,6 +2,7 @@
 #define PEGR_GENSYS_GENSYS_HPP
 
 #include "pegr/gensys/GensysIntermediate.hpp"
+#include "pegr/gensys/GensysRuntime.hpp"
 
 namespace pegr {
 namespace Gensys {
@@ -118,6 +119,9 @@ enum struct ObjectType {
  * @return The type of the object pointed to by this id.
  */
 ObjectType get_type(std::string id);
+
+
+Runtime::Arche* find_archetype(std::string id);
 
 } // namespace Gensys
 } // namespace pegr
