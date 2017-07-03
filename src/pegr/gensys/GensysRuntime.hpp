@@ -16,34 +16,56 @@ namespace Runtime {
 
 typedef std::string Symbol;
 
+struct Prim {
+    enum struct Type {
+        STR,
+        FUNC,
+        F32, F64,
+        I32, I64,
+        ENUM_SIZE
+    };
+    Type m_type;
+    
+    // What this actually points to depends on the type and whether this is a
+    // member of an archetype or a member of a genre
+    std::size_t m_idx;
+};
+
+union Value64 {
+    // There's currently no space-saving benefit for using 32-bit precision...
+    int32_t m_i32;
+    int64_t m_i64;
+    float m_f32;
+    double m_f64;
+    
+    Script::Regref m_func;
+};
+
 struct Arche {
-    std::size_t m_size_pures;
-    int32_t* m_default_pures;
     
-    std::size_t m_num_strings;
-    const char* m_aggregated_default_strings;
-    std::size_t* m_string_lens;
+    std::size_t m_default_64s_len;
+    Value64* m_default_64s;
     
-    std::size_t m_num_funcs;
-    Script::Regref* m_func_regrefs;
+    const char* m_aggregate_default_strings;
+    std::size_t* m_default_string_lens;
+    
+    std::map<Symbol, Prim> m_members;
 };
 
 struct Entity {
     const Arche* m_archetype;
-    int32_t* m_data;
-    std::string* m_instance_strings;
+    std::size_t m_size_bytes;
+    const char* m_bytes;
+    std::string* m_strings;
 };
 
 struct Genre {
-    // Interpretation of archetypes, offsets into various arrays
-    struct Interp {
-        // Whether the value goes into the pures, functions, or strings array
-        // is determined by the type of the primitive.
-        std::map<Symbol, std::size_t> m_offsets;
-    };
+    /* This map gives an offset into 
+     */
+    std::map<Symbol, Prim> m_virtual;
+    std::map<Arche*, std::size_t> m_interpretations;
     
-    // Set of Archetype pointers and interpretation
-    std::map<Arche*, Interp> m_interpretations;
+    
 };
 
 } // namespace Runtime

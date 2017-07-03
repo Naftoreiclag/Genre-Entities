@@ -6,6 +6,7 @@
 
 #include "pegr/logger/Logger.hpp"
 #include "pegr/gensys/GensysLuaInterface.hpp"
+#include "pegr/gensys/GensysRuntime.hpp"
 
 namespace pegr {
 namespace Gensys {
