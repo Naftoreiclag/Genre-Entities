@@ -2,6 +2,8 @@
 
 print('init')
 
+-------------------------------------------------------------------------------
+
 pegr.add_component('position.c', {
   x = {'f64', 0},
   y = {'f64', 0},
@@ -9,6 +11,7 @@ pegr.add_component('position.c', {
     return self.x == 0 and self.y == 0
   end},
 })
+print('added position.c')
 
 pegr.add_component('velocity.c', {
   x = {'f64', 0},
@@ -17,15 +20,20 @@ pegr.add_component('velocity.c', {
     return self.x == 0 and self.y == 0
   end},
 })
+print('added velocity.c')
 
 pegr.add_component('circle.c', {
   radius = {'f32', 1},
 })
+print('added circle.c')
 
 pegr.add_component('edible.c', {
   food_value = {'f32', 0},
   on_eaten = {'func', function(self) end}
 })
+print('added edible.c')
+
+-------------------------------------------------------------------------------
 
 pegr.add_archetype('cookie.at', {
   position = {
@@ -53,7 +61,9 @@ pegr.add_archetype('cookie.at', {
     food_value = {'f32', 0.315},
   },
 })
+print('added cookie.at')
 
+-------------------------------------------------------------------------------
 
 --[[
   Todo: allow for "super" types for primitives.
@@ -98,3 +108,30 @@ pegr.add_genre('food.g', {
     },
   },
 })
+print('added food.g')
+
+-------------------------------------------------------------------------------
+
+pegr.schedule_task('fizz.t', {
+    
+  -- Describes when this function should be called
+  when = 'tick',
+  
+  -- List of the function's arguments, in order
+  args = {
+    {'ent_view', 'food.g'}
+  },
+  
+  -- The actual function to be called
+  func = function(entity)
+    
+    -- Update position based on velocity
+    entity.pos_x = entity.pos_x + entity.vel_x
+    entity.pos_y = entity.pos_y + entity.vel_y
+    
+    
+  end,
+})
+print('added fizz.t')
+
+-------------------------------------------------------------------------------

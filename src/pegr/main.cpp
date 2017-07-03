@@ -1,4 +1,5 @@
 #include <cassert>
+#include <stdexcept>
 
 #include "pegr/gensys/Gensys.hpp"
 #include "pegr/gensys/GensysLuaInterface.hpp"
@@ -45,9 +46,17 @@ void run() {
     Script::Regref_Guard postinit_fun(
             Script::load_lua_function("postinit.lua", sandbox));
     
-    Script::Helper::run_simple_function(init_fun, 0);
+    try {
+        Script::Helper::run_simple_function(init_fun, 0);
+    } catch (std::runtime_error e) {
+        Logger::log()->warn(e.what());
+    }
     Gensys::compile();
-    Script::Helper::run_simple_function(postinit_fun, 0);
+    try {
+        Script::Helper::run_simple_function(postinit_fun, 0);
+    } catch (std::runtime_error e) {
+        Logger::log()->warn(e.what());
+    }
 }
 
 void cleanup() {
