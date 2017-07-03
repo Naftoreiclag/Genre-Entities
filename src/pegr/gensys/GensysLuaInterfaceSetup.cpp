@@ -34,6 +34,12 @@ void initialize() {
     m_working_components = Script::grab_reference();
 }
 
+void cleanup() {
+    Script::drop_reference(m_working_archetypes);
+    Script::drop_reference(m_working_components);
+    Script::drop_reference(m_working_genres);
+}
+
 /**
  * @brief Converts a modder's table keys into strings, or die trying
  * [BALANCED]
@@ -681,12 +687,6 @@ void stage_all() {
     pop_guard.pop(1);
 }
 
-void cleanup() {
-    Script::drop_reference(m_working_archetypes);
-    Script::drop_reference(m_working_components);
-    Script::drop_reference(m_working_genres);
-}
-
 int add_component(lua_State* l) {
     luaL_checktype(l, 2, LUA_TTABLE);
     std::size_t strlen;
@@ -741,23 +741,6 @@ int edit_archetype(lua_State* l) {
     return 1;
 }
 
-int find_archetype(lua_State* l) {
-    if (Gensys::get_global_state() != GlobalState::EXECUTABLE) {
-        luaL_error(l, "find_archetype is only available during execution");
-    }
-    std::size_t strlen;
-    const char* strdata = luaL_checklstring(l, 1, &strlen);
-    std::string key(strdata, strlen);
-    // TODO: resolve namespace issues in key
-    
-    /*
-    auto iter = m_archetypes.find(key);
-    if (iter == m_archetypes.end()) {
-        // ???
-    }
-    */
-}
-
 /**
  * @brief Ensures that all invariants are satisfied for a genre table
  * The table is at position -1 on the stack
@@ -793,12 +776,6 @@ int add_genre(lua_State* l) {
     
     lua_settable(l, 3);
     return 0;
-}
-const char* MTI_ARCHETYPE = "pegr.Archetype";
-const char* MTI_ENTITY = "pegr.Entity";
-
-int entity_new(lua_State* l) {
-    
 }
 
 } // namespace LI

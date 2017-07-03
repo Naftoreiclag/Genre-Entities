@@ -26,6 +26,9 @@ void setup_gensys() {
         {"add_genre", Gensys::LI::add_genre},
         {"add_component", Gensys::LI::add_component},
         
+        {"find_archetype", Gensys::LI::find_archetype},
+        {"new_entity", Gensys::LI::new_entity},
+        
         {"schedule_task", Sched::LI::schedule_task},
         
         // End of the list
