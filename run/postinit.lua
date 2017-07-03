@@ -4,7 +4,10 @@ print('post init')
 
 -------------------------------------------------------------------------------
 
-entity = pegr.new_entity(pegr.find_archetype('cookie.at'))
+arche = pegr.find_archetype('cookie.at')
+print(arche)
+
+entity = pegr.new_entity(arche)
 entity.position.x = 100
 entity.position.y = 100
 entity.velocity.x = 2
