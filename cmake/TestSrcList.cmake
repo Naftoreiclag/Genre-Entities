@@ -34,6 +34,7 @@ foreach(fname
 "test/GensysIntermediateTest.cpp"
 "test/GensysLITest.cpp"
 "test/InitializationSanityTest.cpp"
+"test/MemoryTest.cpp"
 "test/ScriptHelperTest.cpp"
 "test/ScriptTest.cpp"
 
