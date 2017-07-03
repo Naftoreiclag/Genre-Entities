@@ -94,6 +94,10 @@ int edit_archetype(lua_State* l);
 int find_archetype(lua_State* l);
 int add_genre(lua_State* l);
 
+// MTI = metatable id
+extern const char* MTI_ARCHETYPE;
+extern const char* MTI_ENTITY;
+
 int entity_new(lua_State* l);
 
 } // namespace LI

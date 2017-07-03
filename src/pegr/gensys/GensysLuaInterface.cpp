@@ -794,6 +794,8 @@ int add_genre(lua_State* l) {
     lua_settable(l, 3);
     return 0;
 }
+const char* MTI_ARCHETYPE = "pegr.Archetype";
+const char* MTI_ENTITY = "pegr.Entity";
 
 int entity_new(lua_State* l) {
     

@@ -30,7 +30,6 @@ void test_0010_check_pop_guard() {
     Script::Pop_Guard pg(1);
 }
 
-
 //@Test Script Regref_Guard memory leaks
 void test_0010_check_guard_memory_leaks() {
     lua_State* l = Script::get_lua_state();

@@ -3,6 +3,7 @@
 
 #include "pegr/gensys/Gensys.hpp"
 #include "pegr/gensys/GensysLuaInterface.hpp"
+#include "pegr/scheduler/SchedLuaInterface.hpp"
 #include "pegr/script/Script.hpp"
 #include "pegr/logger/Logger.hpp"
 #include "pegr/test/Tests.hpp"

@@ -28,6 +28,7 @@ foreach(fname
 "gensys/GensysLuaInterface.cpp"
 "logger/Logger.cpp"
 "main.cpp"
+"scheduler/SchedLuaInterface.cpp"
 "script/Script.cpp"
 "script/ScriptHelper.cpp"
 

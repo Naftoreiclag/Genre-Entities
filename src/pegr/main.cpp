@@ -3,6 +3,7 @@
 
 #include "pegr/gensys/Gensys.hpp"
 #include "pegr/gensys/GensysLuaInterface.hpp"
+#include "pegr/scheduler/SchedLuaInterface.hpp"
 #include "pegr/script/Script.hpp"
 #include "pegr/script/ScriptHelper.hpp"
 #include "pegr/logger/Logger.hpp"
@@ -22,10 +23,10 @@ void setup_gensys() {
     Gensys::initialize();
     const luaL_Reg api_safe[] = {
         {"add_archetype", Gensys::LI::add_archetype},
-        {"edit_archetype", Gensys::LI::edit_archetype},
         {"add_genre", Gensys::LI::add_genre},
         {"add_component", Gensys::LI::add_component},
-        {"edit_component", Gensys::LI::edit_component},
+        
+        {"schedule_task", Sched::LI::schedule_task},
         
         // End of the list
         {nullptr, nullptr}
