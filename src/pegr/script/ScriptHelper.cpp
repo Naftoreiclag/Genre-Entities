@@ -146,7 +146,7 @@ void simple_deep_copy(int table_idx) {
 }
 
 void run_simple_function(Script::Regref ref, int nresults) {
-    assert_balance(nresults);
+    assert_balance(nresults, 1);
     Script::push_reference(ref);
     Script::run_function(0, nresults);
 }

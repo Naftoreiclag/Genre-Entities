@@ -5,10 +5,14 @@
 
 #include "pegr/Debug/DebugAssertLuaBalance.hpp"
 
-#define assert_balance_msg(delta, msg) \
-        pegr::Debug::LuaBalanceGuard _pegr_debug_balance_assert_obj(delta, msg)
-#define assert_balance(delta) \
-        pegr::Debug::LuaBalanceGuard _pegr_debug_balance_assert_obj(delta, __FILE__, __LINE__)
+#define assert_balance_msg(msg, ...) \
+        pegr::Debug::LuaBalanceGuard \
+        _pegr_debug_balance_assert_obj__LINE__ \
+        ({__VA_ARGS__}, msg)
+#define assert_balance(...) \
+        pegr::Debug::LuaBalanceGuard \
+        _pegr_debug_balance_assert_obj__LINE__ \
+        ({__VA_ARGS__}, __FILE__, __LINE__)
 
 #else
 
