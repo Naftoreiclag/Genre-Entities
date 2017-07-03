@@ -268,7 +268,7 @@ void get_and_print_lua_version() {
 void replace_std_functions() {
     assert_balance(0);
     push_reference(m_luaglob_tostring);
-    lua_pushcclosure(m_l, li_print, 1);
+    lua_pushcclosure(m_l, LI::print, 1);
     lua_setglobal(m_l, "print");
 }
 
@@ -509,6 +509,7 @@ void expose_string(const char* key, const char* str, bool safe) {
 }
 void multi_expose_c_functions(const luaL_Reg* api, bool safe) {
     assert(is_initialized());
+    assert_balance();
     push_reference(m_pegr_table);
     if (safe) {
         push_reference(m_pegr_table_safe);
@@ -525,9 +526,23 @@ void multi_expose_c_functions(const luaL_Reg* api, bool safe) {
         }
         lua_setfield(m_l, -2, reg.name); // Add to the remaining table
     }
+    if (safe) {
+        lua_pop(m_l, 2);
+    } else {
+        lua_pop(m_l, 1);
+    }
 }
 
-int li_print(lua_State* l) {
+int absolute_idx(int idx) {
+    if (idx < 0) {
+        idx = lua_gettop(m_l) + idx + 1;
+    }
+    return idx;
+}
+
+namespace LI {
+
+int print(lua_State* l) {
     /* Expects upvalues:
      * 1: default lua tostring() function
      */
@@ -555,13 +570,7 @@ int li_print(lua_State* l) {
     return 0;
 }
 
-int absolute_idx(int idx) {
-    if (idx < 0) {
-        idx = lua_gettop(m_l) + idx + 1;
-    }
-    return idx;
-}
-
+} // namespace LI
 } // namespace Script
 } // namespace pegr
 

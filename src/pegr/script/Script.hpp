@@ -251,16 +251,12 @@ void expose_string(const char* key, const char* str, bool safe = true);
 
 /**
  * @brief Exposes multiple c functions to lua. Faster than repeatedly calling
- * expose_referenced_value with referenced functions
+ * expose_referenced_value with referenced functions.
+ * [BALANCED]
  * @param api Multiple registry entries. Array must end with a pair of nullptrs.
  * @param safe If true, then these values are accessible in sandboxes
  */
 void multi_expose_c_functions(const luaL_Reg* api, bool safe = true);
-
-/**
- * @brief Replacement print for lua, uses logger
- */
-int li_print(lua_State* l);
 
 /**
  * @brief Turns an index relative to the top of the stack (negative indices)
@@ -270,6 +266,14 @@ int li_print(lua_State* l);
  */
 int absolute_idx(int idx);
 
+namespace LI {
+
+/**
+ * @brief Replacement print for lua, uses logger
+ */
+int print(lua_State* l);
+
+} // namespace LI
 } // namespace Script
 } // namespace pegr
 
