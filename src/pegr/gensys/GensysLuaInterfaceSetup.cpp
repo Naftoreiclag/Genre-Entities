@@ -22,9 +22,8 @@ Script::Regref m_working_archetypes;
 Script::Regref m_working_genres;
 Script::Regref m_working_components;
 
-void initialize_working_tables() {
+void initialize_working_tables(lua_State* l) {
     assert_balance(0);
-    lua_State* l = Script::get_lua_state();
     lua_newtable(l);
     m_working_archetypes = Script::grab_reference();
     lua_newtable(l);
@@ -33,9 +32,8 @@ void initialize_working_tables() {
     m_working_components = Script::grab_reference();
 }
 
-void initialize_userdata_metatables() {
+void initialize_userdata_metatables(lua_State* l) {
     assert_balance(0);
-    lua_State* l = Script::get_lua_state();
     
     int success = luaL_newmetatable(l, MTI_COMPONENT);
     Script::Pop_Guard popg(1);
@@ -58,9 +56,8 @@ void initialize_userdata_metatables() {
     popg.pop(1);
 }
 
-void initialize_expose_global_functions() {
+void initialize_expose_global_functions(lua_State* l) {
     assert_balance(0);
-    lua_State* l = Script::get_lua_state();
     const luaL_Reg api_safe[] = {
         {"add_archetype", add_archetype},
         {"add_genre", add_genre},
@@ -78,9 +75,10 @@ void initialize_expose_global_functions() {
 void initialize() {
     assert(Script::is_initialized());
     assert_balance(0);
-    initialize_working_tables();
-    initialize_userdata_metatables();
-    initialize_expose_global_functions();
+    lua_State* l = Script::get_lua_state();
+    initialize_working_tables(l);
+    initialize_userdata_metatables(l);
+    initialize_expose_global_functions(l);
 }
 
 void cleanup() {

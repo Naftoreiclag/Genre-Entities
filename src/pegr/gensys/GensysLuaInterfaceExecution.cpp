@@ -25,7 +25,11 @@ const char* MTI_GENRE = "pegr.Genre";
 const char* MTI_ENTITY = "pegr.Entity";
 
 int archetype_mt_tostring(lua_State* l) {
-    lua_pushstring(l, "Archetype");
+    // (No need to check the metatable of first value)
+    
+    std::stringstream sss;
+    sss << "Archetype: ";
+    lua_pushstring(l, sss.str().c_str());
     return 1;
 }
 
@@ -43,11 +47,7 @@ int find_archetype(lua_State* l) {
     }
     
     void* lua_mem = lua_newuserdata(l, sizeof(Runtime::Arche*));
-    Runtime::Arche** egg = static_cast<Runtime::Arche**>(lua_mem);
-    
-    
-    *egg = arche;
-    
+    *(static_cast<Runtime::Arche**>(lua_mem)) = arche;
     luaL_getmetatable(l, MTI_ARCHETYPE);
     lua_setmetatable(l, -2);
     
@@ -58,6 +58,10 @@ int new_entity(lua_State* l) {
     if (Gensys::get_global_state() != GlobalState::EXECUTABLE) {
         luaL_error(l, "new_entity is only available during execution");
     }
+    
+    luaL_checkudata(l, 1, MTI_ARCHETYPE);
+    
+    return 1;
 }
 
 } // namespace LI

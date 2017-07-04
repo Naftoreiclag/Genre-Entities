@@ -52,11 +52,25 @@ struct Arche {
     std::map<Symbol, Prim> m_members;
 };
 
-struct Entity {
+/**
+ * @class Entity_Handle
+ * @brief The entity's "real data" doesn't exist in a single self-contained
+ * struct (it can't), and so what would be called an "Entity" is really a
+ * collection of relevant pointers. Therefore, these are constant-size handles
+ * to be copied and passed around indefinitely. Memory management of the
+ * continaed pointers is not the responsibility of this class.
+ */
+struct Entity_Handle {
     const Arche* m_archetype;
-    std::size_t m_size_bytes;
+    
+    // Instance data
     const char* m_bytes;
+    
+    // Array of strings that replace the defaults.
+    // TODO: a bitfield for checking if the strings are actually different
+    // from the defaults (save space)
     std::string* m_strings;
+    std::size_t m_num_strings;
 };
 
 struct Genre {
@@ -66,6 +80,15 @@ struct Genre {
     std::map<Arche*, std::size_t> m_interpretations;
     
     
+};
+
+/**
+ * @class Archetype_View
+ * @brief Enables mutation of an entity through its archetype. This view is the
+ * most permissive possible.
+ */
+struct Archetype_View {
+    Entity_Handle m_entity;
 };
 
 } // namespace Runtime
