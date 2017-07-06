@@ -1,5 +1,7 @@
 #include <sstream>
 #include <cstdint>
+#include <cstdlib>
+#include <cstdint>
 
 #include "pegr/logger/Logger.hpp"
 
@@ -37,6 +39,43 @@ void test_0000_memory_test() {
         ers << "Expected: " << expected;
         throw std::runtime_error(ers.str());
     }
+}
+
+//@Test Pointer cast
+void test_0000_ptr_cast() {
+    
+    int num_ints = 13;
+    
+    std::size_t int_offset = 0;
+    std::size_t double_offset = int_offset + num_ints * sizeof(int32_t);
+    std::size_t total_size = double_offset + 4 * sizeof(double);
+    
+    void* memory = std::calloc(1, total_size);
+    void* int_memory = static_cast<void*>(
+        static_cast<char*>(memory) + int_offset);
+    void* double_memory = static_cast<void*>(
+        static_cast<char*>(memory) + double_offset);
+    
+    int32_t* int_arr = static_cast<int32_t*>(int_memory);
+    double* double_arr = static_cast<double*>(double_memory);
+    
+    int_arr[0] = 1;
+    for (int32_t i = 1; i < num_ints; ++i) {
+        int_arr[i] = int_arr[i - 1] * 5;
+    }
+    double_arr[0] = 1.0;
+    for (int i = 1; i < 4; ++i) {
+        double_arr[i] = double_arr[i - 1] * 2.7182818285;
+    }
+    
+    for (int32_t i = 0; i < num_ints; ++i) {
+        Logger::log()->info(int_arr[i]);
+    }
+    for (int32_t i = 0; i < 4; ++i) {
+        Logger::log()->info(double_arr[i]);
+    }
+    
+    std::free(static_cast<void*>(memory));
 }
 
 } // namespace Test

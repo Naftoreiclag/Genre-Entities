@@ -7,6 +7,7 @@ namespace pegr {
 namespace Test {
 
 void test_0000_memory_test();
+void test_0000_ptr_cast();
 void test_0001_init_sanity();
 void test_0005_assertion_test();
 void test_0010_check_guard_memory_leaks();
@@ -34,6 +35,7 @@ const NamedTest m_tests[] = {
     {"Testing Framework", [](){}},
 
     {"Memory Test", test_0000_memory_test},
+    {"Pointer cast", test_0000_ptr_cast},
     {"Initialization Sanity Test", test_0001_init_sanity},
     {"Assertion test", test_0005_assertion_test},
     {"Script Regref_Guard memory leaks", test_0010_check_guard_memory_leaks},
