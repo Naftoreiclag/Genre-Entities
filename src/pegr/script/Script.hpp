@@ -14,6 +14,12 @@ namespace Script {
 typedef int Regref;
 
 /**
+ * @brief An integer index into a Lua array (a table with consecutive integer 
+ * keys starting at 1)
+ */
+typedef int Arridx;
+
+/**
  * @class Regref_Guard
  * @brief Handles the release of a value referenced in the lua registry (RAII)
  * Note that these must go out of scope before Script::cleanup() is called.
