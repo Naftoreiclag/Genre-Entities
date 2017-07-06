@@ -8,6 +8,7 @@
 
 #include "pegr/script/Script.hpp"
 #include "pegr/gensys/GensysIntermediate.hpp"
+#include "pegr/gensys/GensysRuntime.hpp"
 
 namespace pegr {
 namespace Gensys {
@@ -101,13 +102,13 @@ int add_genre(lua_State* l);
 
 //// RUNTIME ////
 
-// MTI = metatable id
-extern const char* MTI_COMPONENT;
-extern const char* MTI_ARCHETYPE;
-extern const char* MTI_GENRE;
-extern const char* MTI_ENTITY;
+Runtime::Arche** argcheck_archetype(lua_State* l, int idx);
+Runtime::Aview* argcheck_aview(lua_State* l, int idx);
 
 int archetype_mt_tostring(lua_State* l);
+
+int aview_mt_tostring(lua_State* l);
+int aview_mt_gc(lua_State* l);
 
 // ...
 int find_archetype(lua_State* l);

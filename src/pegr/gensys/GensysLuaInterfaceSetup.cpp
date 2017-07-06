@@ -32,29 +32,8 @@ void initialize_working_tables(lua_State* l) {
     m_working_components = Script::grab_reference();
 }
 
-void initialize_userdata_metatables(lua_State* l) {
-    assert_balance(0);
-    
-    int success = luaL_newmetatable(l, MTI_COMPONENT);
-    Script::Pop_Guard popg(1);
-    assert(success && "Component metatable id already taken!");
-    
-    popg.pop(1);
-    
-    success = luaL_newmetatable(l, MTI_ARCHETYPE);
-    popg.on_push(1);
-    assert(success && "Archetype metatable id already taken!");
-    
-    const luaL_Reg archetype_metatable[] = {
-        {"__tostring", archetype_mt_tostring},
-        
-        // End of the list
-        {nullptr, nullptr}
-    };
-    luaL_register(l, nullptr, archetype_metatable);
-    
-    popg.pop(1);
-}
+// (This is defined in GensysLuaInterfaceExecution.cpp)
+void initialize_userdata_metatables(lua_State* l);
 
 void initialize_expose_global_functions(lua_State* l) {
     assert_balance(0);

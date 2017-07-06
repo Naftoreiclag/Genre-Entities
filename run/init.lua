@@ -69,6 +69,7 @@ print('added cookie.at')
   Todo: allow for "super" types for primitives.
     For example, 'fany' can accept 'f32' or 'f64'
                  'iany' can accept 'i32' or 'i64'
+  ... maybe?
 ]]
 pegr.add_genre('food.g', {
   -- nil values indicate that those fields must be filled in by
