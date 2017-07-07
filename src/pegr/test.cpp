@@ -10,22 +10,11 @@
 
 using namespace pegr;
 
-void setup_logger() {
-    Logger::initialize();
-}
-
-void setup_scripting() {
-    Script::initialize();
-}
-
-void setup_gensys() {
-    Gensys::initialize();
-}
-
 void setup() {
-    setup_logger();
-    setup_scripting();
-    setup_gensys();
+    Logger::initialize();
+    Script::initialize();
+    Gensys::initialize();
+    Gensys::LI::initialize();
 }
 
 void run() {
@@ -69,6 +58,7 @@ void run() {
 }
 
 void cleanup() {
+    Gensys::LI::cleanup();
     Gensys::cleanup();
     Script::cleanup();
     Logger::cleanup();

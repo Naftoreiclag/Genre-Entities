@@ -5,7 +5,6 @@
 #include <sstream>
 
 #include "pegr/logger/Logger.hpp"
-#include "pegr/gensys/GensysLuaInterface.hpp"
 #include "pegr/gensys/GensysRuntime.hpp"
 
 namespace pegr {
@@ -28,19 +27,22 @@ GlobalState get_global_state() {
 
 void initialize() {
     assert(m_global_state == GlobalState::UNINITIALIZED);
-    LI::initialize();
     m_global_state = GlobalState::MUTABLE;
 }
 
 void compile() {
     assert(m_global_state == GlobalState::MUTABLE);
-    LI::stage_all();
+    
+    // ....
+    
+    
+    
+    
     m_global_state = GlobalState::EXECUTABLE;
 }
 
 void cleanup() {
     assert(m_global_state != GlobalState::UNINITIALIZED);
-    LI::cleanup();
     for (auto const& pair : m_staged_components) {
         delete pair.second;
     }
