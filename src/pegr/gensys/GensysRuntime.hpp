@@ -80,7 +80,75 @@ struct Component {
  * to be copied and passed around indefinitely. Memory management of the
  * contained pointers is not the responsibility of this class.
  */
-struct Entity_Ptr {
+class Entity_Ptr {
+public:
+    // Default constructor, makes a null pointer
+    Entity_Ptr();
+    
+    // Constructs a pointer given all the Entity "members"
+    Entity_Ptr(const Arche* arche, int64_t* chunk, std::string* strings);
+    
+    // Copy constructor
+    Entity_Ptr(const Entity_Ptr& rhs);
+    
+    // Move constructor
+    Entity_Ptr(Entity_Ptr&& rhs);
+    
+    // Copy assignment
+    Entity_Ptr& operator =(const Entity_Ptr& rhs);
+    
+    // Move assignment
+    Entity_Ptr& operator =(Entity_Ptr&& rhs);
+    
+    // Deconstructor
+    ~Entity_Ptr();
+    
+    /**
+     * @return True iff this pointer points to no entity
+     */
+    bool is_nullptr() const;
+    
+    /**
+     * @brief Resets this pointer to the nullptr state (no associated entity)
+     */
+    void make_nullptr();
+    
+    /**
+     * @brief Turns this pointer into a smart, reference-counting pointer that
+     * calls the proper grab and drop functions on the held entity. All future
+     * copies of this pointer will also have the smart property.
+     */
+    void make_smart();
+    
+    /**
+     * @brief Makes a copy of this pointer which does not reference-count. This
+     * is the only way to make a weak copy of the pointer given a smart version
+     * of the pointer.
+     * @return The weak pointer for the same entity
+     */
+    Entity_Ptr make_weak_copy() const;
+    
+    /**
+     * @return m_archetype, pointer to the archetype which created the entity.
+     */
+    const Arche* get_archetype() const;
+    /**
+     * @return m_chunk, the data chunk which holds instance data
+     */
+    int64_t* get_chunk() const;
+    
+    /**
+     * @return m_strings, the array of strings for replacement instance data
+     */
+    std::string* get_strings() const;
+    
+    bool has_been_spawned() const;
+    bool is_dead() const;
+    bool can_be_spawned() const;
+    int32_t get_lua_reference_count() const;
+    
+private:
+    // The archetype used by the entity (maybe add to the chunk?)
     const Arche* m_archetype;
     
     /* The POD chunk containing flags, lua reference counts, and instance data
@@ -101,7 +169,8 @@ struct Entity_Ptr {
      * when this value reaches zero. This means that the entity may be cleaned
      * up during a Lua GC cycle.
      * 
-     * The instance data comprises the remainder of the memory block.
+     * The instance data comprises the remainder of the memory block. Only
+     * constant-size data is stored here.
      */
     int64_t* m_chunk;
     
@@ -110,10 +179,9 @@ struct Entity_Ptr {
     // from the defaults (save space)
     std::string* m_strings;
     
-    bool has_been_spawned() const;
-    bool is_dead() const;
-    bool can_be_spawned() const;
-    int32_t get_lua_reference_count() const;
+    // If true, then this pointer will properly grab/drop the held entity. This
+    // smartness property carries on to all copies of this pointer.
+    bool m_is_smart;
 };
 
 /**
@@ -130,7 +198,7 @@ Entity_Ptr new_entity(Arche* arche);
  * already dead.
  * @param ent The entity to kill
  */
-void kill_entity(Entity_Ptr ent);
+void kill_entity(const Entity_Ptr& ent);
 
 /**
  * @brief Undoes the effect of new_entity(). Completely deletes the entity's
@@ -139,20 +207,20 @@ void kill_entity(Entity_Ptr ent);
  * pointer after deletion.
  * @param ent The entity to delete. Must have been created through new_entity()
  */
-void delete_entity(Entity_Ptr ent);
+void delete_entity(const Entity_Ptr& ent);
 
 /**
  * @brief Increments the reference count for the entity.
  * @param ent
  */
-void grab_entity(Entity_Ptr ent);
+void grab_entity(const Entity_Ptr& ent);
 
 /**
  * @brief Decrements the reference count for the entity, deleting it if it
  * reaches zero.
  * @param ent
  */
-void drop_entity(Entity_Ptr ent);
+void drop_entity(const Entity_Ptr& ent);
 
 struct Genre {
     std::map<Symbol, Prim> m_member_lookup;
