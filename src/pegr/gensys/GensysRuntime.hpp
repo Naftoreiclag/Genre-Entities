@@ -2,6 +2,7 @@
 #define PEGR_GENSYS_RUNTIME_GENSYSRUNTIME_HPP
 
 #include <cstdint>
+#include <cstddef>
 #include <string>
 #include <map>
 
