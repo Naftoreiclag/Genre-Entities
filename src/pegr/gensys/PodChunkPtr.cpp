@@ -22,17 +22,62 @@ int32_t Pod_Chunk_Ptr::get_int32(std::size_t off) {
 int64_t Pod_Chunk_Ptr::get_int64(std::size_t off) {
     return *static_cast<int64_t*>(get_aligned_64(off));
 }
+int Pod_Chunk_Ptr::get_int(std::size_t off) {
+    // Should optimize away one branch
+    if (sizeof(int) == 4) {
+        return *static_cast<int*>(get_aligned_32(off));
+    } else {
+        return *static_cast<int*>(get_aligned_64(off));
+    }
+}
 float Pod_Chunk_Ptr::get_float(std::size_t off) {
-    // TODO: compile-time check whether floats are actually 32 or 64 bit.
-    // Assuming 32 bit
-    return *static_cast<float*>(get_aligned_32(off));
-    
+    // Should optimize away one branch
+    if (sizeof(float) == 4) {
+        return *static_cast<float*>(get_aligned_32(off));
+    } else {
+        return *static_cast<float*>(get_aligned_64(off));
+    }
 }
 double Pod_Chunk_Ptr::get_f64(std::size_t off) {
-    // TODO: compile-time check whether doubles are actually 64 bit.or greater
-    // Assuming 64 bit
-    return *static_cast<double*>(get_aligned_64(off));
+    // Should optimize away one branch
+    if (sizeof(double) == 4) {
+        return *static_cast<double*>(get_aligned_32(off));
+    } else {
+        return *static_cast<double*>(get_aligned_64(off));
+    }
 }
+
+void set_int32(std::size_t off, int32_t val) {
+    *static_cast<int32_t*>(get_aligned_32(off)) = val;
+}
+void set_int64(std::size_t off, int64_t val) {
+    *static_cast<int32_t*>(get_aligned_64(off)) = val;
+}
+void set_int(std::size_t off, int val) {
+    // Should optimize away one branch
+    if (sizeof(int) == 4) {
+        *static_cast<int*>(get_aligned_32(off)) = val;
+    } else {
+        *static_cast<int*>(get_aligned_64(off)) = val;
+    }
+}
+void set_float(std::size_t off, float val) {
+    // Should optimize away one branch
+    if (sizeof(float) == 4) {
+        *static_cast<float*>(get_aligned_32(off)) = val;
+    } else {
+        *static_cast<float*>(get_aligned_64(off)) = val;
+    }
+}
+void set_double(std::size_t off, double val) {
+    // Should optimize away one branch
+    if (sizeof(double) == 4) {
+        *static_cast<double*>(get_aligned_32(off)) = val;
+    } else {
+        *static_cast<double*>(get_aligned_64(off)) = val;
+    }
+}
+
 int64_t* Pod_Chunk_Ptr::get_chunk() {
     return m_chunk;
 }
