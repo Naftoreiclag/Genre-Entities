@@ -1,5 +1,5 @@
-#ifndef PEGR_GENSYS_RUNTIME_GENSYSRUNTIME_HPP
-#define PEGR_GENSYS_RUNTIME_GENSYSRUNTIME_HPP
+#ifndef PEGR_GENSYS_GENSYSRUNTIME_HPP
+#define PEGR_GENSYS_GENSYSRUNTIME_HPP
 
 #include <cstdint>
 #include <cstddef>
@@ -261,4 +261,4 @@ struct Cview {
 } // namespace Gensys
 } // namespace pegr
 
-#endif // PEGR_GENSYS_RUNTIME_GENSYSRUNTIME_HPP
+#endif // PEGR_GENSYS_GENSYSRUNTIME_HPP
