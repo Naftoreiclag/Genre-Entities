@@ -28,7 +28,7 @@ foreach(fname
 "gensys/GensysLuaInterfaceExecution.cpp"
 "gensys/GensysLuaInterfaceSetup.cpp"
 "gensys/GensysRuntime.cpp"
-"gensys/PodChunkPtr.cpp"
+"gensys/PodChunk.cpp"
 "logger/Logger.cpp"
 "scheduler/SchedLuaInterface.cpp"
 "script/Script.cpp"
@@ -39,6 +39,7 @@ foreach(fname
 "test/GensysLITest.cpp"
 "test/InitializationSanityTest.cpp"
 "test/MemoryTest.cpp"
+"test/PodChunkTest.cpp"
 "test/ScriptHelperTest.cpp"
 "test/ScriptTest.cpp"
 

@@ -24,6 +24,7 @@ void test_0028_to_string();
 void test_0030_gensys_primitive();
 void test_0030_gensys_primitive_multiple();
 void test_0080_00_gensys_primitive();
+void test_0085_00_podchunk_test();
 
 struct NamedTest {
     const char* m_name;
@@ -52,6 +53,7 @@ const NamedTest m_tests[] = {
     {"Single gensys primitive", test_0030_gensys_primitive},
     {"Reassignment of gensys primitives", test_0030_gensys_primitive_multiple},
     {"Gensys primitive from Lua values", test_0080_00_gensys_primitive},
+    {"PodChunk test", test_0085_00_podchunk_test},
     
     // Sentinel
     {nullptr, std::function<void()>()}
