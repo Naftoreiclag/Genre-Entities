@@ -46,14 +46,14 @@ def indexFiles(searchPath, allowedFileExts, blacklistedDirs, includeRoot=True):
     
     Only files with the extensions listed in allowedFileExts are included.
     Any files located in the directories (or subdirectories thereof) listed in 
-    blacklistedDirs are discluded.
+    blacklistedDirs are excluded.
     
     Files at the root of the search path are included iff includeRoot is True.
     
     First return is a list of all of the files, relative to searchPath.
     
     Second return is all of the directories relative to searchPath containing
-    at least one file.
+    at least one file listed in the first return.
     
     Third return is a dictionary mapping filenames to full paths relative to
     searchPath.
