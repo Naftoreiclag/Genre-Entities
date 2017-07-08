@@ -1,5 +1,5 @@
-#ifndef PEGR_GENSYS_PODCHUNKPTR_HPP
-#define PEGR_GENSYS_PODCHUNKPTR_HPP
+#ifndef PEGR_GENSYS_PODCHUNK_HPP
+#define PEGR_GENSYS_PODCHUNK_HPP
 
 #include <cstddef>
 #include <cstdint>
@@ -92,4 +92,4 @@ void delete_pod_chunk(Pod_Chunk_Ptr ptr);
 } // namespace Gensys
 } // namespace pegr
 
-#endif // PEGR_GENSYS_PODCHUNKPTR_HPP
+#endif // PEGR_GENSYS_PODCHUNK_HPP
