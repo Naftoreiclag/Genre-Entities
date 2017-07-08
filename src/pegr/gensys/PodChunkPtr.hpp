@@ -18,62 +18,53 @@ public:
 
     /**
      * @brief Returns the memory address in the chunk with the given offset,
-     * aligned to store 32-bit values.
+     * aligned to store values of type "T"
      * @param off Offset in bytes
-     * @return Pointer to 4-byte aligned address
+     * @return Pointer to properly aligned address
      */
-    void* get_aligned_32(std::size_t off);
+    template <typename T>
+    void* get_aligned(std::size_t off) {
+        assert(off % sizeof(T) == 0);
+        return &(static_cast<T*>(m_chunk)[off / sizeof(T)]);
+    }
+
+    /**
+     * @brief Interprets the data at the given offset in the chunk as a "T" and
+     * returns the bytes interpreted as a "T"
+     * @param off Offset in bytes
+     * @return "T" representation of the data
+     */
+    template <typename T>
+    T get_value(std::size_t off) {
+        if (sizeof(T) <= 1) {
+            return *static_cast<T*>(get_aligned<int8_t>(off));
+        } else if (sizeof(T) <= 2) {
+            return *static_cast<T*>(get_aligned<int16_t>(off));
+        } else if (sizeof(T) <= 4) {
+            return *static_cast<T*>(get_aligned<int32_t>(off));
+        } else {
+            return *static_cast<T*>(get_aligned<int64_t>(off));
+        }
+    }
     
     /**
-     * @brief Returns the memory address in the chunk with the given offset,
-     * aligned to store 64-bit values.
+     * @brief Interprets the data at the given offset in the chunk as a "T" and
+     * set the bytes interpreted as a "T" as val
      * @param off Offset in bytes
-     * @return Pointer to 8-byte aligned address
+     * @param val The value to set the bytes
      */
-    void* get_aligned_64(std::size_t off);
-
-    /**
-     * @brief Interprets the data at the given offset in the chunk as a 32-bit
-     * integer.
-     * @param off Offset in bytes
-     * @return 32-bit integer representation of the data
-     */
-    int32_t get_int32(std::size_t off);
-
-    /**
-     * @brief Interprets the data at the given offset in the chunk as a 64-bit
-     * integer.
-     * @param off Offset in bytes
-     * @return 64-bit integer representation of the data
-     */
-    int64_t get_int64(std::size_t off);
-
-    /**
-     * @brief Interprets the data at the given offset in the chunk as an "int".
-     * @param off Offset in bytes
-     * @return float "int" of the data
-     */
-    int get_int(std::size_t off);
-
-    /**
-     * @brief Interprets the data at the given offset in the chunk as a float.
-     * @param off Offset in bytes
-     * @return float representation of the data
-     */
-    float get_float(std::size_t off);
-
-    /**
-     * @brief Interprets the data at the given offset in the chunk as a double.
-     * @param off Offset in bytes
-     * @return double representation of the data
-     */
-    double get_double(std::size_t off);
-    
-    void set_int32(std::size_t off, int32_t val);
-    void set_int64(std::size_t off, int64_t val);
-    void set_int(std::size_t off, int val);
-    void set_float(std::size_t off, float val);
-    void set_double(std::size_t off, double val);
+    template <typename T>
+    void set_value(std::size_t off, T val) {
+        if (sizeof(T) <= 1) {
+            *static_cast<T*>(get_aligned<int8_t>(off)) = val;
+        } else if (sizeof(T) <= 2) {
+            *static_cast<T*>(get_aligned<int16_t>(off)) = val;
+        } else if (sizeof(T) <= 4) {
+            *static_cast<T*>(get_aligned<int32_t>(off)) = val;
+        } else {
+            *static_cast<T*>(get_aligned<int64_t>(off)) = val;
+        }
+    }
     
     /**
      * @return the internal chunk pointed to. Is an array of 64-bit-aligned
