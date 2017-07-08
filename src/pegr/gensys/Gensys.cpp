@@ -35,15 +35,15 @@ void compile() {
     assert(m_global_state == GlobalState::MUTABLE);
     
     for (const auto entry : m_staged_components) {
-        const std::string& id = entry->first;
-        const Interm::Comp_Def* comp = entry->second;
+        const std::string& id = entry.first;
+        const Interm::Comp_Def* comp = entry.second;
         
         std::vector<std::pair<std::string, Interm::Prim> > aligned_members;
         std::vector<std::pair<std::string, Interm::Prim> > unaligned_members;
         
         for (auto member : comp->m_members) {
-            const Interm::Symbol& symb = member->first;
-            const Interm::Prim& prim = member->second;
+            const Interm::Symbol& symb = member.first;
+            const Interm::Prim& prim = member.second;
             
             // ...
         }

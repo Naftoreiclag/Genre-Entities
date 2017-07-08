@@ -28,6 +28,7 @@ foreach(fname
 "gensys/GensysLuaInterfaceExecution.cpp"
 "gensys/GensysLuaInterfaceSetup.cpp"
 "gensys/GensysRuntime.cpp"
+"gensys/PodChunkPtr.cpp"
 "logger/Logger.cpp"
 "main.cpp"
 "scheduler/SchedLuaInterface.cpp"

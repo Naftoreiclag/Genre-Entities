@@ -22,7 +22,7 @@ public:
      * @param off Offset in bytes
      * @return Pointer to 4-byte aligned address
      */
-    int32_t* get_aligned_32(std::size_t off);
+    void* get_aligned_32(std::size_t off);
     
     /**
      * @brief Returns the memory address in the chunk with the given offset,
@@ -30,7 +30,7 @@ public:
      * @param off Offset in bytes
      * @return Pointer to 8-byte aligned address
      */
-    int64_t* get_aligned_64(std::size_t off);
+    void* get_aligned_64(std::size_t off);
 
     /**
      * @brief Interprets the data at the given offset in the chunk as a 32-bit
@@ -53,7 +53,7 @@ public:
      * @param off Offset in bytes
      * @return float "int" of the data
      */
-    float get_int(std::size_t off);
+    int get_int(std::size_t off);
 
     /**
      * @brief Interprets the data at the given offset in the chunk as a float.
@@ -81,7 +81,7 @@ public:
      */
     void* get_chunk();
 
-private
+private:
     void* m_chunk;
 };
 
@@ -101,4 +101,4 @@ void delete_pod_chunk(Pod_Chunk_Ptr ptr);
 } // namespace Gensys
 } // namespace pegr
 
-#endif PEGR_GENSYS_PODCHUNKPTR_HPP
+#endif // PEGR_GENSYS_PODCHUNKPTR_HPP

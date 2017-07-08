@@ -1,17 +1,19 @@
 #include "pegr/gensys/PodChunkPtr.hpp"
 
+#include <cassert>
+
 namespace pegr {
 namespace Gensys {
 
 Pod_Chunk_Ptr::Pod_Chunk_Ptr(void* chunk)
 : m_chunk(chunk) {}
 
-int32_t* Pod_Chunk_Ptr::get_aligned_32(std::size_t off) {
+void* Pod_Chunk_Ptr::get_aligned_32(std::size_t off) {
     assert(off % 4 == 0);
     return &(static_cast<int32_t*>(m_chunk)[off / 4]);
 }
 
-int64_t* Pod_Chunk_Ptr::get_aligned_64(std::size_t off) {
+void* Pod_Chunk_Ptr::get_aligned_64(std::size_t off) {
     assert(off % 8 == 0);
     return &(static_cast<int64_t*>(m_chunk)[off / 8]);
 }
@@ -38,7 +40,7 @@ float Pod_Chunk_Ptr::get_float(std::size_t off) {
         return *static_cast<float*>(get_aligned_64(off));
     }
 }
-double Pod_Chunk_Ptr::get_f64(std::size_t off) {
+double Pod_Chunk_Ptr::get_double(std::size_t off) {
     // Should optimize away one branch
     if (sizeof(double) == 4) {
         return *static_cast<double*>(get_aligned_32(off));
@@ -47,13 +49,13 @@ double Pod_Chunk_Ptr::get_f64(std::size_t off) {
     }
 }
 
-void set_int32(std::size_t off, int32_t val) {
+void Pod_Chunk_Ptr::set_int32(std::size_t off, int32_t val) {
     *static_cast<int32_t*>(get_aligned_32(off)) = val;
 }
-void set_int64(std::size_t off, int64_t val) {
+void Pod_Chunk_Ptr::set_int64(std::size_t off, int64_t val) {
     *static_cast<int32_t*>(get_aligned_64(off)) = val;
 }
-void set_int(std::size_t off, int val) {
+void Pod_Chunk_Ptr::set_int(std::size_t off, int val) {
     // Should optimize away one branch
     if (sizeof(int) == 4) {
         *static_cast<int*>(get_aligned_32(off)) = val;
@@ -61,7 +63,7 @@ void set_int(std::size_t off, int val) {
         *static_cast<int*>(get_aligned_64(off)) = val;
     }
 }
-void set_float(std::size_t off, float val) {
+void Pod_Chunk_Ptr::set_float(std::size_t off, float val) {
     // Should optimize away one branch
     if (sizeof(float) == 4) {
         *static_cast<float*>(get_aligned_32(off)) = val;
@@ -69,7 +71,7 @@ void set_float(std::size_t off, float val) {
         *static_cast<float*>(get_aligned_64(off)) = val;
     }
 }
-void set_double(std::size_t off, double val) {
+void Pod_Chunk_Ptr::set_double(std::size_t off, double val) {
     // Should optimize away one branch
     if (sizeof(double) == 4) {
         *static_cast<double*>(get_aligned_32(off)) = val;
@@ -78,7 +80,7 @@ void set_double(std::size_t off, double val) {
     }
 }
 
-int64_t* Pod_Chunk_Ptr::get_chunk() {
+void* Pod_Chunk_Ptr::get_chunk() {
     return m_chunk;
 }
 Pod_Chunk_Ptr new_pod_chunk(std::size_t size) {
@@ -88,7 +90,7 @@ Pod_Chunk_Ptr new_pod_chunk(std::size_t size) {
     return Pod_Chunk_Ptr(chunk);
 }
 void delete_pod_chunk(Pod_Chunk_Ptr ptr) {
-    delete[] static_cast<int64_t*>(ptr.m_chunk);
+    delete[] static_cast<int64_t*>(ptr.get_chunk());
 }
     
 } // namespace Gensys
