@@ -63,8 +63,12 @@ pegr.add_archetype('cookie.at', {
     food_value = {'f32', 0.315},
     
     -- The "self" argument is an archetype-view on the entity
-    on_eaten = {'func', function(self) 
-      
+    on_eaten = {'func', function(self)
+      if food_value > 0.2 then
+        print('This cookie sure is chewy!')
+      else
+        print('This cookie sure is sweet!')
+      end
     end},
   },
 })
