@@ -99,7 +99,7 @@ int aview_mt_tostring(lua_State* l) {
             *(static_cast<Runtime::Aview*>(lua_touserdata(l, 1)));
     std::stringstream sss;
     sss << "Entity: @"
-        << aview.m_entity.get_chunk()
+        << aview.m_entity.get_chunk().get_raw()
         << " through archetype @"
         << aview.m_entity.get_archetype();
     lua_pushstring(l, sss.str().c_str());

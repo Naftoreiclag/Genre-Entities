@@ -7,6 +7,8 @@ print('init')
 pegr.add_component('position.c', {
   x = {'f64', 0},
   y = {'f64', 0},
+  
+  -- The "self" argument is a component-view on the entity
   is_at_origin = {'func', function(self)
     return self.x == 0 and self.y == 0
   end},
@@ -29,7 +31,7 @@ print('added circle.c')
 
 pegr.add_component('edible.c', {
   food_value = {'f32', 0},
-  on_eaten = {'func', function(self) end}
+  on_eaten = {'func', function(self) end},
 })
 print('added edible.c')
 
@@ -59,6 +61,11 @@ pegr.add_archetype('cookie.at', {
     
     -- 0.315 foodiness (this is a VERY hearty cookie)
     food_value = {'f32', 0.315},
+    
+    -- The "self" argument is an archetype-view on the entity
+    on_eaten = {'func', function(self) 
+      
+    end},
   },
 })
 print('added cookie.at')
@@ -84,6 +91,8 @@ pegr.add_genre('food.g', {
     vel_y = {'f64', nil},
     is_stationary = {'func', nil},
     food_value = {'f32', nil},
+    
+    -- The "self" argument is a genre-view on the entity
     on_eaten = {'func', function(self)
       print(string.format(
           'I was eaten at x: %f y:%f', self.pos_x, self.pos_y))

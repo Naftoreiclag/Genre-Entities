@@ -190,7 +190,7 @@ void Prim::set_i64(int64_t i64) {
     m_i64 = i64;
     m_empty = false;
 }
-bool Prim::is_empty() {
+bool Prim::is_empty() const {
     return m_empty;
 }
 void Prim::set_empty() {

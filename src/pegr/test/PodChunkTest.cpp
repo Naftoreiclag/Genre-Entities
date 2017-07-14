@@ -8,7 +8,7 @@ namespace Test {
 
 //@Test PodChunk test
 void test_0085_00_podchunk_test() {
-    Gensys::Pod_Chunk_Ptr pcp = Gensys::new_pod_chunk(256);
+    Gensys::Pod::Chunk_Ptr pcp = Gensys::Pod::new_pod_chunk(256);
     
     pcp.set_value<int32_t>(0, 12345);
     pcp.set_value<int64_t>(8, 123456789);
@@ -52,7 +52,7 @@ void test_0085_00_podchunk_test() {
         }
     }
     
-    Gensys::delete_pod_chunk(pcp);
+    Gensys::Pod::delete_pod_chunk(pcp);
 }
 
 } // namespace Test

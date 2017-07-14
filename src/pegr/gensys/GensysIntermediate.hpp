@@ -6,6 +6,7 @@
 #include <map>
 
 #include "pegr/script/Script.hpp"
+#include "pegr/gensys/PodChunk.hpp"
 
 namespace pegr {
 namespace Gensys {
@@ -48,7 +49,7 @@ public:
     void set_i32(int32_t i32);
     void set_i64(int64_t i64);
     
-    bool is_empty();
+    bool is_empty() const;
     void set_empty();
 
 private:
@@ -84,6 +85,14 @@ struct Comp_Def {
     
     // Named members with primitive values
     std::map<Symbol, Prim> m_members;
+    
+    // --- For compiling stage ---
+    
+    // Finding the offsets in this chunk
+    std::map<Symbol, size_t> m_compiled_offsets;
+    
+    // Chunk holding preconstructed values
+    Pod::Chunk_Ptr m_compiled_chunk;
 };
 
 struct Arche {
@@ -99,6 +108,11 @@ struct Arche {
     
     // Key: symbol, Value: implementations for the component's members
     std::map<Symbol, Implement> m_implements;
+    
+    // --- For compiling stage ---
+    
+    // Chunk holding preconstructed values
+    Pod::Chunk_Ptr m_compiled_chunk;
 };
 
 struct Genre {

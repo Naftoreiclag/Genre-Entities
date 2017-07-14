@@ -6,7 +6,8 @@
 #include <string>
 #include <map>
 
-#include "pegr/Script/Script.hpp"
+#include "pegr/script/Script.hpp"
+#include "pegr/gensys/PodChunk.hpp"
 
 namespace pegr {
 namespace Gensys {
@@ -51,8 +52,7 @@ struct Arche {
     /* Default chunk which is memcpy'd into the entity's chunk. These chunks
      * only contain POD types.
      */
-    std::size_t m_default_chunk_size;
-    int64_t* m_default_chunk;
+    Pod::Chunk_Ptr m_default_chunk;
     
     // It may not be necessary to store how many strings there are, but the 
     // extra few bytes won't make a difference...
@@ -87,7 +87,7 @@ public:
     Entity_Ptr();
     
     // Constructs a pointer given all the Entity "members"
-    Entity_Ptr(const Arche* arche, int64_t* chunk, std::string* strings);
+    Entity_Ptr(const Arche* arche, Pod::Chunk_Ptr chunk, std::string* strings);
     
     // Copy constructor
     Entity_Ptr(const Entity_Ptr& rhs);
@@ -136,7 +136,7 @@ public:
     /**
      * @return m_chunk, the data chunk which holds instance data
      */
-    int64_t* get_chunk() const;
+    Pod::Chunk_Ptr get_chunk() const;
     
     /**
      * @return m_strings, the array of strings for replacement instance data
@@ -173,7 +173,7 @@ private:
      * The instance data comprises the remainder of the memory block. Only
      * constant-size data is stored here.
      */
-    int64_t* m_chunk;
+    Pod::Chunk_Ptr m_chunk;
     
     // Array of strings that replace the archetype defaults.
     // TODO: a bitfield for checking if the strings are actually different

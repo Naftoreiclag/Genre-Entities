@@ -10,19 +10,18 @@ namespace Runtime {
 
 const int32_t EFLAG_SPAWNED = 0x0001;
 const int32_t EFLAG_DEAD = 0x0002;
-const std::size_t E_CHAROFF_FLAGS = 0;
-const std::size_t E_CHAROFF_RCOUNT = 4;
+const std::size_t INST_OFF_FLAGS = 0;
+const std::size_t INST_OFF_REF_COUNT = 4;
+const std::size_t INST_OFF_SIZE = 8;
 
 /**
  * @brief Private function for finding entity flags address
  * @param ent The entity
  * @return The memory address containing the 32-bitfield for an entity.
  */
-int32_t* get_entity_flags_addr(const Entity_Ptr& ent) {
+int32_t* get_entity_flags_addr(Pod::Chunk_Ptr chunk) {
     return static_cast<int32_t*>(
-            static_cast<void*>(
-            static_cast<char*>(
-            static_cast<void*>(ent.get_chunk())) + E_CHAROFF_FLAGS));
+            chunk.get_aligned<int32_t>(INST_OFF_FLAGS));
 }
 
 /**
@@ -30,21 +29,18 @@ int32_t* get_entity_flags_addr(const Entity_Ptr& ent) {
  * @param ent The entity
  * @return The memory address containing the reference count for an entity.
  */
-int32_t* get_entity_rcount_addr(const Entity_Ptr& ent) {
+int32_t* get_entity_rcount_addr(Pod::Chunk_Ptr chunk) {
     return static_cast<int32_t*>(
-            static_cast<void*>(
-            static_cast<char*>(
-            static_cast<void*>(ent.get_chunk())) + E_CHAROFF_RCOUNT));
+            chunk.get_aligned<int32_t>(INST_OFF_REF_COUNT));
 }
 
 Entity_Ptr::Entity_Ptr()
 : m_is_smart(false)
 , m_archetype(nullptr)
-, m_chunk(nullptr)
 , m_strings(nullptr) {}
 
 Entity_Ptr::Entity_Ptr(
-        const Arche* arche, int64_t* chunk, std::string* strings)
+        const Arche* arche, Pod::Chunk_Ptr chunk, std::string* strings)
 : m_is_smart(false)
 , m_archetype(arche)
 , m_chunk(chunk)
@@ -72,10 +68,11 @@ Entity_Ptr::Entity_Ptr(Entity_Ptr&& rhs)
     // to be dropped and deleted, after which it cannot be incremented again.)
     rhs.m_is_smart = false;
     rhs.m_archetype = nullptr;
-    rhs.m_chunk = nullptr;
+    rhs.m_chunk.make_nullptr();
     rhs.m_strings = nullptr;
     
-    /* If we are moving from a smart pointer, then do nothing because the net
+    /* [MOVING OWNERSHIP]
+     * If we are moving from a smart pointer, then do nothing because the net
      * result of incrementing the reference count and immediately decrementing
      * it is wasted time.
      * 
@@ -95,6 +92,8 @@ Entity_Ptr& Entity_Ptr::operator =(const Entity_Ptr& rhs) {
     m_archetype = rhs.m_archetype;
     m_chunk = rhs.m_chunk;
     m_strings = rhs.m_strings;
+    
+    // Also grab since this a copy
     if (m_is_smart) {
         grab_entity(*this);
     }
@@ -103,10 +102,21 @@ Entity_Ptr& Entity_Ptr::operator =(const Entity_Ptr& rhs) {
 
 // Move assignment
 Entity_Ptr& Entity_Ptr::operator =(Entity_Ptr&& rhs) {
+    make_nullptr();
+    m_is_smart = rhs.m_is_smart;
+    m_archetype = rhs.m_archetype;
+    m_chunk = rhs.m_chunk;
+    m_strings = rhs.m_strings;
+    
+    // (Do not call make_nullptr() on rhs because that could cause the entity
+    // to be dropped and deleted, after which it cannot be incremented again.)
     rhs.m_is_smart = false;
     rhs.m_archetype = nullptr;
-    rhs.m_chunk = nullptr;
+    rhs.m_chunk.make_nullptr();
     rhs.m_strings = nullptr;
+
+    // (See [MOVING_OWNERSHIP] above)
+
     return *this;
 }
 
@@ -125,7 +135,9 @@ void Entity_Ptr::make_nullptr() {
     }
     m_is_smart = false;
     m_archetype = nullptr;
-    m_chunk = nullptr;
+    
+    // Not necessary, but who cares
+    m_chunk.make_nullptr();
     m_strings = nullptr;
 }
 
@@ -133,7 +145,7 @@ const Arche* Entity_Ptr::get_archetype() const {
     return m_archetype;
 }
 
-int64_t* Entity_Ptr::get_chunk() const {
+Pod::Chunk_Ptr Entity_Ptr::get_chunk() const {
     return m_chunk;
 }
 
@@ -142,11 +154,11 @@ std::string* Entity_Ptr::get_strings() const {
 }
 
 bool Entity_Ptr::has_been_spawned() const {
-    return (*get_entity_flags_addr(*this) & EFLAG_SPAWNED) == EFLAG_SPAWNED;
+    return (*get_entity_flags_addr(m_chunk) & EFLAG_SPAWNED) == EFLAG_SPAWNED;
 }
 
 bool Entity_Ptr::is_dead() const {
-    return (*get_entity_flags_addr(*this) & EFLAG_DEAD) == EFLAG_DEAD;
+    return (*get_entity_flags_addr(m_chunk) & EFLAG_DEAD) == EFLAG_DEAD;
 }
 
 bool Entity_Ptr::can_be_spawned() const {
@@ -154,20 +166,23 @@ bool Entity_Ptr::can_be_spawned() const {
 }
 
 int32_t Entity_Ptr::get_lua_reference_count() const {
-    return *get_entity_rcount_addr(*this);
+    return *get_entity_rcount_addr(m_chunk);
 }
 
 Entity_Ptr new_entity(Arche* arche) {
     
-    assert(arche->m_default_chunk_size % 8 == 0);
+    assert(arche->m_default_chunk.get_size() % 8 == 0);
     
-    int64_t* chunk = new int64_t[1 + (arche->m_default_chunk_size / 8)];
-    std::memcpy(
-            &(chunk[1]), arche->m_default_chunk, 
-            arche->m_default_chunk_size);
+    Pod::Chunk_Ptr chunk = Pod::new_pod_chunk(
+            INST_OFF_SIZE + arche->m_default_chunk.get_size());
     
-    // No flags set, reference count is zero
-    chunk[0] = 0;
+    Pod::copy_pod_chunk(
+            arche->m_default_chunk, 0, 
+            chunk, INST_OFF_SIZE, 
+            arche->m_default_chunk.get_size());
+            
+    *get_entity_flags_addr(chunk) = 0;
+    *get_entity_rcount_addr(chunk) = 0;
     
     
     std::string* strings = new std::string[arche->m_num_strings];
@@ -186,22 +201,22 @@ void kill_entity(const Entity_Ptr& ent) {
     if (ent.is_dead()) {
         return;
     }
-    ent.get_chunk()[0] |= EFLAG_DEAD;
+    *get_entity_flags_addr(ent.get_chunk()) |= EFLAG_DEAD;
     delete[] ent.get_strings();
 }
 
 void delete_entity(const Entity_Ptr& ent) {
     kill_entity(ent);
-    delete[] ent.get_chunk();
+    Pod::delete_pod_chunk(ent.get_chunk());
 }
 
 void grab_entity(const Entity_Ptr& ent) {
-    int32_t& ref_count = *get_entity_rcount_addr(ent);
+    int32_t& ref_count = *get_entity_rcount_addr(ent.get_chunk());
     ++ref_count;
 }
 
 void drop_entity(const Entity_Ptr& ent) {
-    int32_t& ref_count = *get_entity_rcount_addr(ent);
+    int32_t& ref_count = *get_entity_rcount_addr(ent.get_chunk());
     --ref_count;
     if (ref_count == 0) {
         delete_entity(ent);

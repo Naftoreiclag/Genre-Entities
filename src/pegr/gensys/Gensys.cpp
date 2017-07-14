@@ -7,6 +7,7 @@
 
 #include "pegr/logger/Logger.hpp"
 #include "pegr/gensys/GensysRuntime.hpp"
+#include "pegr/gensys/GensysUtil.hpp"
 
 namespace pegr {
 namespace Gensys {
@@ -31,22 +32,68 @@ void initialize() {
     m_global_state = GlobalState::MUTABLE;
 }
 
+void compile_component(const std::string& id, Interm::Comp_Def* comp) {
+    Pod::delete_pod_chunk(comp->m_compiled_chunk);
+    comp->m_compiled_chunk = 
+            Util::new_pod_chunk_from_interm_prims(
+                    comp->m_members, 
+                    comp->m_compiled_offsets);
+}
+
+void compile_archetype(const std::string& id, Interm::Arche* arche) {
+    // Find the total size of the pod data
+    // and make a chunk for the archetype
+    {
+        std::size_t total_size = 0;
+        for (const auto& implem_pair : arche->m_implements) {
+            const Interm::Arche::Implement& implem = implem_pair.second;
+            total_size += implem.m_component->m_compiled_chunk.get_size();
+        }
+        
+        Pod::delete_pod_chunk(arche->m_compiled_chunk);
+        arche->m_compiled_chunk = Pod::new_pod_chunk(total_size);
+    }
+    
+    // Copy POD data into the archetype, also processing changed defaults
+    {
+        // Stores how many bytes have already been used up in the pod chunk
+        std::size_t accumulated = 0;
+        
+        for (const auto& implem_pair : arche->m_implements) {
+            const Interm::Arche::Implement& implem = implem_pair.second;
+            
+            Pod::copy_pod_chunk(
+                    implem.m_component->m_compiled_chunk,
+                    0,
+                    arche->m_compiled_chunk,
+                    accumulated,
+                    implem.m_component->m_compiled_chunk.get_size());
+            
+            // Set new defaults by overwriting existing component chunk data
+            Util::copy_named_prims_into_pod_chunk(
+                    implem.m_values, implem.m_component->m_compiled_offsets, 
+                    arche->m_compiled_chunk, accumulated);
+                    
+            // Copy over the offsets
+            
+            // Keep track of how much space has been used
+            accumulated += implem.m_component->m_compiled_chunk.get_size();
+        }
+    }
+    
+    // (Everything else is non-pod and therefore must be specially copied)
+    
+}
+
 void compile() {
     assert(m_global_state == GlobalState::MUTABLE);
     
-    for (const auto entry : m_staged_components) {
-        const std::string& id = entry.first;
-        const Interm::Comp_Def* comp = entry.second;
-        
-        std::vector<std::pair<std::string, Interm::Prim> > aligned_members;
-        std::vector<std::pair<std::string, Interm::Prim> > unaligned_members;
-        
-        for (auto member : comp->m_members) {
-            const Interm::Symbol& symb = member.first;
-            const Interm::Prim& prim = member.second;
-            
-            // ...
-        }
+    for (const auto& entry : m_staged_components) {
+        compile_component(entry.first, entry.second);
+    }
+    
+    for (const auto& entry : m_staged_archetypes) {
+        compile_archetype(entry.first, entry.second);
     }
     
     m_global_state = GlobalState::EXECUTABLE;

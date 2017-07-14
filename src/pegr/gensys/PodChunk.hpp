@@ -7,15 +7,32 @@
 
 namespace pegr {
 namespace Gensys {
-
-class Pod_Chunk_Ptr {
+namespace Pod {
+    
+class Chunk_Ptr {
 public:
     /**
      * @brief Constructor. You should not directly call this in most
      * circumstances. Instead, use the factory function new_pod_chunk()
      * declared below. This constructor does not assume deletion responsibility.
      */
-    Pod_Chunk_Ptr(void* chunk);
+    Chunk_Ptr(void* chunk, std::size_t size);
+    
+    /**
+     * @brief Constructs a nullptr
+     */
+    Chunk_Ptr();
+    
+    /**
+     * @return If this is pointing to nothing 
+     */
+    bool is_nullptr() const;
+    
+    /**
+     * @brief Make this pointer point to nothing. Calling is_nullptr()
+     * immediately after calling this will return true.
+     */
+    void make_nullptr();
 
     /**
      * @brief Returns the memory address in the chunk with the given offset,
@@ -24,9 +41,9 @@ public:
      * @return Pointer to properly aligned address
      */
     template <typename T>
-    void* get_aligned(std::size_t off) {
+    void* get_aligned(std::size_t off) const {
         assert(off % sizeof(T) == 0);
-        return &(static_cast<T*>(m_chunk)[off / sizeof(T)]);
+        return &(static_cast<T*>(m_voidptr)[off / sizeof(T)]);
     }
 
     /**
@@ -36,7 +53,7 @@ public:
      * @return "T" representation of the data
      */
     template <typename T>
-    T get_value(std::size_t off) {
+    T get_value(std::size_t off) const {
         if (sizeof(T) <= 1) {
             return *static_cast<T*>(get_aligned<int8_t>(off));
         } else if (sizeof(T) <= 2) {
@@ -71,10 +88,19 @@ public:
      * @return the internal chunk pointed to. Is an array of 64-bit-aligned
      * values, such as an int64_t[]
      */
-    void* get_chunk();
+    void* get_raw() const;
+    
+    /**
+     * @return the size of the chunk in bytes, including any final padding.
+     * Guaranteed to be a multiple of 8
+     */
+    std::size_t get_size() const;
+    
+    bool operator ==(const Chunk_Ptr& rhs);
 
 private:
-    void* m_chunk;
+    void* m_voidptr;
+    std::size_t m_size;
 };
 
 /**
@@ -83,13 +109,27 @@ private:
  * @param size The requested size in bytes
  * @return "Pointer"
  */
-Pod_Chunk_Ptr new_pod_chunk(std::size_t size);
+Chunk_Ptr new_pod_chunk(std::size_t size);
 
 /**
  * @brief Deletes a chunk that was created by new_pod_chunk()
  */
-void delete_pod_chunk(Pod_Chunk_Ptr ptr);
+void delete_pod_chunk(Chunk_Ptr ptr);
 
+/**
+ * @brief Copies the data from one chunk into another
+ * @param src The source chunk
+ * @param src_start Offset to begin reading from (must be multiple of 8)
+ * @param dest The destination chunk
+ * @param dest_start Offset to begin overwriting at (must be multiple of 8)
+ * @param num_bytes The number of bytes to copy (must be multiple of 8)
+ */
+void copy_pod_chunk(
+        Chunk_Ptr src, std::size_t src_start,
+        Chunk_Ptr dest, std::size_t dest_start, std::size_t num_bytes);
+
+
+} // namespace Pod
 } // namespace Gensys
 } // namespace pegr
 
