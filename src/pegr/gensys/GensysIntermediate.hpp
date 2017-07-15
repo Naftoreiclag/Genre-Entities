@@ -89,7 +89,7 @@ struct Comp_Def {
     // --- For compiling stage ---
     
     // Finding the offsets in this chunk
-    std::map<Symbol, size_t> m_compiled_offsets;
+    Runtime::Component* m_compiled_runtime;
     
     // Chunk holding preconstructed values
     Pod::Chunk_Ptr m_compiled_chunk;

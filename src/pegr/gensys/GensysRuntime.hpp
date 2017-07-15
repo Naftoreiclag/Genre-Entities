@@ -43,34 +43,61 @@ struct Prim {
 };
 
 /**
+ * @class Component
+ * @brief Maps archetypes to where the component is within the chunk
+ */
+struct Component {
+    std::map<Symbol, Prim> m_member_offset;
+};
+
+/**
+ * @brief These values are added to the "raw" index provided in the map
+ * Component::m_member_offset
+ */
+struct Aggregate_Offset {
+    std::size_t m_pod_idx;
+    std::size_t m_string_idx;
+};
+
+/**
  * @class Arche
  * @brief 
  * Memory management of the contained pointers is not the responsibility of 
  * this class.
  */
 struct Arche {
+    /* Archetypes are composed of components. This maps the internal name to
+     * the actual component.
+     */
+    std::map<Symbol, Component*> m_components;
+    
+    /* Given a component, provides the offsets into the various aggregate
+     * arrays that store the first member of that type. For instance, when
+     * looking for an int32, first locate the component-relative offset from
+     * the Component object and then add that offset to the m_pod_idx offset
+     * provided in this map, using the Component's memory address as a key.
+     */
+    std::map<Component*, Aggregate_Offset> m_comp_offsets; 
+    
     /* Default chunk which is memcpy'd into the entity's chunk. These chunks
      * only contain POD types.
      */
     Pod::Chunk_Ptr m_default_chunk;
     
-    // It may not be necessary to store how many strings there are, but the 
-    // extra few bytes won't make a difference...
-    std::size_t m_num_strings;
-    const char* m_aggregate_default_strings;
-    std::size_t* m_default_string_offsets;
-    
-    // Named members of this archetype
-    std::map<Symbol, Prim> m_members;
+    /* Default collection of default strings
+     */
+    std::vector<std::string> m_default_strings;
 };
 
-/**
- * @class Component
- * @brief Maps archetypes to where the component is within the chunk
- */
-struct Component {
-    std::map<Symbol, Prim> m_member_offset;
-    std::map<Arche*, size_t> m_data_offsets;
+struct Genre {
+    /* First, look into this array to convert symbol into an index into the 
+     * vector in the map m_archetype_lookup
+     */
+    std::map<Symbol, Prim> m_member_indices;
+    
+    /* Then, lookup the archetype in this map
+     */
+    std::map<Arche*, std::vector<Aggregate_Offset> > m_archetype_lookup;
 };
 
 /**
@@ -222,11 +249,6 @@ void grab_entity(const Entity_Ptr& ent);
  * @param ent
  */
 void drop_entity(const Entity_Ptr& ent);
-
-struct Genre {
-    std::map<Symbol, Prim> m_member_lookup;
-    std::map<Arche*, std::size_t> m_archetype_lookup;
-};
 
 /**
  * @class Aview

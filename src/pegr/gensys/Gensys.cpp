@@ -4,6 +4,7 @@
 #include <cassert>
 #include <sstream>
 #include <vector>
+#include <memory>
 
 #include "pegr/logger/Logger.hpp"
 #include "pegr/gensys/GensysRuntime.hpp"
@@ -11,12 +12,26 @@
 
 namespace pegr {
 namespace Gensys {
-    
-std::map<std::string, Runtime::Arche*> m_runtime_archetypes;
 
-std::map<std::string, Interm::Comp_Def*> m_staged_components;
-std::map<std::string, Interm::Arche*> m_staged_archetypes;
-std::map<std::string, Interm::Genre*> m_staged_genres;
+namespace Staged {
+struct Comp {
+    std::unique_ptr<Interm::Comp_Def> m_interm;
+    std::unique_ptr<Runtime::Component> m_runtime;
+    Pod::Chunk_Ptr m_compiled_chunk;
+};
+struct Arche {
+    std::unique_ptr<Interm::Arche> m_interm;
+    std::unique_ptr<Runtime::Arche> m_runtime;
+};
+struct Genre {
+    std::unique_ptr<Interm::Genre> m_interm;
+    std::unique_ptr<Runtime::Genre> m_runtime;
+}
+} // namespace Staged
+
+std::map<std::string, Staged::Comp> m_staged_components;
+std::map<std::string, Staged::Arche> m_staged_archetypes;
+std::map<std::string, Staged::Genre> m_staged_genres;
 
 // TODO: make into a single lua table
 std::vector<Script::Regref_Guard> m_held_functions;
@@ -32,31 +47,32 @@ void initialize() {
     m_global_state = GlobalState::MUTABLE;
 }
 
-void compile_component(const std::string& id, Interm::Comp_Def* comp) {
+void compile_component(const std::string& id, Staged::Comp comp) {
     Pod::delete_pod_chunk(comp->m_compiled_chunk);
+    comp.m_runtime = std::make_unique<Runtime::Component>();
     comp->m_compiled_chunk = 
             Util::new_pod_chunk_from_interm_prims(
-                    comp->m_members, 
-                    comp->m_compiled_offsets);
+                    comp.m_interm->m_members, 
+                    comp.m_runtime->m_compiled_offsets);
 }
 
 void compile_archetype(const std::string& id, Interm::Arche* arche) {
-    // Find the total size of the pod data
-    // and make a chunk for the archetype
+    // Find the total size of the pod data and make a chunk for the archetype
     {
         std::size_t total_size = 0;
         for (const auto& implem_pair : arche->m_implements) {
             const Interm::Arche::Implement& implem = implem_pair.second;
             total_size += implem.m_component->m_compiled_chunk.get_size();
+            
         }
         
         Pod::delete_pod_chunk(arche->m_compiled_chunk);
         arche->m_compiled_chunk = Pod::new_pod_chunk(total_size);
     }
     
-    // Copy POD data into the archetype, also processing changed defaults
+    // POD
     {
-        // Stores how many bytes have already been used up in the pod chunk
+        // Stores how many bytes have already been used up in the POD chunk
         std::size_t accumulated = 0;
         
         for (const auto& implem_pair : arche->m_implements) {
@@ -79,10 +95,15 @@ void compile_archetype(const std::string& id, Interm::Arche* arche) {
             // Keep track of how much space has been used
             accumulated += implem.m_component->m_compiled_chunk.get_size();
         }
+        
+        // This should have exactly filled the POD chunk (guaranteed above)
+        assert(accumulated == arche->m_compiled_chunk.get_size());
     }
     
-    // (Everything else is non-pod and therefore must be specially copied)
-    
+    // Strings
+    {
+        
+    }
 }
 
 void compile() {
@@ -101,17 +122,8 @@ void compile() {
 
 void cleanup() {
     assert(m_global_state != GlobalState::UNINITIALIZED);
-    for (auto const& pair : m_staged_components) {
-        delete pair.second;
-    }
     m_staged_components.clear();
-    for (auto const& pair : m_staged_archetypes) {
-        delete pair.second;
-    }
     m_staged_archetypes.clear();
-    for (auto const& pair : m_staged_genres) {
-        delete pair.second;
-    }
     m_staged_genres.clear();
     m_global_state = GlobalState::UNINITIALIZED;
 }
@@ -146,9 +158,10 @@ void overwrite(std::string id_str, const char* attacker) {
     }
 }
 
-void stage_component(std::string id_str, Interm::Comp_Def* comp_def) {
+void stage_component(std::string id_str, 
+        std::unique_ptr<Interm::Comp_Def>&& comp_def) {
     overwrite(id_str, "component");
-    m_staged_components[id_str] = comp_def;
+    m_staged_components[id_str].m_interm = comp_def;
 }
 Interm::Comp_Def* get_staged_component(std::string id_str) {
     auto iter = m_staged_components.find(id_str);
@@ -156,7 +169,7 @@ Interm::Comp_Def* get_staged_component(std::string id_str) {
         Logger::log()->warn("Could not find staged component: %v", id_str);
         return nullptr;
     }
-    return iter->second;
+    return (iter->second).m_interm;
 }
 void unstage_component(std::string id_str) {
     auto iter = m_staged_components.find(id_str);
@@ -164,12 +177,12 @@ void unstage_component(std::string id_str) {
         Logger::log()->warn("Could not find staged component: %v", id_str);
         return;
     }
-    delete iter->second;
     m_staged_components.erase(iter);
 }
-void stage_archetype(std::string id_str, Interm::Arche* arche) {
+void stage_archetype(std::string id_str, 
+        std::unique_ptr<Interm::Arche>&& arche) {
     overwrite(id_str, "archetype");
-    m_staged_archetypes[id_str] = arche;
+    m_staged_archetypes[id_str].m_interm = arche;
 }
 Interm::Arche* get_staged_archetype(std::string id_str) {
     auto iter = m_staged_archetypes.find(id_str);
@@ -177,7 +190,7 @@ Interm::Arche* get_staged_archetype(std::string id_str) {
         Logger::log()->warn("Could not find staged archetype: %v", id_str);
         return nullptr;
     }
-    return iter->second;
+    return (iter->second).m_interm;
 }
 void unstage_archetype(std::string id_str) {
     auto iter = m_staged_archetypes.find(id_str);
@@ -185,10 +198,9 @@ void unstage_archetype(std::string id_str) {
         Logger::log()->warn("Could not find staged archetype: %v", id_str);
         return;
     }
-    delete iter->second;
     m_staged_archetypes.erase(iter);
 }
-void stage_genre(std::string id_str, Interm::Genre* genre) {
+void stage_genre(std::string id_str, std::unique_ptr<Interm::Genre>&& genre) {
     overwrite(id_str, "genre");
     m_staged_genres[id_str] = genre;
 }
@@ -198,7 +210,7 @@ Interm::Genre* get_staged_genre(std::string id_str) {
         Logger::log()->warn("Could not find staged genre: %v", id_str);
         return nullptr;
     }
-    return iter->second;
+    return (iter->second).m_interm;
 }
 void unstage_genre(std::string id_str) {
     auto iter = m_staged_genres.find(id_str);
@@ -206,7 +218,6 @@ void unstage_genre(std::string id_str) {
         Logger::log()->warn("Could not find staged genre: %v", id_str);
         return;
     }
-    delete iter->second;
     m_staged_genres.erase(iter);
 }
 
