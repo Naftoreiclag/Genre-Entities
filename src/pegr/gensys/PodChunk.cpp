@@ -84,6 +84,17 @@ void copy_pod_chunk(
     assert(src_start % 8 == 0);
     assert(dest_start % 8 == 0);
     assert(num_bytes % 8 == 0);
+    assert(src_start >= 0);
+    assert(dest_start >= 0);
+    assert(num_bytes >= 0);
+    assert(!dest.is_nullptr());
+    assert(num_bytes <= src.get_size() - src_start);
+    assert(num_bytes <= dest.get_size() - dest_start);
+    
+    if (src.is_nullptr()) {
+        assert(num_bytes == 0);
+        return;
+    }
     
     int64_t* src_array = static_cast<int64_t*>(src.get_raw());
     int64_t* dest_array = static_cast<int64_t*>(dest.get_raw());
