@@ -60,6 +60,10 @@ void Chunk_Ptr_Deleter::operator ()(pointer ptr) const {
 }
 
 Chunk_Ptr new_pod_chunk(std::size_t req_size) {
+    /* Special case if there is no size: Create a "zero-length" array
+     * NOT nullptr! This ensures that no two independent return values for this 
+     * function are equal!
+     */
     if (req_size == 0) {
         int64_t* chunk = new int64_t[1];
         return Chunk_Ptr(chunk, 0);
@@ -72,8 +76,7 @@ Chunk_Ptr new_pod_chunk(std::size_t req_size) {
 }
 
 void delete_pod_chunk(Chunk_Ptr ptr) {
-    if (!ptr.get_raw()) return;
-    
+    if (ptr.is_nullptr()) return;
     delete[] static_cast<int64_t*>(ptr.get_raw());
 }
 
