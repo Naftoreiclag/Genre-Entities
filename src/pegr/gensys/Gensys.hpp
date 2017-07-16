@@ -120,7 +120,6 @@ enum struct ObjectType {
  */
 ObjectType get_type(std::string id);
 
-
 Runtime::Arche* find_archetype(std::string id);
 
 } // namespace Gensys

@@ -42,9 +42,18 @@ struct Genre {
     std::unique_ptr<Runtime::Genre> m_runtime;
 };
 
-template<typename T>
-void remove_unique_ptr_vector(std::vector<std::unique_ptr<T> >& vec, T* ptr) {
-    
+/**
+ * @brief Removes from a vector of unique pointers by comparing their .get()
+ * by value
+ * @param vec
+ * @param ptr
+ */
+template<typename T, typename V>
+void vector_remove_unique_ptrs(std::vector<std::unique_ptr<T> >& vec, V& ptr) {
+    vec.erase(std::remove_if(vec.begin(), vec.end(), 
+            [&](const std::unique_ptr<T>& elem) -> bool {
+                return elem.get() == ptr;
+            }), vec.end());
 }
 
 class Collection {
@@ -91,15 +100,15 @@ public:
     }
     
     void erase(Comp* comp) {
-        
+        vector_remove_unique_ptrs(m_comps, comp);
     }
     
     void erase(Arche* arche) {
-        
+        vector_remove_unique_ptrs(m_arches, arche);
     }
     
     void erase(Genre* genre) {
-        
+        vector_remove_unique_ptrs(m_genres, genre);
     }
     
     void add_comp(std::string id, std::unique_ptr<Comp>&& obj) {
@@ -235,7 +244,7 @@ void compile_archetype(const Staged::Arche* arche) {
             
             const Staged::Comp* comp = comp_iter->second;
 
-            // Copy the 
+            // Copy the pod chunk
             Pod::copy_pod_chunk(
                     comp->m_compiled_chunk.get(),
                     0,
@@ -251,7 +260,7 @@ void compile_archetype(const Staged::Arche* arche) {
                     accumulated);
 
             // Copy over the offsets
-            // TODO
+            // 
 
             // Keep track of how much space has been used
             accumulated += comp->m_compiled_chunk.get().get_size();
@@ -399,16 +408,6 @@ ObjectType get_type(std::string id) {
 }
 
 Runtime::Arche* find_archetype(std::string id_str) {
-    // temp
-    return new Runtime::Arche();
-    /*
-    auto iter = m_runtime_archetypes.find(id_str);
-    if (iter == m_runtime_archetypes.end()) {
-        Logger::log()->warn("Could not find archetype: %v", id_str);
-        return nullptr;
-    }
-    return iter->second;
-    */
 }
 
 } // namespace Gensys
