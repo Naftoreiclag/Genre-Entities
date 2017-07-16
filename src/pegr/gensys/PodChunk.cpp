@@ -22,6 +22,7 @@ bool Chunk_Ptr::is_nullptr() const {
 }
 void Chunk_Ptr::make_nullptr() {
     m_voidptr = nullptr;
+    m_size = 0;
 }
 
 void* Chunk_Ptr::get_raw() const {
@@ -36,6 +37,11 @@ bool Chunk_Ptr::operator ==(const Chunk_Ptr& rhs) {
 }
 
 Chunk_Ptr new_pod_chunk(std::size_t req_size) {
+    if (req_size == 0) {
+        int64_t* chunk = new int64_t[1];
+        return Chunk_Ptr(chunk, 0);
+    }
+    
     // Fewest number of int64's that can hold the requested number of bytes
     std::size_t size = (req_size / 8) + (req_size % 8 == 0 ? 0 : 1);
     int64_t* chunk = new int64_t[size];

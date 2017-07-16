@@ -48,7 +48,7 @@ Interm::Prim parse_primitive(int table_idx,
  * @param table_idx The index on the main Lua stack to translate
  * @return The component
  */
-Interm::Comp_Def* parse_component_definition(int table_idx);
+std::unique_ptr<Interm::Comp_Def> parse_component_definition(int table_idx);
 
 /**
  * @brief Make an archetype implementation from the table at the given index.
@@ -67,7 +67,7 @@ Interm::Arche::Implement parse_archetype_implementation(int table_idx);
  * @param table_idx The index on the main Lua stack to translate
  * @return The archetype
  */
-Interm::Arche* parse_archetype(int table_idx);
+std::unique_ptr<Interm::Arche> parse_archetype(int table_idx);
 
 /**
  * @brief Make a genre pattern from the given Lua value.
@@ -86,7 +86,7 @@ Interm::Genre::Pattern parse_genre_pattern(int idx);
  * @param table_idx The index on the main Lua stack to translate
  * @return The genre
  */
-Interm::Genre* parse_genre(int table_idx);
+std::unique_ptr<Interm::Genre> parse_genre(int table_idx);
 
 /**
  * @brief Translates all submitted Lua tables into their intermediate forms and

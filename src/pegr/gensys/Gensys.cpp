@@ -14,24 +14,128 @@ namespace pegr {
 namespace Gensys {
 
 namespace Staged {
+
 struct Comp {
+    Comp() = default;
+    Comp(std::unique_ptr<Interm::Comp_Def>&& interm)
+    : m_interm(std::move(interm)) {}
+    
     std::unique_ptr<Interm::Comp_Def> m_interm;
     std::unique_ptr<Runtime::Component> m_runtime;
+    std::map<Interm::Symbol, std::size_t> m_symbol_to_offset;
     Pod::Chunk_Ptr m_compiled_chunk;
 };
 struct Arche {
+    Arche() = default;
+    Arche(std::unique_ptr<Interm::Arche>&& interm)
+    : m_interm(std::move(interm)) {}
+    
     std::unique_ptr<Interm::Arche> m_interm;
     std::unique_ptr<Runtime::Arche> m_runtime;
 };
 struct Genre {
+    Genre() = default;
+    Genre(std::unique_ptr<Interm::Genre>&& interm)
+    : m_interm(std::move(interm)) {}
+    
     std::unique_ptr<Interm::Genre> m_interm;
     std::unique_ptr<Runtime::Genre> m_runtime;
+};
+
+template<typename T>
+void remove_unique_ptr_vector(std::vector<std::unique_ptr<T> >& vec, T* ptr) {
+    
 }
+
+class Collection {
+private:
+    std::vector<std::unique_ptr<Comp> > m_comps;
+    std::vector<std::unique_ptr<Arche> > m_arches;
+    std::vector<std::unique_ptr<Genre> > m_genres;
+
+    std::map<const Interm::Comp_Def*, Comp*> m_comps_by_interm;
+    std::map<const Interm::Arche*, Arche*> m_arches_by_interm;
+    std::map<const Interm::Genre*, Genre*> m_genres_by_interm;
+
+    std::map<std::string, Comp*> m_comps_by_id;
+    std::map<std::string, Arche*> m_arches_by_id;
+    std::map<std::string, Genre*> m_genres_by_id;
+    
+public:
+    const std::vector<std::unique_ptr<Comp> >& get_comps() const {
+        return m_comps;
+    }
+    const std::vector<std::unique_ptr<Arche> >& get_arches() const {
+        return m_arches;
+    }
+    const std::vector<std::unique_ptr<Genre> >& get_genres() const {
+        return m_genres;
+    }
+    const std::map<const Interm::Comp_Def*, Comp*>& get_comps_by_interm() const {
+        return m_comps_by_interm;
+    }
+    const std::map<const Interm::Arche*, Arche*>& get_arches_by_interm() const {
+        return m_arches_by_interm;
+    }
+    const std::map<const Interm::Genre*, Genre*>& get_genres_by_interm() const {
+        return m_genres_by_interm;
+    }
+    const std::map<std::string, Comp*>& get_comps_by_id() const {
+        return m_comps_by_id;
+    }
+    const std::map<std::string, Arche*>& get_arches_by_id() const {
+        return m_arches_by_id;
+    }
+    const std::map<std::string, Genre*>& get_genres_by_id() const {
+        return m_genres_by_id;
+    }
+    
+    void erase(Comp* comp) {
+        
+    }
+    
+    void erase(Arche* arche) {
+        
+    }
+    
+    void erase(Genre* genre) {
+        
+    }
+    
+    void add_comp(std::string id, std::unique_ptr<Comp>&& obj) {
+        m_comps_by_interm[obj->m_interm.get()] = obj.get();
+        m_comps_by_id[id] = obj.get();
+        m_comps.emplace_back(std::move(obj));
+    }
+    
+    void add_arche(std::string id, std::unique_ptr<Arche>&& obj) {
+        m_arches_by_interm[obj->m_interm.get()] = obj.get();
+        m_arches_by_id[id] = obj.get();
+        m_arches.emplace_back(std::move(obj));
+    }
+    
+    void add_genre(std::string id, std::unique_ptr<Genre>&& obj) {
+        m_genres_by_interm[obj->m_interm.get()] = obj.get();
+        m_genres_by_id[id] = obj.get();
+        m_genres.emplace_back(std::move(obj));
+    }
+    
+    void clear() {
+        m_comps.clear();
+        m_arches.clear();
+        m_genres.clear();
+        m_comps_by_interm.clear();
+        m_arches_by_interm.clear();
+        m_genres_by_interm.clear();
+        m_comps_by_id.clear();
+        m_arches_by_id.clear();
+        m_genres_by_id.clear();
+    }
+};
+
 } // namespace Staged
 
-std::map<std::string, Staged::Comp> m_staged_components;
-std::map<std::string, Staged::Arche> m_staged_archetypes;
-std::map<std::string, Staged::Genre> m_staged_genres;
+Staged::Collection m_staged;
 
 // TODO: make into a single lua table
 std::vector<Script::Regref_Guard> m_held_functions;
@@ -47,188 +151,251 @@ void initialize() {
     m_global_state = GlobalState::MUTABLE;
 }
 
-void compile_component(const std::string& id, Staged::Comp comp) {
-    Pod::delete_pod_chunk(comp->m_compiled_chunk);
-    comp.m_runtime = std::make_unique<Runtime::Component>();
-    comp->m_compiled_chunk = 
-            Util::new_pod_chunk_from_interm_prims(
-                    comp.m_interm->m_members, 
-                    comp.m_runtime->m_compiled_offsets);
+Runtime::Prim::Type prim_type_convert(Interm::Prim::Type it) {
+    switch (it) {
+        case Interm::Prim::Type::I32: return Runtime::Prim::Type::I32;
+        case Interm::Prim::Type::I64: return Runtime::Prim::Type::I64;
+        case Interm::Prim::Type::F32: return Runtime::Prim::Type::F32;
+        case Interm::Prim::Type::F64: return Runtime::Prim::Type::F64;
+        case Interm::Prim::Type::FUNC: return Runtime::Prim::Type::FUNC;
+        case Interm::Prim::Type::STR: return Runtime::Prim::Type::STR;
+        default: {
+            assert(false);
+            break;
+        }
+    }
 }
 
-void compile_archetype(const std::string& id, Interm::Arche* arche) {
+void compile_component(Staged::Comp* comp) {
+    // Delete any compiled chunk that might have existed there
+    Pod::delete_pod_chunk(comp->m_compiled_chunk);
+    
+    // Pack POD data into the chunk, and record where each member was placed
+    comp->m_compiled_chunk =
+            Util::new_pod_chunk_from_interm_prims(
+                    comp->m_interm->m_members,
+                    comp->m_symbol_to_offset);
+    
+    // Construct runtime data
+    comp->m_runtime = std::make_unique<Runtime::Component>();
+    
+    // Record the member offsets in the runtime data
+    for (const auto& sto_entry : comp->m_symbol_to_offset) {
+        // Get the symbol and offset
+        const Interm::Symbol& symbol = sto_entry.first;
+        std::size_t offset = sto_entry.second;
+        
+        // Get the type of the primitive and the associated offset
+        const auto& member_entry = comp->m_interm->m_members.find(symbol);
+        assert(member_entry != comp->m_interm->m_members.end());
+        Interm::Prim::Type prim_type = member_entry->second.get_type();
+        
+        // Runtime primitive setup
+        Runtime::Prim runtime_prim;
+        runtime_prim.m_type = prim_type_convert(prim_type);
+        runtime_prim.m_byte_offset = offset;
+        
+        // Ensure that the runtime primitive is actually POD
+        assert(runtime_prim.m_type != Runtime::Prim::Type::FUNC);
+        assert(runtime_prim.m_type != Runtime::Prim::Type::STR);
+        
+        // Store in runtime data
+        comp->m_runtime->m_member_offsets[symbol] = std::move(runtime_prim);
+    }
+}
+
+void compile_archetype(const Staged::Arche* arche) {
     // Find the total size of the pod data and make a chunk for the archetype
     {
+        // Find the total size, which is the sum of the component POD chunk
         std::size_t total_size = 0;
-        for (const auto& implem_pair : arche->m_implements) {
+        for (const auto& implem_pair : arche->m_interm->m_implements) {
             const Interm::Arche::Implement& implem = implem_pair.second;
-            total_size += implem.m_component->m_compiled_chunk.get_size();
-            
+            const auto& comp_iter = 
+                    m_staged.get_comps_by_interm().find(implem.m_component);
+            assert(comp_iter != m_staged.get_comps_by_interm().end());
+            const Staged::Comp* comp = comp_iter->second;
+            total_size += comp->m_compiled_chunk.get_size();
         }
-        
-        Pod::delete_pod_chunk(arche->m_compiled_chunk);
-        arche->m_compiled_chunk = Pod::new_pod_chunk(total_size);
+        Pod::delete_pod_chunk(arche->m_runtime->m_default_chunk);
+        arche->m_runtime->m_default_chunk = Pod::new_pod_chunk(total_size);
     }
-    
+
     // POD
     {
         // Stores how many bytes have already been used up in the POD chunk
         std::size_t accumulated = 0;
-        
-        for (const auto& implem_pair : arche->m_implements) {
+
+        // For every implementation
+        for (const auto& implem_pair : arche->m_interm->m_implements) {
+            
+            // Get the implementation
             const Interm::Arche::Implement& implem = implem_pair.second;
+
+            const auto& comp_iter = 
+                    m_staged.get_comps_by_interm().find(implem.m_component);
             
+            assert(comp_iter != m_staged.get_comps_by_interm().end());
+            
+            const Staged::Comp* comp = comp_iter->second;
+
+            // Copy the 
             Pod::copy_pod_chunk(
-                    implem.m_component->m_compiled_chunk,
+                    comp->m_compiled_chunk,
                     0,
-                    arche->m_compiled_chunk,
+                    arche->m_runtime->m_default_chunk,
                     accumulated,
-                    implem.m_component->m_compiled_chunk.get_size());
-            
+                    comp->m_compiled_chunk.get_size());
+
             // Set new defaults by overwriting existing component chunk data
             Util::copy_named_prims_into_pod_chunk(
-                    implem.m_values, implem.m_component->m_compiled_offsets, 
-                    arche->m_compiled_chunk, accumulated);
-                    
+                    implem.m_values,
+                    comp->m_symbol_to_offset,
+                    arche->m_runtime->m_default_chunk,
+                    accumulated);
+
             // Copy over the offsets
-            
+            // TODO
+
             // Keep track of how much space has been used
-            accumulated += implem.m_component->m_compiled_chunk.get_size();
+            accumulated += comp->m_compiled_chunk.get_size();
         }
-        
+
         // This should have exactly filled the POD chunk (guaranteed above)
-        assert(accumulated == arche->m_compiled_chunk.get_size());
+        assert(accumulated == arche->m_runtime->m_default_chunk.get_size());
     }
-    
+
     // Strings
     {
-        
+
     }
 }
 
 void compile() {
     assert(m_global_state == GlobalState::MUTABLE);
-    
-    for (const auto& entry : m_staged_components) {
-        compile_component(entry.first, entry.second);
+
+    for (const auto& comp : m_staged.get_comps()) {
+        compile_component(comp.get());
     }
-    
-    for (const auto& entry : m_staged_archetypes) {
-        compile_archetype(entry.first, entry.second);
+
+    for (const auto& arche : m_staged.get_arches()) {
+        compile_archetype(arche.get());
     }
-    
+
     m_global_state = GlobalState::EXECUTABLE;
 }
 
 void cleanup() {
     assert(m_global_state != GlobalState::UNINITIALIZED);
-    m_staged_components.clear();
-    m_staged_archetypes.clear();
-    m_staged_genres.clear();
+    m_staged.clear();
     m_global_state = GlobalState::UNINITIALIZED;
 }
 
 void overwrite(std::string id_str, const char* attacker) {
     {
-        auto iter = m_staged_components.find(id_str);
-        if (iter != m_staged_components.end()) {
+        auto iter = m_staged.get_comps_by_id().find(id_str);
+        if (iter != m_staged.get_comps_by_id().end()) {
             Logger::log()->warn(
-                    "Overwriting staged component [%v] with a %v", id_str);
-            delete iter->second;
-            m_staged_components.erase(iter);
+                    "Overwriting staged component [%v] with %v", attacker);
+            m_staged.erase(iter->second);
         }
     }
     {
-        auto iter = m_staged_archetypes.find(id_str);
-        if (iter != m_staged_archetypes.end()) {
+        auto iter = m_staged.get_arches_by_id().find(id_str);
+        if (iter != m_staged.get_arches_by_id().end()) {
             Logger::log()->warn(
-                    "Overwriting staged archetype [%v] with a %v", id_str);
-            delete iter->second;
-            m_staged_archetypes.erase(iter);
+                    "Overwriting staged archetype [%v] with %v", attacker);
+            m_staged.erase(iter->second);
         }
     }
     {
-        auto iter = m_staged_genres.find(id_str);
-        if (iter != m_staged_genres.end()) {
+        auto iter = m_staged.get_genres_by_id().find(id_str);
+        if (iter != m_staged.get_genres_by_id().end()) {
             Logger::log()->warn(
-                    "Overwriting staged genre [%v] with a %v", id_str);
-            delete iter->second;
-            m_staged_genres.erase(iter);
+                    "Overwriting staged genre [%v] with %v", attacker);
+            m_staged.erase(iter->second);
         }
     }
 }
 
-void stage_component(std::string id_str, 
-        std::unique_ptr<Interm::Comp_Def>&& comp_def) {
+void stage_component(std::string id_str,
+        std::unique_ptr<Interm::Comp_Def>&& comp) {
     overwrite(id_str, "component");
-    m_staged_components[id_str].m_interm = comp_def;
+    m_staged.add_comp(id_str, 
+            std::make_unique<Staged::Comp>(std::move(comp)));
 }
 Interm::Comp_Def* get_staged_component(std::string id_str) {
-    auto iter = m_staged_components.find(id_str);
-    if (iter == m_staged_components.end()) {
+    auto iter = m_staged.get_comps_by_id().find(id_str);
+    if (iter == m_staged.get_comps_by_id().end()) {
         Logger::log()->warn("Could not find staged component: %v", id_str);
         return nullptr;
     }
-    return (iter->second).m_interm;
+    return (iter->second)->m_interm.get();
 }
 void unstage_component(std::string id_str) {
-    auto iter = m_staged_components.find(id_str);
-    if (iter == m_staged_components.end()) {
+    auto iter = m_staged.get_comps_by_id().find(id_str);
+    if (iter == m_staged.get_comps_by_id().end()) {
         Logger::log()->warn("Could not find staged component: %v", id_str);
         return;
     }
-    m_staged_components.erase(iter);
+    m_staged.erase(iter->second);
 }
-void stage_archetype(std::string id_str, 
+
+void stage_archetype(std::string id_str,
         std::unique_ptr<Interm::Arche>&& arche) {
     overwrite(id_str, "archetype");
-    m_staged_archetypes[id_str].m_interm = arche;
+    m_staged.add_arche(id_str, 
+            std::make_unique<Staged::Arche>(std::move(arche)));
 }
 Interm::Arche* get_staged_archetype(std::string id_str) {
-    auto iter = m_staged_archetypes.find(id_str);
-    if (iter == m_staged_archetypes.end()) {
+    auto iter = m_staged.get_arches_by_id().find(id_str);
+    if (iter == m_staged.get_arches_by_id().end()) {
         Logger::log()->warn("Could not find staged archetype: %v", id_str);
         return nullptr;
     }
-    return (iter->second).m_interm;
+    return (iter->second)->m_interm.get();
 }
 void unstage_archetype(std::string id_str) {
-    auto iter = m_staged_archetypes.find(id_str);
-    if (iter == m_staged_archetypes.end()) {
+    auto iter = m_staged.get_arches_by_id().find(id_str);
+    if (iter == m_staged.get_arches_by_id().end()) {
         Logger::log()->warn("Could not find staged archetype: %v", id_str);
         return;
     }
-    m_staged_archetypes.erase(iter);
+    m_staged.erase(iter->second);
 }
 void stage_genre(std::string id_str, std::unique_ptr<Interm::Genre>&& genre) {
     overwrite(id_str, "genre");
-    m_staged_genres[id_str] = genre;
+    m_staged.add_genre(id_str, 
+            std::make_unique<Staged::Genre>(std::move(genre)));
 }
 Interm::Genre* get_staged_genre(std::string id_str) {
-    auto iter = m_staged_genres.find(id_str);
-    if (iter == m_staged_genres.end()) {
+    auto iter = m_staged.get_genres_by_id().find(id_str);
+    if (iter == m_staged.get_genres_by_id().end()) {
         Logger::log()->warn("Could not find staged genre: %v", id_str);
         return nullptr;
     }
-    return (iter->second).m_interm;
+    return (iter->second)->m_interm.get();
 }
 void unstage_genre(std::string id_str) {
-    auto iter = m_staged_genres.find(id_str);
-    if (iter == m_staged_genres.end()) {
+    auto iter = m_staged.get_genres_by_id().find(id_str);
+    if (iter == m_staged.get_genres_by_id().end()) {
         Logger::log()->warn("Could not find staged genre: %v", id_str);
         return;
     }
-    m_staged_genres.erase(iter);
+    m_staged.erase(iter->second);
 }
 
 ObjectType get_type(std::string id) {
-    if (m_staged_components.find(id) != m_staged_components.end()) {
+    if (m_staged.get_comps_by_id().find(id) 
+            != m_staged.get_comps_by_id().end()) {
         return ObjectType::COMP_DEF;
     }
-    if (m_staged_archetypes.find(id) != m_staged_archetypes.end()) {
+    if (m_staged.get_arches_by_id().find(id) 
+            != m_staged.get_arches_by_id().end()) {
         return ObjectType::ARCHETYPE;
     }
-    if (m_staged_genres.find(id) != m_staged_genres.end()) {
+    if (m_staged.get_genres_by_id().find(id) 
+            != m_staged.get_genres_by_id().end()) {
         return ObjectType::GENRE;
     }
     return ObjectType::NOT_FOUND;

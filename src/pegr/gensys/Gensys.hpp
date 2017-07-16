@@ -40,9 +40,9 @@ void cleanup();
  * @brief Stages an intermediate component definition for compilation. 
  * This also hands off deletion responsibility to Gensys.
  * @param id
- * @param comp_def the component definition
+ * @param comp the component definition
  */
-void stage_component(std::string id, Interm::Comp_Def* comp_def);
+void stage_component(std::string id, std::unique_ptr<Interm::Comp_Def>&& comp);
 
 /**
  * @brief Returns a currently staged component from the id. If the component
@@ -64,7 +64,7 @@ void unstage_component(std::string id);
  * @param id
  * @param arche the archetype
  */
-void stage_archetype(std::string id, Interm::Arche* arche);
+void stage_archetype(std::string id, std::unique_ptr<Interm::Arche>&& arche);
 
 /**
  * @brief Returns a currently staged archetype from the id. If the archetype
@@ -86,7 +86,7 @@ void unstage_archetype(std::string id);
  * @param id
  * @param genre
  */
-void stage_genre(std::string id, Interm::Genre* genre);
+void stage_genre(std::string id, std::unique_ptr<Interm::Genre>&& genre);
 
 /**
  * @brief Returns a currently staged genre from the id. If the genre

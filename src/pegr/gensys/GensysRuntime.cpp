@@ -171,6 +171,7 @@ int32_t Entity_Ptr::get_lua_reference_count() const {
 
 Entity_Ptr new_entity(Arche* arche) {
     
+    /*
     assert(arche->m_default_chunk.get_size() % 8 == 0);
     
     Pod::Chunk_Ptr chunk = Pod::new_pod_chunk(
@@ -195,6 +196,7 @@ Entity_Ptr new_entity(Arche* arche) {
     }
     
     return Entity_Ptr(arche, chunk, strings);
+    */
 }
 
 void kill_entity(const Entity_Ptr& ent) {

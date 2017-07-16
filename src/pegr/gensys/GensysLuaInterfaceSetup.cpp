@@ -248,12 +248,13 @@ Interm::Prim parse_primitive(int idx, Interm::Prim::Type required_t) {
     return ret_val;
 }
 
-Interm::Comp_Def* parse_component_definition(int table_idx) {
+std::unique_ptr<Interm::Comp_Def> parse_component_definition(int table_idx) {
     assert_balance(0);
     lua_State* l = Script::get_lua_state();
     table_idx = Script::absolute_idx(table_idx);
     
-    Interm::Comp_Def comp_def;
+    std::unique_ptr<Interm::Comp_Def> comp_def = 
+            std::make_unique<Interm::Comp_Def>();
     
     Script::Helper::for_pairs(table_idx, [&]()->bool {
         Interm::Symbol symbol = 
@@ -270,17 +271,17 @@ Interm::Comp_Def* parse_component_definition(int table_idx) {
             throw std::runtime_error(sss.str());
         }
         // Check that no symbol is duplicated (possible through integer keys)
-        if (comp_def.m_members.find(symbol) != comp_def.m_members.end()) {
+        if (comp_def->m_members.find(symbol) != comp_def->m_members.end()) {
             std::stringstream sss;
             sss << "Symbol \"" << symbol
                 << "\" occurs multiple times in component table";
             throw std::runtime_error(sss.str());
         }
-        comp_def.m_members[symbol] = std::move(value);
+        comp_def->m_members[symbol] = std::move(value);
         return true;
     }, false);
     
-    return new Interm::Comp_Def(std::move(comp_def));
+    return comp_def;
 }
 
 Interm::Arche::Implement parse_archetype_implementation(int table_idx) {
@@ -359,12 +360,13 @@ Interm::Arche::Implement parse_archetype_implementation(int table_idx) {
     return implement;
 }
 
-Interm::Arche* parse_archetype(int table_idx) {
+std::unique_ptr<Interm::Arche> parse_archetype(int table_idx) {
     assert_balance(0);
     lua_State* l = Script::get_lua_state();
     table_idx = Script::absolute_idx(table_idx);
     
-    Interm::Arche arche;
+    std::unique_ptr<Interm::Arche> arche
+            = std::make_unique<Interm::Arche>();
     
     Script::Helper::for_pairs(table_idx, [&]()->bool {
         Interm::Symbol symbol = 
@@ -382,18 +384,18 @@ Interm::Arche* parse_archetype(int table_idx) {
             throw std::runtime_error(sss.str());
         }
         // Check that no symbol is duplicated (possible through integer keys)
-        if (arche.m_implements.find(symbol) != arche.m_implements.end()) {
+        if (arche->m_implements.find(symbol) != arche->m_implements.end()) {
             std::stringstream sss;
             sss << "Symbol \"" << symbol
                 << "\" occurs multiple times in archetype table";
             throw std::runtime_error(sss.str());
         }
-        arche.m_implements[symbol] = std::move(implement);
+        arche->m_implements[symbol] = std::move(implement);
         
         return true;
     }, false);
     
-    return new Interm::Arche(std::move(arche));
+    return arche;
 }
 
 void assert_pattern_source_has_symbol(
@@ -569,12 +571,12 @@ Interm::Genre::Pattern parse_genre_pattern(int value_idx) {
     }
 }
 
-Interm::Genre* parse_genre(int table_idx) {
+std::unique_ptr<Interm::Genre> parse_genre(int table_idx) {
     assert_balance(0);
     lua_State* l = Script::get_lua_state();
     table_idx = Script::absolute_idx(table_idx);
     
-    Interm::Genre genre;
+    std::unique_ptr<Interm::Genre> genre = std::make_unique<Interm::Genre>();
     lua_getfield(l, table_idx, "interface"); // Field guaranteed to exist
     Script::Pop_Guard pop_guard(1);
     Script::Helper::for_pairs(-1, [&]()->bool {
@@ -592,13 +594,13 @@ Interm::Genre* parse_genre(int table_idx) {
             throw std::runtime_error(sss.str());
         }
         // Check that no symbol is duplicated (possible through integer keys)
-        if (genre.m_interface.find(symbol) != genre.m_interface.end()) {
+        if (genre->m_interface.find(symbol) != genre->m_interface.end()) {
             std::stringstream sss;
             sss << "Symbol \"" << symbol
                 << "\" occurs multiple times in interface table";
             throw std::runtime_error(sss.str());
         }
-        genre.m_interface[symbol] = std::move(value);
+        genre->m_interface[symbol] = std::move(value);
         return true;
     }, false);
     pop_guard.pop(1);
@@ -611,7 +613,7 @@ Interm::Genre* parse_genre(int table_idx) {
         try {
             Interm::Genre::Pattern pattern = parse_genre_pattern(-1);
             pattern.m_error_msg_idx = idx;
-            genre.m_patterns.push_back(pattern);
+            genre->m_patterns.push_back(pattern);
         }
         catch (std::runtime_error e) {
             std::stringstream sss;
@@ -622,7 +624,7 @@ Interm::Genre* parse_genre(int table_idx) {
     }, false);
     pop_guard.pop(1);
     
-    return new Interm::Genre(std::move(genre));
+    return genre;
 }
 
 void stage_all() {
@@ -647,9 +649,9 @@ void stage_all() {
         pop_guard2.pop(1);
         std::string id(strdata, strlen);
         try {
-            Interm::Comp_Def* obj = parse_component_definition(-1);
+            auto obj = parse_component_definition(-1);
             obj->m_error_msg_name = id;
-            Gensys::stage_component(id, obj);
+            Gensys::stage_component(id, std::move(obj));
             Logger::log()->info("Successfully parsed compnent [%v]", id);
         }
         catch (std::runtime_error e) {
@@ -673,9 +675,9 @@ void stage_all() {
         pop_guard2.pop(1);
         std::string id(strdata, strlen);
         try {
-            Interm::Arche* obj = parse_archetype(-1);
+            auto obj = parse_archetype(-1);
             obj->m_error_msg_name = id;
-            Gensys::stage_archetype(id, obj);
+            Gensys::stage_archetype(id, std::move(obj));
             Logger::log()->info("Successfully parsed archetype [%v]", id);
         }
         catch (std::runtime_error e) {
@@ -699,9 +701,9 @@ void stage_all() {
         pop_guard2.pop(1);
         std::string id(strdata, strlen);
         try {
-            Interm::Genre* obj = parse_genre(-1);
+            auto obj = parse_genre(-1);
             obj->m_error_msg_name = id;
-            Gensys::stage_genre(id, obj);
+            Gensys::stage_genre(id, std::move(obj));
             Logger::log()->info("Successfully parsed genre [%v]", id);
         }
         catch (std::runtime_error e) {

@@ -8,7 +8,15 @@
 namespace pegr {
 namespace Gensys {
 namespace Pod {
-    
+
+/**
+ * @class Chunk_Ptr
+ * @brief This class acts similar to an ordinary C pointer to an imaginary
+ * "Chunk" class instance, which is really just a raw area of memory. Note that
+ * this means that Chunk_Ptr has all of the dangers of ordinary C pointers, such
+ * as needing to manually manage memory. For a unique_ptr<Chunk> equivalent,
+ * see class Unique_Chunk_Ptr.
+ */
 class Chunk_Ptr {
 public:
     /**
@@ -97,6 +105,9 @@ public:
     std::size_t get_size() const;
     
     bool operator ==(const Chunk_Ptr& rhs);
+    
+    // Comparisons with nullptr to satisfy pointer requirements
+    //friend bool operator ==(std::nullptr_t, )
 
 private:
     void* m_voidptr;
@@ -104,8 +115,33 @@ private:
 };
 
 /**
+ * @class Unique_Chunk_Ptr
+ * @brief Emulates the behavior of unique_ptr<Chunk>
+ */
+/*
+class Unique_Chunk_Ptr {
+public:
+    Unique_Chunk_Ptr();
+    Unique_Chunk_Ptr(Chunk_Ptr ptr);
+    Unique_Chunk_Ptr(Unique_Chunk_Ptr&& rhs);
+    Unique_Chunk_Ptr& operator =(Unique_Chunk_Ptr&& rhs);
+    
+    ~Unique_Chunk_Ptr();
+    
+    // No copying
+    Unique_Chunk_Ptr(const Unique_Chunk_Ptr& rhs) = delete;
+    Unique_Chunk_Ptr& operator =(const Unique_Chunk_Ptr& rhs) = delete;
+    
+    Chunk_Ptr get() const;
+    
+private:
+    Chunk_Ptr m_ptr;
+}*/
+
+/**
  * @brief Creates a new chunk with the requested size. Rounds up to nearest 8
- * bytes (64 bit alignment).
+ * bytes (64 bit alignment). Chunks of size zero can be created. Such chunks
+ * are not nullptr, and are not equal to each other.
  * @param size The requested size in bytes
  * @return "Pointer"
  */
