@@ -22,14 +22,14 @@ Regref_Guard::Regref_Guard(Regref ref)
 : m_reference(ref) { }
 
 Regref_Guard::Regref_Guard(Regref_Guard&& other) {
-    release_reference();
+    release();
     m_reference = other.m_reference;
     other.m_reference = LUA_REFNIL;
 }
 
 // Move assignment
 Regref_Guard& Regref_Guard::operator =(Regref_Guard&& other) {
-    release_reference();
+    release();
     m_reference = other.m_reference;
     other.m_reference = LUA_REFNIL;
     return *this;
@@ -42,12 +42,12 @@ Regref_Guard& Regref_Guard::operator =(const Regref& value) {
 }
 
 void Regref_Guard::replace(Regref value) {
-    release_reference();
+    release();
     m_reference = value;
 }
 
 Regref_Guard::~Regref_Guard() {
-    release_reference();
+    release();
 }
 
 Regref Regref_Guard::regref() const {
@@ -58,8 +58,9 @@ Regref_Guard::operator Regref() const {
     return regref();
 }
 
-void Regref_Guard::release_reference() {
+void Regref_Guard::release() {
     drop_reference(m_reference);
+    m_reference = LUA_REFNIL;
 }
 
 Regref_Shared make_shared(Regref ref) {

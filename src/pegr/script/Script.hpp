@@ -90,8 +90,12 @@ public:
      */
     operator Regref() const;
     
+    /**
+     * @brief Releases whatever is being guarded
+     */
+    void release();
+    
 private:
-    void release_reference();
     
     Regref m_reference;
 };
