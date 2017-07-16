@@ -32,8 +32,18 @@ std::size_t Chunk_Ptr::get_size() const {
     return m_size;
 }
 
-bool Chunk_Ptr::operator ==(const Chunk_Ptr& rhs) {
+bool Chunk_Ptr::operator ==(const Chunk_Ptr& rhs) const {
     return m_voidptr == rhs.m_voidptr;
+}
+bool Chunk_Ptr::operator !=(const Chunk_Ptr& rhs) const {
+    return m_voidptr != rhs.m_voidptr;
+}
+Chunk_Ptr::operator bool() const {
+    return m_voidptr == nullptr;
+}
+
+void Chunk_Ptr_Deleter::operator ()(pointer ptr) const {
+    delete_pod_chunk(ptr);
 }
 
 Chunk_Ptr new_pod_chunk(std::size_t req_size) {

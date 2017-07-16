@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <cassert>
 
 namespace pegr {
@@ -16,9 +17,16 @@ namespace Pod {
  * this means that Chunk_Ptr has all of the dangers of ordinary C pointers, such
  * as needing to manually manage memory. For a unique_ptr<Chunk> equivalent,
  * see class Unique_Chunk_Ptr.
+ * 
+ * Satisfies NullablePointer requirements
  */
 class Chunk_Ptr {
 public:
+    /**
+     * @brief Constructs a nullptr
+     */
+    Chunk_Ptr();
+    
     /**
      * @brief Constructor. You should not directly call this in most
      * circumstances. Instead, use the factory function new_pod_chunk()
@@ -26,10 +34,11 @@ public:
      */
     Chunk_Ptr(void* chunk, std::size_t size);
     
-    /**
-     * @brief Constructs a nullptr
-     */
-    Chunk_Ptr();
+    Chunk_Ptr(const Chunk_Ptr& rhs) = default;
+    Chunk_Ptr(Chunk_Ptr&& rhs) = default;
+    Chunk_Ptr& operator =(const Chunk_Ptr& rhs) = default;
+    Chunk_Ptr& operator =(Chunk_Ptr&& rhs) = default;
+    ~Chunk_Ptr() = default;
     
     /**
      * @return If this is pointing to nothing 
@@ -104,39 +113,22 @@ public:
      */
     std::size_t get_size() const;
     
-    bool operator ==(const Chunk_Ptr& rhs);
+    bool operator ==(const Chunk_Ptr& rhs) const;
+    bool operator !=(const Chunk_Ptr& rhs) const;
     
-    // Comparisons with nullptr to satisfy pointer requirements
-    //friend bool operator ==(std::nullptr_t, )
+    explicit operator bool() const;
 
 private:
     void* m_voidptr;
     std::size_t m_size;
 };
 
-/**
- * @class Unique_Chunk_Ptr
- * @brief Emulates the behavior of unique_ptr<Chunk>
- */
-/*
-class Unique_Chunk_Ptr {
-public:
-    Unique_Chunk_Ptr();
-    Unique_Chunk_Ptr(Chunk_Ptr ptr);
-    Unique_Chunk_Ptr(Unique_Chunk_Ptr&& rhs);
-    Unique_Chunk_Ptr& operator =(Unique_Chunk_Ptr&& rhs);
-    
-    ~Unique_Chunk_Ptr();
-    
-    // No copying
-    Unique_Chunk_Ptr(const Unique_Chunk_Ptr& rhs) = delete;
-    Unique_Chunk_Ptr& operator =(const Unique_Chunk_Ptr& rhs) = delete;
-    
-    Chunk_Ptr get() const;
-    
-private:
-    Chunk_Ptr m_ptr;
-}*/
+struct Chunk_Ptr_Deleter {
+    typedef Chunk_Ptr pointer;
+    void operator ()(pointer ptr) const;
+};
+
+typedef std::unique_ptr<Chunk_Ptr, Chunk_Ptr_Deleter> Unique_Chunk_Ptr;
 
 /**
  * @brief Creates a new chunk with the requested size. Rounds up to nearest 8
