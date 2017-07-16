@@ -43,6 +43,7 @@ foreach(fname
 "test/PodChunkTest.cpp"
 "test/ScriptHelperTest.cpp"
 "test/ScriptTest.cpp"
+"test/UniquePtrTest.cpp"
 
 )
 list(APPEND PGLOCAL_SOURCES_LIST "${PGLOCAL_SOURCE_DIR}/pegr/${fname}")
