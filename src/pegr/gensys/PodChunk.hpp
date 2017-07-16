@@ -117,6 +117,11 @@ public:
     bool operator !=(const Chunk_Ptr& rhs) const;
     
     explicit operator bool() const;
+    
+    friend bool operator ==(std::nullptr_t, const Chunk_Ptr& rhs);
+    friend bool operator ==(const Chunk_Ptr& lhs, std::nullptr_t);
+    friend bool operator !=(std::nullptr_t, const Chunk_Ptr& rhs);
+    friend bool operator !=(const Chunk_Ptr& lhs, std::nullptr_t);
 
 private:
     void* m_voidptr;

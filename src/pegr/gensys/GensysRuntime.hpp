@@ -83,7 +83,7 @@ struct Arche {
     /* Default chunk which is memcpy'd into the entity's chunk. These chunks
      * only contain POD types.
      */
-    Pod::Chunk_Ptr m_default_chunk;
+    Pod::Unique_Chunk_Ptr m_default_chunk;
 
     /* Default collection of default strings
      */

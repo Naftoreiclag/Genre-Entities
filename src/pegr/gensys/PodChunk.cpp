@@ -41,6 +41,19 @@ bool Chunk_Ptr::operator !=(const Chunk_Ptr& rhs) const {
 Chunk_Ptr::operator bool() const {
     return m_voidptr == nullptr;
 }
+    
+bool operator ==(std::nullptr_t, const Chunk_Ptr& rhs) {
+    return rhs.m_voidptr == nullptr;
+}
+bool operator ==(const Chunk_Ptr& lhs, std::nullptr_t) {
+    return lhs.m_voidptr == nullptr;
+}
+bool operator !=(std::nullptr_t, const Chunk_Ptr& rhs) {
+    return rhs.m_voidptr != nullptr;
+}
+bool operator !=(const Chunk_Ptr& lhs, std::nullptr_t) {
+    return lhs.m_voidptr != nullptr;
+}
 
 void Chunk_Ptr_Deleter::operator ()(pointer ptr) const {
     delete_pod_chunk(ptr);

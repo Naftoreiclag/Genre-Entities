@@ -23,7 +23,7 @@ struct Comp {
     std::unique_ptr<Interm::Comp_Def> m_interm;
     std::unique_ptr<Runtime::Component> m_runtime;
     std::map<Interm::Symbol, std::size_t> m_symbol_to_offset;
-    Pod::Chunk_Ptr m_compiled_chunk;
+    Pod::Unique_Chunk_Ptr m_compiled_chunk;
 };
 struct Arche {
     Arche() = default;
@@ -167,14 +167,11 @@ Runtime::Prim::Type prim_type_convert(Interm::Prim::Type it) {
 }
 
 void compile_component(Staged::Comp* comp) {
-    // Delete any compiled chunk that might have existed there
-    Pod::delete_pod_chunk(comp->m_compiled_chunk);
-    
     // Pack POD data into the chunk, and record where each member was placed
-    comp->m_compiled_chunk =
+    comp->m_compiled_chunk.reset(
             Util::new_pod_chunk_from_interm_prims(
                     comp->m_interm->m_members,
-                    comp->m_symbol_to_offset);
+                    comp->m_symbol_to_offset));
     
     // Construct runtime data
     comp->m_runtime = std::make_unique<Runtime::Component>();
@@ -215,10 +212,9 @@ void compile_archetype(const Staged::Arche* arche) {
                     m_staged.get_comps_by_interm().find(implem.m_component);
             assert(comp_iter != m_staged.get_comps_by_interm().end());
             const Staged::Comp* comp = comp_iter->second;
-            total_size += comp->m_compiled_chunk.get_size();
+            total_size += comp->m_compiled_chunk.get().get_size();
         }
-        Pod::delete_pod_chunk(arche->m_runtime->m_default_chunk);
-        arche->m_runtime->m_default_chunk = Pod::new_pod_chunk(total_size);
+        arche->m_runtime->m_default_chunk.reset(Pod::new_pod_chunk(total_size));
     }
 
     // POD
@@ -241,28 +237,29 @@ void compile_archetype(const Staged::Arche* arche) {
 
             // Copy the 
             Pod::copy_pod_chunk(
-                    comp->m_compiled_chunk,
+                    comp->m_compiled_chunk.get(),
                     0,
-                    arche->m_runtime->m_default_chunk,
+                    arche->m_runtime->m_default_chunk.get(),
                     accumulated,
-                    comp->m_compiled_chunk.get_size());
+                    comp->m_compiled_chunk.get().get_size());
 
             // Set new defaults by overwriting existing component chunk data
             Util::copy_named_prims_into_pod_chunk(
                     implem.m_values,
                     comp->m_symbol_to_offset,
-                    arche->m_runtime->m_default_chunk,
+                    arche->m_runtime->m_default_chunk.get(),
                     accumulated);
 
             // Copy over the offsets
             // TODO
 
             // Keep track of how much space has been used
-            accumulated += comp->m_compiled_chunk.get_size();
+            accumulated += comp->m_compiled_chunk.get().get_size();
         }
 
         // This should have exactly filled the POD chunk (guaranteed above)
-        assert(accumulated == arche->m_runtime->m_default_chunk.get_size());
+        assert(accumulated
+                == arche->m_runtime->m_default_chunk.get().get_size());
     }
 
     // Strings
