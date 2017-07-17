@@ -384,7 +384,7 @@ void overwrite(std::string id_str, const char* attacker) {
 }
 
 template<typename K, typename V>
-V* get_something(std::map<K, std::unique_ptr<V> >& map, const K& key, 
+V* find_something(std::map<K, std::unique_ptr<V> >& map, const K& key, 
         const char* err_msg) {
     auto iter = map.find(key);
     if (iter == map.end()) {
@@ -394,26 +394,28 @@ V* get_something(std::map<K, std::unique_ptr<V> >& map, const K& key,
     return iter->second.get();
 }
 
+template<typename K, typename V>
+void erase_something(std::map<K, V>& map, const K& key, const char* err_msg) {
+    auto iter = map.find(key);
+    if (iter == map.end()) {
+        Logger::log()->warn(err_msg, key);
+        return;
+    }
+    map.erase(iter);
+}
+
 void stage_component(std::string id_str,
         std::unique_ptr<Interm::Comp_Def>&& comp) {
     overwrite(id_str, "component");
     m_staged_comps[id_str] = std::move(comp);
 }
 Interm::Comp_Def* get_staged_component(std::string id_str) {
-    auto iter = m_staged_comps.find(id_str);
-    if (iter == m_staged_comps.end()) {
-        Logger::log()->warn("Could not find staged component: %v", id_str);
-        return nullptr;
-    }
-    return iter->second.get();
+    return find_something(m_staged_comps, id_str, 
+            "Could not find staged component: %v");
 }
 void unstage_component(std::string id_str) {
-    auto iter = m_staged_comps.find(id_str);
-    if (iter == m_staged_comps.end()) {
-        Logger::log()->warn("Could not find staged component: %v", id_str);
-        return;
-    }
-    m_staged_comps.erase(iter);
+    erase_something(m_staged_comps, id_str, 
+            "Could not find staged component: %v");
 }
 void stage_archetype(std::string id_str,
         std::unique_ptr<Interm::Arche>&& arche) {
@@ -421,40 +423,24 @@ void stage_archetype(std::string id_str,
     m_staged_arches[id_str] = std::move(arche);
 }
 Interm::Arche* get_staged_archetype(std::string id_str) {
-    auto iter = m_staged_arches.find(id_str);
-    if (iter == m_staged_arches.end()) {
-        Logger::log()->warn("Could not find staged archetype: %v", id_str);
-        return nullptr;
-    }
-    return iter->second.get();
+    return find_something(m_staged_arches, id_str, 
+            "Could not find staged archetype: %v");
 }
 void unstage_archetype(std::string id_str) {
-    auto iter = m_staged_arches.find(id_str);
-    if (iter == m_staged_arches.end()) {
-        Logger::log()->warn("Could not find staged archetype: %v", id_str);
-        return;
-    }
-    m_staged_arches.erase(iter);
+    erase_something(m_staged_arches, id_str, 
+            "Could not find staged archetype: %v");
 }
 void stage_genre(std::string id_str, std::unique_ptr<Interm::Genre>&& genre) {
     overwrite(id_str, "genre");
     m_staged_genres[id_str] = std::move(genre);
 }
 Interm::Genre* get_staged_genre(std::string id_str) {
-    auto iter = m_staged_genres.find(id_str);
-    if (iter == m_staged_genres.end()) {
-        Logger::log()->warn("Could not find staged genre: %v", id_str);
-        return nullptr;
-    }
-    return iter->second.get();
+    return find_something(m_staged_genres, id_str, 
+            "Could not find staged genre: %v");
 }
 void unstage_genre(std::string id_str) {
-    auto iter = m_staged_genres.find(id_str);
-    if (iter == m_staged_genres.end()) {
-        Logger::log()->warn("Could not find staged genre: %v", id_str);
-        return;
-    }
-    m_staged_genres.erase(iter);
+    erase_something(m_staged_genres, id_str, 
+            "Could not find staged genre: %v");
 }
 
 ObjectType get_staged_type(std::string id) {
@@ -469,9 +455,18 @@ ObjectType get_staged_type(std::string id) {
     }
     return ObjectType::NOT_FOUND;
 }
-Runtime::Component* find_component(std::string id) {}
-Runtime::Arche* find_archetype(std::string id) {}
-Runtime::Genre* find_genre(std::string id) {}
+Runtime::Component* find_component(std::string id_str) {
+    return find_something(m_runtime_comps, id_str, 
+            "Could not find component: %v");
+}
+Runtime::Arche* find_archetype(std::string id_str) {
+    return find_something(m_runtime_arches, id_str, 
+            "Could not find archetype: %v");
+}
+Runtime::Genre* find_genre(std::string id_str) {
+    return find_something(m_runtime_genres, id_str, 
+            "Could not find genre: %v");
+}
 
 } // namespace Gensys
 } // namespace pegr
