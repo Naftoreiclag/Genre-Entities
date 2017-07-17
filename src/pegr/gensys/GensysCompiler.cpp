@@ -407,8 +407,5 @@ ObjectType get_type(std::string id) {
     return ObjectType::NOT_FOUND;
 }
 
-Runtime::Arche* find_archetype(std::string id_str) {
-}
-
 } // namespace Gensys
 } // namespace pegr

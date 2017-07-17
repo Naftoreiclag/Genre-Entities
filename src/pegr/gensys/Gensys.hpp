@@ -118,9 +118,11 @@ enum struct ObjectType {
  * @param id
  * @return The type of the object pointed to by this id.
  */
-ObjectType get_type(std::string id);
+ObjectType get_staged_type(std::string id);
 
+Runtime::Component* find_component(std::string id);
 Runtime::Arche* find_archetype(std::string id);
+Runtime::Genre* find_genre(std::string id);
 
 } // namespace Gensys
 } // namespace pegr
