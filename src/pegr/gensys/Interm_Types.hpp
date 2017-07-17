@@ -60,8 +60,9 @@ private:
         int32_t m_i32; int64_t m_i64;
     };
 
-    // TODO: add to union
     std::string m_str;
+    
+    // We use a shared instead of unique because Prims need to be copiable..?
     Script::Regref_Shared m_func;
 
     void copy_from(const Prim& other_p);

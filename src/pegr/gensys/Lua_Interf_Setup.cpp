@@ -556,7 +556,7 @@ Interm::Genre::Pattern parse_genre_pattern(int value_idx) {
             pattern.m_type = Interm::Genre::Pattern::Type::FUNC;
             lua_pushvalue(l, value_idx);
             
-            // No need to to a function type check, that was done already
+            // No need to do a function type check, that was done already
             
             pattern.m_function = Script::make_shared(Script::grab_reference());
             return pattern;
