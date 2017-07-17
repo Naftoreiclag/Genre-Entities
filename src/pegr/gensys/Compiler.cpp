@@ -180,20 +180,16 @@ Runtime::Prim::Type prim_type_convert(Interm::Prim::Type it) {
     }
 }
 
-std::unique_ptr<Work::Comp> compile_component(Work::Space& workspace, 
-        std::unique_ptr<Interm::Comp_Def>&& interm) {
-    
-    // Make the working component
-    std::unique_ptr<Work::Comp> comp = 
-            std::make_unique<Work::Comp>(std::move(interm));
-    
-    // Pack POD data into the chunk, and record where each member was placed
+void compile_component_store_pod(Work::Space& workspace, 
+        std::unique_ptr<Work::Comp>& comp) {
     comp->m_compiled_chunk.reset(
             Util::new_pod_chunk_from_interm_prims(
                     comp->m_interm->m_members,
                     comp->m_symbol_to_offset));
-    
-    // Copy non-pods into the correct array
+}
+
+void compile_component_store_non_pod(Work::Space& workspace, 
+        std::unique_ptr<Work::Comp>& comp) {
     comp->m_strings.clear();
     std::size_t string_run_idx = 0;
     for (const auto& member : comp->m_interm->m_members) {
@@ -213,7 +209,10 @@ std::unique_ptr<Work::Comp> compile_component(Work::Space& workspace,
             }
         }
     }
-    
+}
+ 
+void compile_component_record_offsets(Work::Space& workspace, 
+        std::unique_ptr<Work::Comp>& comp) {
     // Record the member offsets in the runtime data
     for (const auto& sto_entry : comp->m_symbol_to_offset) {
         // Get the symbol and offset
@@ -253,6 +252,21 @@ std::unique_ptr<Work::Comp> compile_component(Work::Space& workspace,
         // Store in runtime data
         comp->m_runtime->m_member_offsets[symbol] = std::move(runtime_prim);
     }
+}
+
+std::unique_ptr<Work::Comp> compile_component(Work::Space& workspace, 
+        std::unique_ptr<Interm::Comp_Def>&& interm) {
+    
+    // Make the working component
+    std::unique_ptr<Work::Comp> comp = 
+            std::make_unique<Work::Comp>(std::move(interm));
+    
+    // Pack data and record where each member was placed
+    compile_component_store_pod(workspace, comp);
+    compile_component_store_non_pod(workspace, comp);
+    
+    // Record the member offsets in the runtime data
+    compile_component_record_offsets(workspace, comp);
     
     return comp;
 }
