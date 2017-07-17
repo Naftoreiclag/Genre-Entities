@@ -25,6 +25,7 @@ struct Comp {
     std::unique_ptr<Runtime::Component> m_runtime;
     std::map<Interm::Symbol, std::size_t> m_symbol_to_offset;
     Pod::Unique_Chunk_Ptr m_compiled_chunk;
+    std::vector<std::string> m_strings;
 };
 struct Arche {
     Arche(std::unique_ptr<Interm::Arche>&& interm)
@@ -192,6 +193,27 @@ std::unique_ptr<Work::Comp> compile_component(Work::Space& workspace,
                     comp->m_interm->m_members,
                     comp->m_symbol_to_offset));
     
+    // Copy non-pods into the correct array
+    comp->m_strings.clear();
+    std::size_t string_run_idx = 0;
+    for (const auto& member : comp->m_interm->m_members) {
+        //
+        const Interm::Symbol& symbol = member.first;
+        const Interm::Prim& prim = member.second;
+        
+        switch (prim.get_type()) {
+            case Interm::Prim::Type::STR: {
+                comp->m_strings.push_back(prim.get_string());
+                comp->m_symbol_to_offset[symbol] = string_run_idx;
+                ++string_run_idx;
+                break;
+            }
+            default: {
+                continue;
+            }
+        }
+    }
+    
     // Record the member offsets in the runtime data
     for (const auto& sto_entry : comp->m_symbol_to_offset) {
         // Get the symbol and offset
@@ -206,17 +228,151 @@ std::unique_ptr<Work::Comp> compile_component(Work::Space& workspace,
         // Runtime primitive setup
         Runtime::Prim runtime_prim;
         runtime_prim.m_type = prim_type_convert(prim_type);
-        runtime_prim.m_byte_offset = offset;
-        
-        // Ensure that the runtime primitive is actually POD
-        assert(runtime_prim.m_type != Runtime::Prim::Type::FUNC);
-        assert(runtime_prim.m_type != Runtime::Prim::Type::STR);
+        switch (runtime_prim.m_type) {
+            case Runtime::Prim::Type::I32:
+            case Runtime::Prim::Type::I64:
+            case Runtime::Prim::Type::F32:
+            case Runtime::Prim::Type::F64: {
+                runtime_prim.m_byte_offset = offset;
+                break;
+            }
+            case Runtime::Prim::Type::STR: {
+                runtime_prim.m_index = offset;
+                break;
+            }
+            case Runtime::Prim::Type::FUNC: {
+                // TODO
+                break;
+            }
+            default: {
+                assert(false && "Unhandled runtime prim type during compile");
+                break;
+            }
+        }
         
         // Store in runtime data
         comp->m_runtime->m_member_offsets[symbol] = std::move(runtime_prim);
     }
     
     return comp;
+}
+
+void compile_archetype_resize_pod(Work::Space& workspace,
+        std::unique_ptr<Work::Arche>& arche) {
+
+    // Find the total size, which is the sum of the component POD chunk
+    std::size_t total_size = 0;
+    for (const auto& implem_pair : arche->m_interm->m_implements) {
+        const Interm::Arche::Implement& implem = implem_pair.second;
+        const auto& comp_iter = 
+                workspace.get_comps_by_interm().find(implem.m_component);
+        assert(comp_iter != workspace.get_comps_by_interm().end());
+        const Work::Comp* comp = comp_iter->second;
+        total_size += comp->m_compiled_chunk.get().get_size();
+    }
+    arche->m_runtime->m_default_chunk.reset(Pod::new_pod_chunk(total_size));
+}
+
+void compile_archetype_fill_pod(Work::Space& workspace,
+        std::unique_ptr<Work::Arche>& arche) {
+
+    // Stores how many bytes have already been used up in the POD chunk
+    std::size_t accumulated = 0;
+
+    // For every implementation
+    for (const auto& implem_pair : arche->m_interm->m_implements) {
+        
+        // Get the implementation
+        const Interm::Arche::Implement& implem = implem_pair.second;
+
+        const auto& comp_iter = 
+                workspace.get_comps_by_interm().find(implem.m_component);
+        
+        assert(comp_iter != workspace.get_comps_by_interm().end());
+        
+        const Work::Comp* comp = comp_iter->second;
+
+        // Copy the pod chunk
+        Pod::copy_pod_chunk(
+                comp->m_compiled_chunk.get(),
+                0,
+                arche->m_runtime->m_default_chunk.get(),
+                accumulated,
+                comp->m_compiled_chunk.get().get_size());
+
+        // Set new defaults by overwriting existing component chunk data
+        Util::copy_named_prims_into_pod_chunk(
+                implem.m_values,
+                comp->m_symbol_to_offset,
+                arche->m_runtime->m_default_chunk.get(),
+                accumulated);
+
+        // Remember how to find this data later
+        arche->m_runtime->m_comp_offsets[comp->m_runtime.get()].m_pod_idx 
+                = accumulated;
+
+        // Keep track of how much space has been used
+        accumulated += comp->m_compiled_chunk.get().get_size();
+    }
+
+    // This should have exactly filled the POD chunk (guaranteed earlier)
+    assert(accumulated == arche->m_runtime->m_default_chunk.get().get_size());
+}
+
+void compile_archetype_store_strings(Work::Space& workspace,
+        std::unique_ptr<Work::Arche>& arche) {
+
+    // Stores the running index for strings in the vector
+    std::size_t accumulated = 0;
+
+    // For every implementation
+    for (const auto& implem_pair : arche->m_interm->m_implements) {
+        
+        // Get the implementation
+        const Interm::Arche::Implement& implem = implem_pair.second;
+
+        const auto& comp_iter = 
+                workspace.get_comps_by_interm().find(implem.m_component);
+        
+        assert(comp_iter != workspace.get_comps_by_interm().end());
+        
+        // This should be const, since we shouldn't modify anything else
+        const Work::Comp* comp = comp_iter->second;
+        
+        // Copy the default strings
+        std::copy(comp->m_strings.begin(), comp->m_strings.end(), 
+                std::back_inserter(arche->m_runtime->m_default_strings));
+        
+        // Set new defaults by overwriting existing strings
+        for (const auto& member : implem.m_values) {
+            //
+            const Interm::Symbol& symbol = member.first;
+            const Interm::Prim& prim = member.second;
+            
+            if (prim.get_type() != Interm::Prim::Type::STR) {
+                continue;
+            }
+            
+            const auto& iter = comp->m_symbol_to_offset.find(symbol);
+            
+            assert(iter != comp->m_symbol_to_offset.end());
+            
+            std::size_t offset = iter->second;
+            
+            arche->m_runtime->m_default_strings[accumulated + offset]
+                    = prim.get_string();
+        }
+
+        // Remember how to find this data later
+        arche->m_runtime->m_comp_offsets[comp->m_runtime.get()].m_string_idx 
+                = accumulated;
+
+        // Keep track of how much space has been used
+        accumulated += comp->m_strings.size();
+    }
+
+    // This should have exactly filled the string vector
+    assert(accumulated == arche->m_runtime->m_default_strings.size());
 }
 
 std::unique_ptr<Work::Arche> compile_archetype(Work::Space& workspace, 
@@ -227,69 +383,9 @@ std::unique_ptr<Work::Arche> compile_archetype(Work::Space& workspace,
             std::make_unique<Work::Arche>(std::move(interm));
 
     // Find the total size of the pod data and make a chunk for the archetype
-    {
-        // Find the total size, which is the sum of the component POD chunk
-        std::size_t total_size = 0;
-        for (const auto& implem_pair : arche->m_interm->m_implements) {
-            const Interm::Arche::Implement& implem = implem_pair.second;
-            const auto& comp_iter = 
-                    workspace.get_comps_by_interm().find(implem.m_component);
-            assert(comp_iter != workspace.get_comps_by_interm().end());
-            const Work::Comp* comp = comp_iter->second;
-            total_size += comp->m_compiled_chunk.get().get_size();
-        }
-        arche->m_runtime->m_default_chunk.reset(Pod::new_pod_chunk(total_size));
-    }
-
-    // POD
-    {
-        // Stores how many bytes have already been used up in the POD chunk
-        std::size_t accumulated = 0;
-
-        // For every implementation
-        for (const auto& implem_pair : arche->m_interm->m_implements) {
-            
-            // Get the implementation
-            const Interm::Arche::Implement& implem = implem_pair.second;
-
-            const auto& comp_iter = 
-                    workspace.get_comps_by_interm().find(implem.m_component);
-            
-            assert(comp_iter != workspace.get_comps_by_interm().end());
-            
-            const Work::Comp* comp = comp_iter->second;
-
-            // Copy the pod chunk
-            Pod::copy_pod_chunk(
-                    comp->m_compiled_chunk.get(),
-                    0,
-                    arche->m_runtime->m_default_chunk.get(),
-                    accumulated,
-                    comp->m_compiled_chunk.get().get_size());
-
-            // Set new defaults by overwriting existing component chunk data
-            Util::copy_named_prims_into_pod_chunk(
-                    implem.m_values,
-                    comp->m_symbol_to_offset,
-                    arche->m_runtime->m_default_chunk.get(),
-                    accumulated);
-
-            // Copy over the offsets
-            // 
-
-            // Keep track of how much space has been used
-            accumulated += comp->m_compiled_chunk.get().get_size();
-        }
-
-        // This should have exactly filled the POD chunk (guaranteed above)
-        assert(accumulated
-                == arche->m_runtime->m_default_chunk.get().get_size());
-    }
-
-    // Strings
-    {
-
-    }
+    compile_archetype_resize_pod(workspace, arche);
+    compile_archetype_fill_pod(workspace, arche);
+    compile_archetype_store_strings(workspace, arche);
     
     return arche;
 }
@@ -301,7 +397,7 @@ std::unique_ptr<Work::Genre> compile_genre(Work::Space& workspace,
     std::unique_ptr<Work::Genre> genre = 
             std::make_unique<Work::Genre>(std::move(interm));
     
-    // ...?
+    // TODO
     
     return genre;
 }

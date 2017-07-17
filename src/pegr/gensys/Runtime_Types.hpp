@@ -40,6 +40,7 @@ struct Prim {
     union {
         Script::Arridx m_table_idx;
         std::size_t m_byte_offset;
+        std::size_t m_index;
     };
 };
 
@@ -80,7 +81,7 @@ struct Arche {
      */
     std::map<Component*, Aggregate_Offset> m_comp_offsets;
 
-    /* Default chunk which is memcpy'd into the entity's chunk. These chunks
+    /* Default chunk which is fast-copied into the entity's chunk. These chunks
      * only contain POD types.
      */
     Pod::Unique_Chunk_Ptr m_default_chunk;
