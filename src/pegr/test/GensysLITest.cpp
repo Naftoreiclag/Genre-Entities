@@ -3,9 +3,9 @@
 #include "pegr/script/ScriptHelper.hpp"
 #include "pegr/script/Script.hpp"
 #include "pegr/logger/Logger.hpp"
-#include "pegr/gensys/Gensys.hpp"
-#include "pegr/gensys/GensysIntermediate.hpp"
-#include "pegr/gensys/GensysLuaInterface.hpp"
+#include "pegr/gensys/Compiler.hpp"
+#include "pegr/gensys/Interm_Types.hpp"
+#include "pegr/gensys/Lua_Interf.hpp"
 
 namespace pegr {
 namespace Test {

@@ -1,4 +1,4 @@
-#include "pegr/gensys/Gensys.hpp"
+#include "pegr/gensys/Compiler.hpp"
 
 #include <map>
 #include <cassert>
@@ -7,8 +7,8 @@
 #include <memory>
 
 #include "pegr/logger/Logger.hpp"
-#include "pegr/gensys/GensysRuntime.hpp"
-#include "pegr/gensys/GensysUtil.hpp"
+#include "pegr/gensys/Runtime_Types.hpp"
+#include "pegr/gensys/Util.hpp"
 
 namespace pegr {
 namespace Gensys {
@@ -391,7 +391,7 @@ void unstage_genre(std::string id_str) {
     m_staged.erase(iter->second);
 }
 
-ObjectType get_type(std::string id) {
+ObjectType get_staged_type(std::string id) {
     if (m_staged.get_comps_by_id().find(id) 
             != m_staged.get_comps_by_id().end()) {
         return ObjectType::COMP_DEF;
@@ -406,6 +406,10 @@ ObjectType get_type(std::string id) {
     }
     return ObjectType::NOT_FOUND;
 }
+
+Runtime::Component* find_component(std::string id) {}
+Runtime::Arche* find_archetype(std::string id) {}
+Runtime::Genre* find_genre(std::string id) {}
 
 } // namespace Gensys
 } // namespace pegr

@@ -1,4 +1,4 @@
-#include "pegr/gensys/GensysRuntime.hpp"
+#include "pegr/gensys/Runtime_Types.hpp"
 
 #include <cassert>
 #include <cstdint>

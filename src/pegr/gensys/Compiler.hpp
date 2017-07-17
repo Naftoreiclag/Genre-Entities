@@ -1,8 +1,8 @@
 #ifndef PEGR_GENSYS_COMPILER_HPP
 #define PEGR_GENSYS_COMPILER_HPP
 
-#include "pegr/gensys/GensysIntermediate.hpp"
-#include "pegr/gensys/GensysRuntime.hpp"
+#include "pegr/gensys/Interm_Types.hpp"
+#include "pegr/gensys/Runtime_Types.hpp"
 
 namespace pegr {
 namespace Gensys {

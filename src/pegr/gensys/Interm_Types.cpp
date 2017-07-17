@@ -1,4 +1,4 @@
-#include "pegr/gensys/GensysIntermediate.hpp"
+#include "pegr/gensys/Interm_Types.hpp"
 
 #include <cassert>
 

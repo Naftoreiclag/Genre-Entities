@@ -1,4 +1,4 @@
-#include "pegr/gensys/GensysLuaInterface.hpp"
+#include "pegr/gensys/Lua_Interf.hpp"
 
 #include <stdexcept>
 #include <sstream>
@@ -11,9 +11,9 @@
 
 #include "pegr/debug/DebugMacros.hpp"
 #include "pegr/logger/Logger.hpp"
-#include "pegr/gensys/Gensys.hpp"
+#include "pegr/gensys/Compiler.hpp"
 #include "pegr/script/ScriptHelper.hpp"
-#include "pegr/gensys/GensysRuntime.hpp"
+#include "pegr/gensys/Runtime_Types.hpp"
 
 namespace pegr {
 namespace Gensys {

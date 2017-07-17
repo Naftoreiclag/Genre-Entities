@@ -7,8 +7,8 @@
 #include <vector>
 
 #include "pegr/script/Script.hpp"
-#include "pegr/gensys/GensysIntermediate.hpp"
-#include "pegr/gensys/GensysRuntime.hpp"
+#include "pegr/gensys/Interm_Types.hpp"
+#include "pegr/gensys/Runtime_Types.hpp"
 
 namespace pegr {
 namespace Gensys {

@@ -1,4 +1,4 @@
-#include "pegr/gensys/GensysLuaInterface.hpp"
+#include "pegr/gensys/Lua_Interf.hpp"
 
 #include <stdexcept>
 #include <sstream>
@@ -11,7 +11,7 @@
 
 #include "pegr/debug/DebugMacros.hpp"
 #include "pegr/logger/Logger.hpp"
-#include "pegr/gensys/Gensys.hpp"
+#include "pegr/gensys/Compiler.hpp"
 #include "pegr/script/ScriptHelper.hpp"
 
 namespace pegr {
@@ -465,7 +465,7 @@ Interm::Genre::Pattern parse_genre_pattern(int value_idx) {
             pop_guard.pop(1); // Remove __from string
             
             // Determine what we are drawing data from
-            switch (Gensys::get_type(id)) {
+            switch (Gensys::get_staged_type(id)) {
                 // Object does not exist
                 case Gensys::ObjectType::NOT_FOUND: {
                     std::stringstream sss;

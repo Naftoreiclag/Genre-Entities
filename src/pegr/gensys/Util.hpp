@@ -5,8 +5,8 @@
 #include <map>
 #include <vector>
 
-#include "pegr/gensys/GensysIntermediate.hpp"
-#include "pegr/gensys/PodChunk.hpp"
+#include "pegr/gensys/Interm_Types.hpp"
+#include "pegr/gensys/Pod_Chunk.hpp"
 
 namespace pegr {
 namespace Gensys {

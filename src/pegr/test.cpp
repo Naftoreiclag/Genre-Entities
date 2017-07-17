@@ -1,8 +1,8 @@
 #include <stdexcept>
 #include <sstream>
 
-#include "pegr/gensys/Gensys.hpp"
-#include "pegr/gensys/GensysLuaInterface.hpp"
+#include "pegr/gensys/Compiler.hpp"
+#include "pegr/gensys/Lua_Interf.hpp"
 #include "pegr/scheduler/SchedLuaInterface.hpp"
 #include "pegr/script/Script.hpp"
 #include "pegr/logger/Logger.hpp"

@@ -1,4 +1,4 @@
-#include "pegr/gensys/GensysUtil.hpp"
+#include "pegr/gensys/Util.hpp"
 
 #include <algorithm>
 #include <cstdint>

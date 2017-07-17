@@ -6,7 +6,7 @@
 #include <map>
 
 #include "pegr/script/Script.hpp"
-#include "pegr/gensys/PodChunk.hpp"
+#include "pegr/gensys/Pod_Chunk.hpp"
 
 namespace pegr {
 namespace Gensys {
