@@ -1,5 +1,5 @@
-#ifndef PEGR_GENSYS_GENSYS_HPP
-#define PEGR_GENSYS_GENSYS_HPP
+#ifndef PEGR_GENSYS_COMPILER_HPP
+#define PEGR_GENSYS_COMPILER_HPP
 
 #include "pegr/gensys/GensysIntermediate.hpp"
 #include "pegr/gensys/GensysRuntime.hpp"
@@ -127,4 +127,4 @@ Runtime::Genre* find_genre(std::string id);
 } // namespace Gensys
 } // namespace pegr
 
-#endif // PEGR_GENSYS_GENSYS_HPP
+#endif // PEGR_GENSYS_COMPILER_HPP

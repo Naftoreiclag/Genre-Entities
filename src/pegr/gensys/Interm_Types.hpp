@@ -1,5 +1,5 @@
-#ifndef PEGR_GENSYS_GENSYSINTERMEDIATE_HPP
-#define PEGR_GENSYS_GENSYSINTERMEDIATE_HPP
+#ifndef PEGR_GENSYS_INTERMTYPES_HPP
+#define PEGR_GENSYS_INTERMTYPES_HPP
 
 #include <cstdint>
 #include <vector>
@@ -134,4 +134,4 @@ struct Genre {
 } // namespace pegr
 
 
-#endif // PEGR_GENSYS_GENSYSINTERMEDIATE_HPP
+#endif // PEGR_GENSYS_INTERMTYPES_HPP

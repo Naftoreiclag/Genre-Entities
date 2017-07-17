@@ -1,5 +1,5 @@
-#ifndef PEGR_GENSYS_GENSYSUTIL_HPP
-#define PEGR_GENSYS_GENSYSUTIL_HPP
+#ifndef PEGR_GENSYS_UTIL_HPP
+#define PEGR_GENSYS_UTIL_HPP
 
 #include <cstddef>
 #include <map>
@@ -52,4 +52,4 @@ void copy_named_prims_into_pod_chunk(
 } // namespace Gensys
 } // namespace pegr
 
-#endif // PEGR_GENSYS_GENSYSUTIL_HPP
+#endif // PEGR_GENSYS_UTIL_HPP

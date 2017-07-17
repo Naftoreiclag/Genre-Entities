@@ -1,5 +1,5 @@
-#ifndef PEGR_GENSYS_GENSYSLUAINTERFACE_HPP
-#define PEGR_GENSYS_GENSYSLUAINTERFACE_HPP
+#ifndef PEGR_GENSYS_LUAINTERF_HPP
+#define PEGR_GENSYS_LUAINTERF_HPP
 
 #include <cstdint>
 #include <map>
@@ -119,4 +119,4 @@ int new_entity(lua_State* l);
 } // namespace Gensys
 } // namespace pegr
 
-#endif // PEGR_GENSYS_GENSYSLUAINTERFACE_HPP
+#endif // PEGR_GENSYS_LUAINTERF_HPP

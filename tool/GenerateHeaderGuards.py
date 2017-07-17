@@ -28,7 +28,7 @@ definePattern = re.compile('\s*#define\s+(\S*)\s*')
 endifPattern = re.compile('\s*#endif\s+//\s*(\S*)\s*')
 
 def makeGuardFromFname(fname):
-    fname = fname.upper().replace('.', '_').replace('/', '_')
+    fname = fname.upper().replace('_', '').replace('.', '_').replace('/', '_')
     fname = ''.join(c for c in fname if c in \
             'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_')
     return fname
