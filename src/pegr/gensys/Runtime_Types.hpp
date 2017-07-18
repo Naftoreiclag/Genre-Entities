@@ -45,10 +45,10 @@ struct Prim {
 };
 
 /**
- * @class Component
+ * @class Comp
  * @brief Maps archetypes to where the component is within the chunk
  */
-struct Component {
+struct Comp {
     std::map<Symbol, Prim> m_member_offsets;
 };
 
@@ -56,7 +56,7 @@ struct Component {
  * @brief These values are added to the "raw" index provided in the map
  * Component::m_member_offsets
  */
-struct Aggregate_Offset {
+struct Aggindex {
     std::size_t m_pod_idx;
     std::size_t m_string_idx;
 };
@@ -71,7 +71,7 @@ struct Arche {
     /* Archetypes are composed of components. This maps the internal name to
      * the actual component.
      */
-    std::map<Symbol, Component*> m_components;
+    std::map<Symbol, Comp*> m_components;
 
     /* Given a component, provides the offsets into the various aggregate
      * arrays that store the first member of that type. For instance, when
@@ -79,7 +79,7 @@ struct Arche {
      * the Component object and then add that offset to the m_pod_idx offset
      * provided in this map, using the Component's memory address as a key.
      */
-    std::map<Component*, Aggregate_Offset> m_comp_offsets;
+    std::map<Comp*, Aggindex> m_comp_offsets;
 
     /* Default chunk which is fast-copied into the entity's chunk. These chunks
      * only contain POD types.
@@ -99,7 +99,7 @@ struct Genre {
 
     /* Then, lookup the archetype in this map
      */
-    std::map<Arche*, std::vector<Aggregate_Offset> > m_archetype_lookup;
+    std::map<Arche*, std::vector<Aggindex> > m_archetype_lookup;
 };
 
 /**

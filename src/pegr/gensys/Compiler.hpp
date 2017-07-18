@@ -42,7 +42,7 @@ void cleanup();
  * @param id
  * @param comp the component definition
  */
-void stage_component(std::string id, std::unique_ptr<Interm::Comp_Def>&& comp);
+void stage_component(std::string id, std::unique_ptr<Interm::Comp>&& comp);
 
 /**
  * @brief Returns a currently staged component from the id. If the component
@@ -50,7 +50,7 @@ void stage_component(std::string id, std::unique_ptr<Interm::Comp_Def>&& comp);
  * @param id
  * @return nullptr or staged Comp_Def
  */
-Interm::Comp_Def* get_staged_component(std::string id);
+Interm::Comp* get_staged_component(std::string id);
 
 /**
  * @brief Unstages an intermediate component definition for compilation.
@@ -120,7 +120,7 @@ enum struct ObjectType {
  */
 ObjectType get_staged_type(std::string id);
 
-Runtime::Component* find_component(std::string id);
+Runtime::Comp* find_component(std::string id);
 Runtime::Arche* find_archetype(std::string id);
 Runtime::Genre* find_genre(std::string id);
 

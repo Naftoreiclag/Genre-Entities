@@ -48,7 +48,7 @@ Interm::Prim parse_primitive(int table_idx,
  * @param table_idx The index on the main Lua stack to translate
  * @return The component
  */
-std::unique_ptr<Interm::Comp_Def> parse_component_definition(int table_idx);
+std::unique_ptr<Interm::Comp> parse_component_definition(int table_idx);
 
 /**
  * @brief Make an archetype implementation from the table at the given index.

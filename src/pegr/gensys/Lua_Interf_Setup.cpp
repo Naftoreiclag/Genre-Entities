@@ -248,13 +248,13 @@ Interm::Prim parse_primitive(int idx, Interm::Prim::Type required_t) {
     return ret_val;
 }
 
-std::unique_ptr<Interm::Comp_Def> parse_component_definition(int table_idx) {
+std::unique_ptr<Interm::Comp> parse_component_definition(int table_idx) {
     assert_balance(0);
     lua_State* l = Script::get_lua_state();
     table_idx = Script::absolute_idx(table_idx);
     
-    std::unique_ptr<Interm::Comp_Def> comp_def = 
-            std::make_unique<Interm::Comp_Def>();
+    std::unique_ptr<Interm::Comp> comp_def = 
+            std::make_unique<Interm::Comp>();
     
     Script::Helper::for_pairs(table_idx, [&]()->bool {
         Interm::Symbol symbol = 

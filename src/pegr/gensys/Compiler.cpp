@@ -16,13 +16,13 @@ namespace Gensys {
 namespace Work {
 
 struct Comp {
-    Comp(std::unique_ptr<Interm::Comp_Def>&& interm)
+    Comp(std::unique_ptr<Interm::Comp>&& interm)
     : m_interm(std::move(interm)) {
-        m_runtime = std::make_unique<Runtime::Component>();
+        m_runtime = std::make_unique<Runtime::Comp>();
     }
     
-    std::unique_ptr<Interm::Comp_Def> m_interm;
-    std::unique_ptr<Runtime::Component> m_runtime;
+    std::unique_ptr<Interm::Comp> m_interm;
+    std::unique_ptr<Runtime::Comp> m_runtime;
     std::map<Interm::Symbol, std::size_t> m_symbol_to_offset;
     Pod::Unique_Chunk_Ptr m_compiled_chunk;
     std::vector<std::string> m_strings;
@@ -71,7 +71,7 @@ private:
     std::vector<std::unique_ptr<Arche> > m_arches;
     std::vector<std::unique_ptr<Genre> > m_genres;
 
-    std::map<const Interm::Comp_Def*, Comp*> m_comps_by_interm;
+    std::map<const Interm::Comp*, Comp*> m_comps_by_interm;
     std::map<const Interm::Arche*, Arche*> m_arches_by_interm;
     std::map<const Interm::Genre*, Genre*> m_genres_by_interm;
 
@@ -90,7 +90,7 @@ public:
         return m_genres;
     }
     
-    const std::map<const Interm::Comp_Def*, Comp*>& get_comps_by_interm() const {
+    const std::map<const Interm::Comp*, Comp*>& get_comps_by_interm() const {
         return m_comps_by_interm;
     }
     const std::map<const Interm::Arche*, Arche*>& get_arches_by_interm() const {
@@ -143,16 +143,13 @@ public:
 
 } // namespace Staged
 
-std::map<std::string, std::unique_ptr<Runtime::Component> > m_runtime_comps;
+std::map<std::string, std::unique_ptr<Runtime::Comp> > m_runtime_comps;
 std::map<std::string, std::unique_ptr<Runtime::Arche> > m_runtime_arches;
 std::map<std::string, std::unique_ptr<Runtime::Genre> > m_runtime_genres;
 
-std::map<std::string, std::unique_ptr<Interm::Comp_Def> > m_staged_comps;
+std::map<std::string, std::unique_ptr<Interm::Comp> > m_staged_comps;
 std::map<std::string, std::unique_ptr<Interm::Arche> > m_staged_arches;
 std::map<std::string, std::unique_ptr<Interm::Genre> > m_staged_genres;
-
-// TODO: make into a single lua table
-std::vector<Script::Regref_Guard> m_held_functions;
 
 GlobalState m_global_state = GlobalState::UNINITIALIZED;
 
@@ -255,7 +252,7 @@ void compile_component_record_offsets(Work::Space& workspace,
 }
 
 std::unique_ptr<Work::Comp> compile_component(Work::Space& workspace, 
-        std::unique_ptr<Interm::Comp_Def>&& interm) {
+        std::unique_ptr<Interm::Comp>&& interm) {
     
     // Make the working component
     std::unique_ptr<Work::Comp> comp = 
@@ -515,11 +512,11 @@ void erase_something(std::map<K, V>& map, const K& key, const char* err_msg) {
 }
 
 void stage_component(std::string id_str,
-        std::unique_ptr<Interm::Comp_Def>&& comp) {
+        std::unique_ptr<Interm::Comp>&& comp) {
     overwrite(id_str, "component");
     m_staged_comps[id_str] = std::move(comp);
 }
-Interm::Comp_Def* get_staged_component(std::string id_str) {
+Interm::Comp* get_staged_component(std::string id_str) {
     return find_something(m_staged_comps, id_str, 
             "Could not find staged component: %v");
 }
@@ -565,7 +562,7 @@ ObjectType get_staged_type(std::string id) {
     }
     return ObjectType::NOT_FOUND;
 }
-Runtime::Component* find_component(std::string id_str) {
+Runtime::Comp* find_component(std::string id_str) {
     return find_something(m_runtime_comps, id_str, 
             "Could not find component: %v");
 }

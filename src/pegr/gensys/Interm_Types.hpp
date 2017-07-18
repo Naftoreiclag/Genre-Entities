@@ -80,7 +80,7 @@ const char* prim_type_to_debug_str(Prim::Type t);
 
 typedef std::string Symbol;
 
-struct Comp_Def {
+struct Comp {
     // Used only in error messages
     std::string m_error_msg_name;
 
@@ -95,7 +95,7 @@ struct Arche {
     struct Implement {
         std::string m_error_msg_name;
 
-        const Comp_Def* m_component;
+        const Comp* m_component;
         std::map<Symbol, Prim> m_values;
     };
 
@@ -122,7 +122,7 @@ struct Genre {
         Type m_type;
 
         Script::Regref_Shared m_function;
-        Comp_Def* m_from_component;
+        Comp* m_from_component;
         Genre* m_from_genre;
         std::map<Symbol, Symbol> m_aliases;
     };
