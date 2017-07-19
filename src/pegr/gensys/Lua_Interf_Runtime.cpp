@@ -23,16 +23,16 @@ namespace LI {
 const char* MTI_COMPONENT = "pegr.Component";
 const char* MTI_ARCHETYPE = "pegr.Archetype";
 const char* MTI_GENRE = "pegr.Genre";
-const char* MTI_AVIEW = "pegr.Archetypical_Entity";
+const char* MTI_ENTITY = "pegr.Entity";
 
 
 Runtime::Arche** argcheck_archetype(lua_State* l, int idx) {
     void* lua_mem = luaL_checkudata(l, 1, MTI_ARCHETYPE);
     return static_cast<Runtime::Arche**>(lua_mem);
 }
-Runtime::Aview* argcheck_aview(lua_State* l, int idx) {
-    void* lua_mem = luaL_checkudata(l, 1, MTI_AVIEW);
-    return static_cast<Runtime::Aview*>(lua_mem);
+Runtime::Entity_Handle* argcheck_entity(lua_State* l, int idx) {
+    void* lua_mem = luaL_checkudata(l, 1, MTI_ENTITY);
+    return static_cast<Runtime::Entity_Handle*>(lua_mem);
 }
 
 void initialize_userdata_metatables(lua_State* l) {
@@ -67,13 +67,13 @@ void initialize_userdata_metatables(lua_State* l) {
     }
     popg.pop(1);
 
-    success = luaL_newmetatable(l, MTI_AVIEW);
+    success = luaL_newmetatable(l, MTI_ENTITY);
     popg.on_push(1);
-    assert(success && "Archetypical Entity metatable id already taken!");
+    assert(success && "Entity metatable id already taken!");
     {
         const luaL_Reg metatable[] = {
-            {"__tostring", aview_mt_tostring},
-            {"__gc", aview_mt_gc},
+            {"__tostring", entity_mt_tostring},
+            {"__gc", entity_mt_gc},
             
             // End of the list
             {nullptr, nullptr}
@@ -94,22 +94,24 @@ int archetype_mt_tostring(lua_State* l) {
     return 1;
 }
 
-int aview_mt_tostring(lua_State* l) {
-    Runtime::Aview& aview = 
-            *(static_cast<Runtime::Aview*>(lua_touserdata(l, 1)));
+int entity_mt_tostring(lua_State* l) {
+    // The first argument is guaranteed to be the right type
+    Runtime::Entity_Handle ent = 
+            *(static_cast<Runtime::Entity_Handle*>(lua_touserdata(l, 1)));
     std::stringstream sss;
     sss << "Entity: @"
-        << aview.m_entity.get_chunk().get_raw()
+        << ent.get_id()
         << " through archetype @"
-        << aview.m_entity.get_archetype();
+        << ent->get_arche();
     lua_pushstring(l, sss.str().c_str());
     return 1;
 }
 
-int aview_mt_gc(lua_State* l) {
-    Runtime::Aview& av = 
-            *(static_cast<Runtime::Aview*>(lua_touserdata(l, 1)));
-    av.Runtime::Aview::~Aview();
+int entity_mt_gc(lua_State* l) {
+    // The first argument is guaranteed to be the right type
+    Runtime::Entity_Handle ent = 
+            *(static_cast<Runtime::Entity_Handle*>(lua_touserdata(l, 1)));
+    ent.Runtime::Entity_Handle::~Entity_Handle();
     return 0;
 }
 
@@ -143,16 +145,14 @@ int new_entity(lua_State* l) {
     
     Runtime::Arche* arche = *argcheck_archetype(l, 1);
     
-    Runtime::Entity_Ptr ent = Runtime::new_entity(arche);
-    assert(ent.can_be_spawned());
+    Runtime::Entity_Handle ent = Runtime::Entity::new_entity(arche);
+    assert(ent->can_be_spawned());
     
-    void* lua_mem = lua_newuserdata(l, sizeof(Runtime::Aview));
-    luaL_getmetatable(l, MTI_AVIEW);
+    void* lua_mem = lua_newuserdata(l, sizeof(Runtime::Entity_Handle));
+    luaL_getmetatable(l, MTI_ENTITY);
     lua_setmetatable(l, -2);
-    Runtime::Aview& lud_aview = *(new (lua_mem) Runtime::Aview);
     
-    lud_aview.m_entity = ent;
-    Runtime::grab_entity(ent);
+    *(new (lua_mem) Runtime::Entity_Handle) = ent;
     
     return 1;
 }

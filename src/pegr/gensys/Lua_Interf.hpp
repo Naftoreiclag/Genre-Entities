@@ -103,12 +103,12 @@ int add_genre(lua_State* l);
 //// RUNTIME ////
 
 Runtime::Arche** argcheck_archetype(lua_State* l, int idx);
-Runtime::Aview* argcheck_aview(lua_State* l, int idx);
+Runtime::Entity_Handle* argcheck_entity(lua_State* l, int idx);
 
 int archetype_mt_tostring(lua_State* l);
 
-int aview_mt_tostring(lua_State* l);
-int aview_mt_gc(lua_State* l);
+int entity_mt_tostring(lua_State* l);
+int entity_mt_gc(lua_State* l);
 
 // ...
 int find_archetype(lua_State* l);

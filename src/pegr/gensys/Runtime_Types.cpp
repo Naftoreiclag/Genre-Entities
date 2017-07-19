@@ -1,228 +1,160 @@
 #include "pegr/gensys/Runtime_Types.hpp"
 
+#include "pegr/logger/Logger.hpp"
+
+#include <algorithm>
 #include <cassert>
 #include <cstdint>
+#include <vector>
+#include <unordered_map>
 #include <cstring>
 
 namespace pegr {
 namespace Gensys {
 namespace Runtime {
 
-const int32_t EFLAG_SPAWNED = 0x0001;
-const int32_t EFLAG_DEAD = 0x0002;
-const std::size_t INST_OFF_FLAGS = 0;
-const std::size_t INST_OFF_REF_COUNT = 4;
-const std::size_t INST_OFF_SIZE = 8;
+const int64_t ENT_IDX_FLAGS = 0;
+const int64_t ENT_IDX_INST = ENT_IDX_FLAGS + 8;
 
-/**
- * @brief Private function for finding entity flags address
- * @param ent The entity
- * @return The memory address containing the 32-bitfield for an entity.
- */
-int32_t* get_entity_flags_addr(Pod::Chunk_Ptr chunk) {
-    return static_cast<int32_t*>(
-            chunk.get_aligned<int32_t>(INST_OFF_FLAGS));
+const int64_t ENT_FLAG_SPAWNED =        1 << 0;
+const int64_t ENT_FLAG_DEAD =           1 << 1;
+const int64_t ENT_FLAGS_DEFAULT =       0;
+
+int64_t n_next_handle = 0;
+std::vector<Entity> n_entities;
+std::unordered_map<int64_t, std::size_t> n_handle_to_index;
+
+Entity_Handle::Entity_Handle(int64_t id)
+: m_data(id) {}
+
+Entity_Handle::Entity_Handle()
+: m_data(-1) {}
+
+int64_t Entity_Handle::get_id() const {
+    return m_data;
+}
+bool Entity_Handle::does_exist() const {
+    return m_data != -1
+            && n_handle_to_index.find(*this) != n_handle_to_index.end();
+}
+Entity* Entity_Handle::operator ->() const {
+    return get_entity();
 }
 
-/**
- * @brief Private function for finding entity reference count address
- * @param ent The entity
- * @return The memory address containing the reference count for an entity.
- */
-int32_t* get_entity_rcount_addr(Pod::Chunk_Ptr chunk) {
-    return static_cast<int32_t*>(
-            chunk.get_aligned<int32_t>(INST_OFF_REF_COUNT));
+Entity_Handle::operator bool() const {
+    return does_exist();
+}
+Entity_Handle::operator int64_t() const {
+    return get_id();
 }
 
-Entity_Ptr::Entity_Ptr()
-: m_is_smart(false)
-, m_archetype(nullptr)
-, m_strings(nullptr) {}
-
-Entity_Ptr::Entity_Ptr(
-        const Arche* arche, Pod::Chunk_Ptr chunk, std::string* strings)
-: m_is_smart(false)
-, m_archetype(arche)
-, m_chunk(chunk)
-, m_strings(strings) {}
-    
-// Copy constructor
-Entity_Ptr::Entity_Ptr(const Entity_Ptr& rhs)
-: m_is_smart(rhs.m_is_smart)
-, m_archetype(rhs.m_archetype)
-, m_chunk(rhs.m_chunk)
-, m_strings(rhs.m_strings) {
-    if (m_is_smart) {
-        grab_entity(*this);
+Entity* Entity_Handle::get_entity() const {
+    if (!does_exist()) return nullptr;
+    auto iter = n_handle_to_index.find(*this);
+    if (iter == n_handle_to_index.end()) {
+        return nullptr;
     }
+    std::size_t idx = iter->second;
+    assert(idx >= 0 && idx < n_entities.size());
+    return &(n_entities[idx]);
 }
 
-// Move constructor
-Entity_Ptr::Entity_Ptr(Entity_Ptr&& rhs)
-: m_is_smart(rhs.m_is_smart)
-, m_archetype(rhs.m_archetype)
-, m_chunk(rhs.m_chunk)
-, m_strings(rhs.m_strings) {
+Entity::Entity(const Arche* arche)
+: m_arche(arche)
+, m_handle(reserve_new_handle()) {
     
-    // (Do not call make_nullptr() on rhs because that could cause the entity
-    // to be dropped and deleted, after which it cannot be incremented again.)
-    rhs.m_is_smart = false;
-    rhs.m_archetype = nullptr;
-    rhs.m_chunk.make_nullptr();
-    rhs.m_strings = nullptr;
-    
-    /* [MOVING OWNERSHIP]
-     * If we are moving from a smart pointer, then do nothing because the net
-     * result of incrementing the reference count and immediately decrementing
-     * it is wasted time.
-     * 
-     * If we are not moving from a smart pointer, then do nothing trivially.
-     * 
-     * Therefore do not change the reference count when move constructing.
-     */
-}
-
-// Copy assignment
-Entity_Ptr& Entity_Ptr::operator =(const Entity_Ptr& rhs) {
-    if (m_chunk == rhs.m_chunk) {
-        return *this;
-    }
-    make_nullptr();
-    m_is_smart = rhs.m_is_smart;
-    m_archetype = rhs.m_archetype;
-    m_chunk = rhs.m_chunk;
-    m_strings = rhs.m_strings;
-    
-    // Also grab since this a copy
-    if (m_is_smart) {
-        grab_entity(*this);
-    }
-    return *this;
-}
-
-// Move assignment
-Entity_Ptr& Entity_Ptr::operator =(Entity_Ptr&& rhs) {
-    make_nullptr();
-    m_is_smart = rhs.m_is_smart;
-    m_archetype = rhs.m_archetype;
-    m_chunk = rhs.m_chunk;
-    m_strings = rhs.m_strings;
-    
-    // (Do not call make_nullptr() on rhs because that could cause the entity
-    // to be dropped and deleted, after which it cannot be incremented again.)
-    rhs.m_is_smart = false;
-    rhs.m_archetype = nullptr;
-    rhs.m_chunk.make_nullptr();
-    rhs.m_strings = nullptr;
-
-    // (See [MOVING_OWNERSHIP] above)
-
-    return *this;
-}
-
-// Deconstructor
-Entity_Ptr::~Entity_Ptr() {
-    make_nullptr();
-}
-
-bool Entity_Ptr::is_nullptr() const {
-    return m_archetype == nullptr;
-}
-
-void Entity_Ptr::make_nullptr() {
-    if (m_is_smart) {
-        drop_entity(*this);
-    }
-    m_is_smart = false;
-    m_archetype = nullptr;
-    
-    // Not necessary, but who cares
-    m_chunk.make_nullptr();
-    m_strings = nullptr;
-}
-
-const Arche* Entity_Ptr::get_archetype() const {
-    return m_archetype;
-}
-
-Pod::Chunk_Ptr Entity_Ptr::get_chunk() const {
-    return m_chunk;
-}
-
-std::string* Entity_Ptr::get_strings() const {
-    return m_strings;
-}
-
-bool Entity_Ptr::has_been_spawned() const {
-    return (*get_entity_flags_addr(m_chunk) & EFLAG_SPAWNED) == EFLAG_SPAWNED;
-}
-
-bool Entity_Ptr::is_dead() const {
-    return (*get_entity_flags_addr(m_chunk) & EFLAG_DEAD) == EFLAG_DEAD;
-}
-
-bool Entity_Ptr::can_be_spawned() const {
-    return !has_been_spawned() && !is_dead();
-}
-
-int32_t Entity_Ptr::get_lua_reference_count() const {
-    return *get_entity_rcount_addr(m_chunk);
-}
-
-Entity_Ptr new_entity(Arche* arche) {
-    
-    /*
-    assert(arche->m_default_chunk.get_size() % 8 == 0);
-    
-    Pod::Chunk_Ptr chunk = Pod::new_pod_chunk(
-            INST_OFF_SIZE + arche->m_default_chunk.get_size());
+    m_chunk.reset(
+            Pod::new_pod_chunk(8 + m_arche->m_default_chunk.get().get_size()));
     
     Pod::copy_pod_chunk(
-            arche->m_default_chunk, 0, 
-            chunk, INST_OFF_SIZE, 
-            arche->m_default_chunk.get_size());
-            
-    *get_entity_flags_addr(chunk) = 0;
-    *get_entity_rcount_addr(chunk) = 0;
+            m_arche->m_default_chunk.get(), 0, 
+            m_chunk.get(), 8,
+            m_arche->m_default_chunk.get().get_size());
     
+    m_chunk.get().set_value<int64_t>(0, ENT_FLAGS_DEFAULT);
+    m_strings = m_arche->m_default_strings;
+}
+
+Entity::Entity()
+: m_arche(nullptr) {}
+
+Entity_Handle Entity::new_entity(const Arche* arche) {
+    // Record what the entity's index in the vector will be
+    std::size_t index = n_entities.size();
     
-    std::string* strings = new std::string[arche->m_num_strings];
-    for (std::size_t idx = 0; idx < arche->m_num_strings; ++idx) {
-        const char* str_data = arche->m_aggregate_default_strings
-                + arche->m_default_string_offsets[idx];
-        std::size_t str_len = arche->m_default_string_offsets[idx + 1]
-                - arche->m_default_string_offsets[idx];
-        strings[idx] = std::string(str_data, str_len);
+    // Emplace-back a new entity
+    n_entities.emplace_back(arche);
+    
+    // If there is a failure for some reason
+    if (n_entities.size() != index + 1) {
+        Logger::log()->warn("Unable to create new entity!");
+        
+        // Return a null handle
+        return Entity_Handle();
     }
     
-    return Entity_Ptr(arche, chunk, strings);
-    */
+    // Get the entity we just created by reference
+    Entity& ent = n_entities.back();
+    
+    // Map the entity handle to that index in the vector
+    Entity_Handle hand = ent.get_handle();
+    n_handle_to_index[hand] = index;
+    
+    // Return handle to newly created entity
+    return hand;
 }
 
-void kill_entity(const Entity_Ptr& ent) {
-    if (ent.is_dead()) {
-        return;
-    }
-    *get_entity_flags_addr(ent.get_chunk()) |= EFLAG_DEAD;
-    delete[] ent.get_strings();
+void Entity::delete_entity(Entity_Handle hand) {
+    // The handle should always exist in the map
+    assert(n_handle_to_index.find(hand) != n_handle_to_index.end());
+    
+    // Find the pair in the handle-to-index map
+    auto idx_iter = n_handle_to_index.find(hand);
+    
+    // Get the index of the entity in the entity vector
+    std::size_t index = idx_iter->second;
+    
+    // Swap this entity with the back and remove
+    std::iter_swap(n_entities.begin() + index, n_entities.end() - 1);
+    n_entities.pop_back();
+    
+    // Remove the corresponding entry from the handle-to-index map
+    n_handle_to_index.erase(idx_iter);
 }
 
-void delete_entity(const Entity_Ptr& ent) {
-    kill_entity(ent);
-    Pod::delete_pod_chunk(ent.get_chunk());
+const Arche* Entity::get_arche() const {
+    return m_arche;
+}
+Pod::Chunk_Ptr Entity::get_chunk() const {
+    return m_chunk.get();
+}
+Entity_Handle Entity::get_handle() const {
+    return m_handle;
 }
 
-void grab_entity(const Entity_Ptr& ent) {
-    int32_t& ref_count = *get_entity_rcount_addr(ent.get_chunk());
-    ++ref_count;
+int64_t Entity::get_flags() const {
+    return m_chunk.get().get_value<int64_t>(ENT_IDX_FLAGS);
 }
 
-void drop_entity(const Entity_Ptr& ent) {
-    int32_t& ref_count = *get_entity_rcount_addr(ent.get_chunk());
-    --ref_count;
-    if (ref_count == 0) {
-        delete_entity(ent);
-    }
+bool Entity::has_been_spawned() const {
+    return get_flags() & ENT_FLAG_SPAWNED == ENT_FLAG_SPAWNED;
+}
+bool Entity::is_dead() const {
+    return get_flags() & ENT_FLAG_SPAWNED == ENT_FLAG_SPAWNED;
+}
+bool Entity::can_be_spawned() const {
+    return !has_been_spawned();
+}
+
+void initialize() {
+}
+void cleanup() {
+    n_entities.clear();
+    n_next_handle = 0;
+}
+
+Entity_Handle reserve_new_handle() {
+    return Entity_Handle(n_next_handle++);
 }
 
 } // namespace Runtime
