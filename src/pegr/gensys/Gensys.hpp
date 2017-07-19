@@ -1,5 +1,5 @@
-#ifndef GENSYS_HPP
-#define GENSYS_HPP
+#ifndef PEGR_GENSYS_GENSYS_HPP
+#define PEGR_GENSYS_GENSYS_HPP
 
 namespace pegr {
 namespace Gensys {
@@ -26,4 +26,4 @@ void cleanup();
 } // namespace Gensys
 } // namespace pegr
 
-#endif // GENSYS_HPP
+#endif // PEGR_GENSYS_GENSYS_HPP
