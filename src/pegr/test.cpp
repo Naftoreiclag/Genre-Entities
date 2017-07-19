@@ -58,7 +58,7 @@ void run() {
 }
 
 void cleanup() {
-    Gensys::LI::initialize();
+    Gensys::LI::cleanup();
     Gensys::cleanup();
     Script::cleanup();
     Logger::cleanup();
