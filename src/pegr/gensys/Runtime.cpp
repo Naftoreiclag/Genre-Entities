@@ -1,4 +1,4 @@
-#include "pegr/gensys/Runtime_Types.hpp"
+#include "pegr/gensys/Runtime.hpp"
 
 #include <algorithm>
 #include <cassert>

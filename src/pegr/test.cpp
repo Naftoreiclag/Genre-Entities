@@ -1,7 +1,7 @@
 #include <stdexcept>
 #include <sstream>
 
-#include "pegr/gensys/Compiler.hpp"
+#include "pegr/gensys/Gensys.hpp"
 #include "pegr/gensys/Lua_Interf.hpp"
 #include "pegr/scheduler/SchedLuaInterface.hpp"
 #include "pegr/script/Script.hpp"
@@ -14,6 +14,7 @@ void setup() {
     Logger::initialize();
     Script::initialize();
     Gensys::initialize();
+    Gensys::LI::initialize();
 }
 
 void run() {
@@ -57,6 +58,7 @@ void run() {
 }
 
 void cleanup() {
+    Gensys::LI::initialize();
     Gensys::cleanup();
     Script::cleanup();
     Logger::cleanup();

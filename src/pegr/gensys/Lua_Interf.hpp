@@ -8,7 +8,7 @@
 
 #include "pegr/script/Script.hpp"
 #include "pegr/gensys/Interm_Types.hpp"
-#include "pegr/gensys/Runtime_Types.hpp"
+#include "pegr/gensys/Runtime.hpp"
 
 namespace pegr {
 namespace Gensys {

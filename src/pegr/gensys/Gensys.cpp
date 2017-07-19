@@ -2,6 +2,7 @@
 
 #include "pegr/gensys/Compiler.hpp"
 #include "pegr/gensys/Util.hpp"
+#include "pegr/gensys/Runtime.hpp"
 
 namespace pegr {
 namespace Gensys {

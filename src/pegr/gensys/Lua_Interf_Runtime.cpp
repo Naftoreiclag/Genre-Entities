@@ -13,7 +13,7 @@
 #include "pegr/logger/Logger.hpp"
 #include "pegr/gensys/Compiler.hpp"
 #include "pegr/script/ScriptHelper.hpp"
-#include "pegr/gensys/Runtime_Types.hpp"
+#include "pegr/gensys/Runtime.hpp"
 #include "pegr/gensys/Gensys.hpp"
 
 namespace pegr {

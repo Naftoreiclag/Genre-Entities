@@ -29,7 +29,7 @@ foreach(fname
 "gensys/Lua_Interf_Runtime.cpp"
 "gensys/Lua_Interf_Setup.cpp"
 "gensys/Pod_Chunk.cpp"
-"gensys/Runtime_Types.cpp"
+"gensys/Runtime.cpp"
 "gensys/Util.cpp"
 "logger/Logger.cpp"
 "scheduler/SchedLuaInterface.cpp"
