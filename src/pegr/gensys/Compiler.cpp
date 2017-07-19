@@ -7,11 +7,19 @@
 #include <memory>
 
 #include "pegr/logger/Logger.hpp"
-#include "pegr/gensys/Runtime_Types.hpp"
+#include "pegr/gensys/Gensys.hpp"
 #include "pegr/gensys/Util.hpp"
 
 namespace pegr {
 namespace Gensys {
+
+namespace Runtime {
+extern std::map<std::string, std::unique_ptr<Runtime::Comp> > m_runtime_comps;
+extern std::map<std::string, std::unique_ptr<Runtime::Arche> > m_runtime_arches;
+extern std::map<std::string, std::unique_ptr<Runtime::Genre> > m_runtime_genres;
+} // namespace Runtime
+    
+namespace Compiler {
 
 namespace Work {
 
@@ -45,20 +53,6 @@ struct Genre {
     std::unique_ptr<Interm::Genre> m_interm;
     std::unique_ptr<Runtime::Genre> m_runtime;
 };
-
-/**
- * @brief Removes from a vector of unique pointers by comparing their .get()
- * by value
- * @param vec
- * @param ptr
- */
-template<typename T, typename V>
-void vector_remove_unique_ptrs(std::vector<std::unique_ptr<T> >& vec, V& ptr) {
-    vec.erase(std::remove_if(vec.begin(), vec.end(), 
-            [&](const std::unique_ptr<T>& elem) -> bool {
-                return elem.get() == ptr;
-            }), vec.end());
-}
 
 /**
  * @class Space
@@ -141,25 +135,21 @@ public:
     }
 };
 
-} // namespace Staged
-
-std::map<std::string, std::unique_ptr<Runtime::Comp> > m_runtime_comps;
-std::map<std::string, std::unique_ptr<Runtime::Arche> > m_runtime_arches;
-std::map<std::string, std::unique_ptr<Runtime::Genre> > m_runtime_genres;
+} // namespace Work
 
 std::map<std::string, std::unique_ptr<Interm::Comp> > m_staged_comps;
 std::map<std::string, std::unique_ptr<Interm::Arche> > m_staged_arches;
 std::map<std::string, std::unique_ptr<Interm::Genre> > m_staged_genres;
 
-GlobalState m_global_state = GlobalState::UNINITIALIZED;
-
-GlobalState get_global_state() {
-    return m_global_state;
+void initialize() {
+    assert(get_global_state() == GlobalState::UNINITIALIZED);
 }
 
-void initialize() {
-    assert(m_global_state == GlobalState::UNINITIALIZED);
-    m_global_state = GlobalState::MUTABLE;
+void cleanup() {
+    assert(get_global_state() != GlobalState::UNINITIALIZED);
+    m_staged_comps.clear();
+    m_staged_arches.clear();
+    m_staged_genres.clear();
 }
 
 Runtime::Prim::Type prim_type_convert(Interm::Prim::Type it) {
@@ -414,7 +404,7 @@ std::unique_ptr<Work::Genre> compile_genre(Work::Space& workspace,
 }
 
 void compile() {
-    assert(m_global_state == GlobalState::MUTABLE);
+    assert(get_global_state() == GlobalState::MUTABLE);
     
     Work::Space workspace;
 
@@ -433,34 +423,24 @@ void compile() {
         workspace.add_genre(std::move(genre), entry.first);
     }
     
-    m_runtime_comps.clear();
-    m_runtime_arches.clear();
-    m_runtime_genres.clear();
+    Runtime::m_runtime_comps.clear();
+    Runtime::m_runtime_arches.clear();
+    Runtime::m_runtime_genres.clear();
     
     for (const auto& entry : workspace.get_comps_by_id()) {
-        m_runtime_comps[entry.first] = std::move(entry.second->m_runtime);
+        Runtime::m_runtime_comps[entry.first] 
+                = std::move(entry.second->m_runtime);
     }
     
     for (const auto& entry : workspace.get_arches_by_id()) {
-        m_runtime_arches[entry.first] = std::move(entry.second->m_runtime);
+        Runtime::m_runtime_arches[entry.first] 
+                = std::move(entry.second->m_runtime);
     }
     
     for (const auto& entry : workspace.get_genres_by_id()) {
-        m_runtime_genres[entry.first] = std::move(entry.second->m_runtime);
+        Runtime::m_runtime_genres[entry.first] 
+                = std::move(entry.second->m_runtime);
     }
-
-    m_global_state = GlobalState::EXECUTABLE;
-}
-
-void cleanup() {
-    assert(m_global_state != GlobalState::UNINITIALIZED);
-    m_staged_comps.clear();
-    m_staged_arches.clear();
-    m_staged_genres.clear();
-    m_runtime_comps.clear();
-    m_runtime_arches.clear();
-    m_runtime_genres.clear();
-    m_global_state = GlobalState::UNINITIALIZED;
 }
 
 void overwrite(std::string id_str, const char* attacker) {
@@ -490,38 +470,17 @@ void overwrite(std::string id_str, const char* attacker) {
     }
 }
 
-template<typename K, typename V>
-V* find_something(std::map<K, std::unique_ptr<V> >& map, const K& key, 
-        const char* err_msg) {
-    auto iter = map.find(key);
-    if (iter == map.end()) {
-        Logger::log()->warn(err_msg, key);
-        return nullptr;
-    }
-    return iter->second.get();
-}
-
-template<typename K, typename V>
-void erase_something(std::map<K, V>& map, const K& key, const char* err_msg) {
-    auto iter = map.find(key);
-    if (iter == map.end()) {
-        Logger::log()->warn(err_msg, key);
-        return;
-    }
-    map.erase(iter);
-}
-
 void stage_component(std::string id_str,
         std::unique_ptr<Interm::Comp>&& comp) {
     overwrite(id_str, "component");
     m_staged_comps[id_str] = std::move(comp);
 }
 Interm::Comp* get_staged_component(std::string id_str) {
-    return find_something(m_staged_comps, id_str, 
+    return Util::find_something(m_staged_comps, id_str, 
             "Could not find staged component: %v");
 }
 void unstage_component(std::string id_str) {
-    erase_something(m_staged_comps, id_str, 
+    Util::erase_something(m_staged_comps, id_str, 
             "Could not find staged component: %v");
 }
 void stage_archetype(std::string id_str,
@@ -530,11 +489,11 @@ void stage_archetype(std::string id_str,
     m_staged_arches[id_str] = std::move(arche);
 }
 Interm::Arche* get_staged_archetype(std::string id_str) {
-    return find_something(m_staged_arches, id_str, 
+    return Util::find_something(m_staged_arches, id_str, 
             "Could not find staged archetype: %v");
 }
 void unstage_archetype(std::string id_str) {
-    erase_something(m_staged_arches, id_str, 
+    Util::erase_something(m_staged_arches, id_str, 
             "Could not find staged archetype: %v");
 }
 void stage_genre(std::string id_str, std::unique_ptr<Interm::Genre>&& genre) {
@@ -542,11 +501,11 @@ void stage_genre(std::string id_str, std::unique_ptr<Interm::Genre>&& genre) {
     m_staged_genres[id_str] = std::move(genre);
 }
 Interm::Genre* get_staged_genre(std::string id_str) {
-    return find_something(m_staged_genres, id_str, 
+    return Util::find_something(m_staged_genres, id_str, 
             "Could not find staged genre: %v");
 }
 void unstage_genre(std::string id_str) {
-    erase_something(m_staged_genres, id_str, 
+    Util::erase_something(m_staged_genres, id_str, 
             "Could not find staged genre: %v");
 }
 
@@ -562,18 +521,7 @@ ObjectType get_staged_type(std::string id) {
     }
     return ObjectType::NOT_FOUND;
 }
-Runtime::Comp* find_component(std::string id_str) {
-    return find_something(m_runtime_comps, id_str, 
-            "Could not find component: %v");
-}
-Runtime::Arche* find_archetype(std::string id_str) {
-    return find_something(m_runtime_arches, id_str, 
-            "Could not find archetype: %v");
-}
-Runtime::Genre* find_genre(std::string id_str) {
-    return find_something(m_runtime_genres, id_str, 
-            "Could not find genre: %v");
-}
 
+} // namespace Compiler
 } // namespace Gensys
 } // namespace pegr

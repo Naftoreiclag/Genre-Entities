@@ -3,6 +3,7 @@
 
 #include "pegr/gensys/Compiler.hpp"
 #include "pegr/gensys/Lua_Interf.hpp"
+#include "pegr/gensys/Gensys.hpp"
 #include "pegr/scheduler/SchedLuaInterface.hpp"
 #include "pegr/script/Script.hpp"
 #include "pegr/script/ScriptHelper.hpp"
@@ -31,7 +32,7 @@ void run() {
         Logger::log()->warn(e.what());
     }
     Gensys::LI::stage_all();
-    Gensys::compile();
+    Gensys::Compiler::compile();
     try {
         Script::Helper::run_simple_function(postinit_fun, 0);
     } catch (std::runtime_error e) {

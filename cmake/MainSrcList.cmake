@@ -24,6 +24,7 @@ foreach(fname
 
 "debug/DebugAssertLuaBalance.cpp"
 "gensys/Compiler.cpp"
+"gensys/Gensys.cpp"
 "gensys/Interm_Types.cpp"
 "gensys/Lua_Interf_Runtime.cpp"
 "gensys/Lua_Interf_Setup.cpp"

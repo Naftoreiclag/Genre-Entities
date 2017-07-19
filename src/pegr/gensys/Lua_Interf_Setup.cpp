@@ -13,6 +13,7 @@
 #include "pegr/logger/Logger.hpp"
 #include "pegr/gensys/Compiler.hpp"
 #include "pegr/script/ScriptHelper.hpp"
+#include "pegr/gensys/Gensys.hpp"
 
 namespace pegr {
 namespace Gensys {
@@ -309,7 +310,7 @@ Interm::Arche::Implement parse_archetype_implementation(int table_idx) {
     
     pop_guard.pop(1); // Pop __is string
     
-    implement.m_component = Gensys::get_staged_component(comp_id);
+    implement.m_component = Compiler::get_staged_component(comp_id);
     
     if (!implement.m_component) {
         std::stringstream sss;
@@ -465,16 +466,16 @@ Interm::Genre::Pattern parse_genre_pattern(int value_idx) {
             pop_guard.pop(1); // Remove __from string
             
             // Determine what we are drawing data from
-            switch (Gensys::get_staged_type(id)) {
+            switch (Compiler::get_staged_type(id)) {
                 // Object does not exist
-                case Gensys::ObjectType::NOT_FOUND: {
+                case Compiler::ObjectType::NOT_FOUND: {
                     std::stringstream sss;
                     sss << "No component or genre with id ["
                         << id << ']';
                     throw std::runtime_error(sss.str());
                 }
                 // Object is an archetype (not allowed)
-                case Gensys::ObjectType::ARCHETYPE: {
+                case Compiler::ObjectType::ARCHETYPE: {
                     std::stringstream sss;
                     sss << "Genres cannot depend on the existence of "
                             "particular archetypes, such as ["
@@ -482,20 +483,20 @@ Interm::Genre::Pattern parse_genre_pattern(int value_idx) {
                     throw std::runtime_error(sss.str());
                 }
                 // Object is a component
-                case Gensys::ObjectType::COMP_DEF: {
+                case Compiler::ObjectType::COMP_DEF: {
                     pattern.m_type = 
                             Interm::Genre::Pattern::Type::FROM_COMP;
                     pattern.m_from_component = 
-                            Gensys::get_staged_component(id);
+                            Compiler::get_staged_component(id);
                     assert(pattern.m_from_component);
                     break;
                 }
                 // Object is a genre
-                case Gensys::ObjectType::GENRE: {
+                case Compiler::ObjectType::GENRE: {
                     pattern.m_type = 
                             Interm::Genre::Pattern::Type::FROM_GENRE;
                     pattern.m_from_genre =
-                            Gensys::get_staged_genre(id);
+                            Compiler::get_staged_genre(id);
                     assert(pattern.m_from_genre);
                     break;
                 }
@@ -651,7 +652,7 @@ void stage_all() {
         try {
             auto obj = parse_component_definition(-1);
             obj->m_error_msg_name = id;
-            Gensys::stage_component(id, std::move(obj));
+            Compiler::stage_component(id, std::move(obj));
             Logger::log()->info("Successfully parsed compnent [%v]", id);
         }
         catch (std::runtime_error e) {
@@ -677,7 +678,7 @@ void stage_all() {
         try {
             auto obj = parse_archetype(-1);
             obj->m_error_msg_name = id;
-            Gensys::stage_archetype(id, std::move(obj));
+            Compiler::stage_archetype(id, std::move(obj));
             Logger::log()->info("Successfully parsed archetype [%v]", id);
         }
         catch (std::runtime_error e) {
@@ -703,7 +704,7 @@ void stage_all() {
         try {
             auto obj = parse_genre(-1);
             obj->m_error_msg_name = id;
-            Gensys::stage_genre(id, std::move(obj));
+            Compiler::stage_genre(id, std::move(obj));
             Logger::log()->info("Successfully parsed genre [%v]", id);
         }
         catch (std::runtime_error e) {

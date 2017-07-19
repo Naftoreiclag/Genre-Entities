@@ -1,7 +1,5 @@
 #include "pegr/gensys/Runtime_Types.hpp"
 
-#include "pegr/logger/Logger.hpp"
-
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
@@ -9,9 +7,16 @@
 #include <unordered_map>
 #include <cstring>
 
+#include "pegr/logger/Logger.hpp"
+#include "pegr/gensys/Util.hpp"
+
 namespace pegr {
 namespace Gensys {
 namespace Runtime {
+
+std::map<std::string, std::unique_ptr<Runtime::Comp> > m_runtime_comps;
+std::map<std::string, std::unique_ptr<Runtime::Arche> > m_runtime_arches;
+std::map<std::string, std::unique_ptr<Runtime::Genre> > m_runtime_genres;
 
 const int64_t ENT_IDX_FLAGS = 0;
 const int64_t ENT_IDX_INST = ENT_IDX_FLAGS + 8;
@@ -151,10 +156,26 @@ void initialize() {
 void cleanup() {
     n_entities.clear();
     n_next_handle = 0;
+    m_runtime_comps.clear();
+    m_runtime_arches.clear();
+    m_runtime_genres.clear();
 }
 
 Entity_Handle reserve_new_handle() {
     return Entity_Handle(n_next_handle++);
+}
+
+Runtime::Comp* find_component(std::string id_str) {
+    return Util::find_something(m_runtime_comps, id_str, 
+            "Could not find component: %v");
+}
+Runtime::Arche* find_archetype(std::string id_str) {
+    return Util::find_something(m_runtime_arches, id_str, 
+            "Could not find archetype: %v");
+}
+Runtime::Genre* find_genre(std::string id_str) {
+    return Util::find_something(m_runtime_genres, id_str, 
+            "Could not find genre: %v");
 }
 
 } // namespace Runtime

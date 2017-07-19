@@ -14,6 +14,7 @@
 #include "pegr/gensys/Compiler.hpp"
 #include "pegr/script/ScriptHelper.hpp"
 #include "pegr/gensys/Runtime_Types.hpp"
+#include "pegr/gensys/Gensys.hpp"
 
 namespace pegr {
 namespace Gensys {
@@ -123,7 +124,7 @@ int find_archetype(lua_State* l) {
     const char* strdata = luaL_checklstring(l, 1, &strlen);
     std::string key(strdata, strlen);
     
-    Runtime::Arche* arche = Gensys::find_archetype(key);
+    Runtime::Arche* arche = Runtime::find_archetype(key);
     if (!arche) {
         return 0;
     }

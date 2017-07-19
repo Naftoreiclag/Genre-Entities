@@ -6,21 +6,7 @@
 
 namespace pegr {
 namespace Gensys {
-
-enum struct GlobalState {
-    // Stage before initialize() is called for the first time
-    UNINITIALIZED,
-    
-    // Stage where new elements can be added into the system
-    MUTABLE,
-    
-    // Stage after "compiling," entities can be created and processed now
-    EXECUTABLE,
-    
-    ENUM_SIZE /*Number of valid enum values*/
-};
-
-GlobalState get_global_state();
+namespace Compiler {
 
 /**
  * @brief Initializes the gensys. Sets up workspaces for adding new components,
@@ -28,13 +14,13 @@ GlobalState get_global_state();
  */
 void initialize();
 
+void cleanup();
+
 /**
  * @brief Transitions to executable mode, turning all of the staged intermediate
  * elements into their post-process types
  */
 void compile();
-
-void cleanup();
 
 /**
  * @brief Stages an intermediate component definition for compilation. 
@@ -120,10 +106,7 @@ enum struct ObjectType {
  */
 ObjectType get_staged_type(std::string id);
 
-Runtime::Comp* find_component(std::string id);
-Runtime::Arche* find_archetype(std::string id);
-Runtime::Genre* find_genre(std::string id);
-
+} // namespace Compiler
 } // namespace Gensys
 } // namespace pegr
 
