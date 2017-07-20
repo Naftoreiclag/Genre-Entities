@@ -69,10 +69,12 @@ Chunk_Ptr new_pod_chunk(std::size_t req_size) {
         return Chunk_Ptr(chunk, 0);
     }
     
+    assert(sizeof(int64_t) == 8);
+    
     // Fewest number of int64's that can hold the requested number of bytes
-    std::size_t size = (req_size / 8) + (req_size % 8 == 0 ? 0 : 1);
-    int64_t* chunk = new int64_t[size];
-    return Chunk_Ptr(chunk, size);
+    std::size_t num_64s = (req_size / 8) + (req_size % 8 == 0 ? 0 : 1);
+    int64_t* chunk = new int64_t[num_64s];
+    return Chunk_Ptr(chunk, num_64s * 8);
 }
 
 void delete_pod_chunk(Chunk_Ptr ptr) {
