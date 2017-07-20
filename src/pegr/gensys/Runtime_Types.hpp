@@ -120,6 +120,23 @@ public:
     explicit Entity_Handle(int64_t id);
     
     int64_t get_id() const;
+    
+    /**
+     * @brief Returns false if any of the following conditions are true:
+     *  -   This handle has no entity associated with it at all, such as
+     *      immediately after using the default constructor
+     *  -   The entity that this handle once referred to was deleted (and
+     *      therefore there is absolutely no data that this handle can
+     *      return.)
+     * This function returns false iff operator-> returns nullptr
+     * Note that existence implies that the entity has been despawned, but
+     * being despawned does not imply non-existence.
+     * 
+     * Existence indicates whether or not any data is retrievable from the 
+     * entity instance.
+     * 
+     * @return Whether an entity "exists"
+     */
     bool does_exist() const;
     
     /**
@@ -148,11 +165,38 @@ private:
 
 
 extern const int64_t ENT_FLAG_SPAWNED;
-extern const int64_t ENT_FLAG_DEAD;
+extern const int64_t ENT_FLAG_KILLED;
 extern const int64_t ENT_FLAGS_DEFAULT;
 
 /**
  * @class Entity
+ * 
+ * Typical entity lifecycle:
+ * +---+--------+---------+-------+--------+----------------+
+ * | i | exists | spawned | alive | killed | can be spawned |
+ * +---+--------+---------+-------+--------+----------------+
+ * | 0 |   -    |    -    |   -   |   -    |       -        |
+ * | 1 |   X    |    -    |   -   |   -    |       X        |
+ * | 2 |   X    |    X    |   X   |   -    |       -        |
+ * | 3 |   X    |    X    |   -   |   X    |       -        |
+ * | 4 |   -    |    -    |   -   |   -    |       -        |
+ * +---+--------+---------+-------+--------+----------------+
+ * 
+ * 0. No call to new_entity, no handle can report that this entity exists.
+ * 1. Call to new_entity, entity exists and can be spawned
+ * 2. Entity spawned, entity has been spawned and is alive, can not be spawned.
+ * 3. Entity despawned, entity has been spawned and is dead, still unspawnable.
+ * 4. Call to delete_entity, entity does not exist anymore
+ * 
+ * This table also shows all possible states that all entities can have.
+ * 
+ * killed implies spawned
+ * alive implies spawned
+ * killed implies not alive
+ * alive implies not killed
+ * can be spawned implies not spawned
+ * spawned implies not can be spawned
+ * 
  */
 class Entity {
 public:
@@ -174,7 +218,9 @@ public:
      */
     Pod::Chunk_Ptr get_chunk() const;
     
-    
+    /**
+     * @return m_handle The handle for this entity
+     */
     Entity_Handle get_handle() const;
 
     /**
@@ -182,10 +228,34 @@ public:
      */
     const std::vector<std::string>& get_strings() const;
 
+    /**
+     * @return The set of flags that all entity instances must have, particular
+     * to this instance
+     */
     int64_t get_flags() const;
+    
+    /**
+     * @return If this entity has ever been spawned. This value can be true
+     * even if the entity is dead.
+     */
     bool has_been_spawned() const;
-    bool is_dead() const;
+    
+    /**
+     * @return If the entity has been newly constructed but not yet spawned.
+     * True iff has_been_spawned() returns false
+     */
     bool can_be_spawned() const;
+    
+    /**
+     * @return If the entity has been spawned and has not been despawned.
+     */
+    bool is_alive() const;
+    
+    /**
+     * @return If the entity has been spawned but more recently has been
+     * despawned.
+     */
+    bool has_been_killed() const;
 
     /**
      * @brief Constructor. You likely do not want to use this. Use the static

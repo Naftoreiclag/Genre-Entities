@@ -22,7 +22,7 @@ const int64_t ENT_IDX_FLAGS = 0;
 const int64_t ENT_IDX_INST = ENT_IDX_FLAGS + 8;
 
 const int64_t ENT_FLAG_SPAWNED =        1 << 0;
-const int64_t ENT_FLAG_DEAD =           1 << 1;
+const int64_t ENT_FLAG_KILLED =           1 << 1;
 const int64_t ENT_FLAGS_DEFAULT =       0;
 
 int64_t n_next_handle = 0;
@@ -54,7 +54,7 @@ Entity_Handle::operator int64_t() const {
 }
 
 Entity* Entity_Handle::get_entity() const {
-    if (!does_exist()) return nullptr;
+    if (m_data == -1) return nullptr;
     auto iter = n_handle_to_index.find(*this);
     if (iter == n_handle_to_index.end()) {
         return nullptr;
@@ -144,8 +144,14 @@ int64_t Entity::get_flags() const {
 bool Entity::has_been_spawned() const {
     return get_flags() & ENT_FLAG_SPAWNED == ENT_FLAG_SPAWNED;
 }
-bool Entity::is_dead() const {
-    return get_flags() & ENT_FLAG_SPAWNED == ENT_FLAG_SPAWNED;
+bool Entity::is_alive() const {
+    int64_t flags = get_flags();
+    // Spawned and not killed
+    return (flags & ENT_FLAG_SPAWNED == ENT_FLAG_SPAWNED)
+            && (flags & ENT_FLAG_KILLED != ENT_FLAG_KILLED);
+}
+bool Entity::has_been_killed() const {
+    return get_flags() & ENT_FLAG_KILLED == ENT_FLAG_KILLED;
 }
 bool Entity::can_be_spawned() const {
     return !has_been_spawned();
