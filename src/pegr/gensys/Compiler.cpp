@@ -243,7 +243,6 @@ void compile_component_record_offsets(Work::Space& workspace,
 
 std::unique_ptr<Work::Comp> compile_component(Work::Space& workspace, 
         std::unique_ptr<Interm::Comp>&& interm) {
-    
     // Make the working component
     std::unique_ptr<Work::Comp> comp = 
             std::make_unique<Work::Comp>(std::move(interm));
@@ -260,7 +259,6 @@ std::unique_ptr<Work::Comp> compile_component(Work::Space& workspace,
 
 void compile_archetype_resize_pod(Work::Space& workspace,
         std::unique_ptr<Work::Arche>& arche) {
-
     // Find the total size, which is the sum of the component POD chunk
     std::size_t total_size = 0;
     for (const auto& implem_pair : arche->m_interm->m_implements) {
@@ -279,12 +277,12 @@ void compile_archetype_fill_pod(Work::Space& workspace,
 
     // Stores how many bytes have already been used up in the POD chunk
     std::size_t accumulated = 0;
-
+    
     // For every implementation
     for (const auto& implem_pair : arche->m_interm->m_implements) {
-        
         // Get the implementation
         const Interm::Arche::Implement& implem = implem_pair.second;
+        Logger::log()->info("    %v", implem.m_error_msg_name);
 
         const auto& comp_iter = 
                 workspace.get_comps_by_interm().find(implem.m_component);
@@ -307,7 +305,7 @@ void compile_archetype_fill_pod(Work::Space& workspace,
                 comp->m_symbol_to_offset,
                 arche->m_runtime->m_default_chunk.get(),
                 accumulated);
-
+                
         // Remember how to find this data later
         arche->m_runtime->m_comp_offsets[comp->m_runtime.get()].m_pod_idx 
                 = accumulated;
@@ -404,20 +402,27 @@ std::unique_ptr<Work::Genre> compile_genre(Work::Space& workspace,
 }
 
 void compile() {
+    Logger::log()->info("Gensys compilation starting...");
     assert(get_global_state() == GlobalState::MUTABLE);
     
+    Logger::log()->info("Creating workspace...");
     Work::Space workspace;
 
+    Logger::log()->info("Compiling components...");
     for (auto& entry : m_staged_comps) {
+        Logger::log()->info("-> %v", entry.first);
         auto comp = compile_component(workspace, std::move(entry.second));
         workspace.add_comp(std::move(comp), entry.first);
     }
 
+    Logger::log()->info("Processing archetypes...");
     for (auto& entry : m_staged_arches) {
+        Logger::log()->info("-> %v", entry.first);
         auto arche = compile_archetype(workspace, std::move(entry.second));
         workspace.add_arche(std::move(arche), entry.first);
     }
 
+    Logger::log()->info("Processing genres...");
     for (auto& entry : m_staged_genres) {
         auto genre = compile_genre(workspace, std::move(entry.second));
         workspace.add_genre(std::move(genre), entry.first);
@@ -427,20 +432,25 @@ void compile() {
     Runtime::m_runtime_arches.clear();
     Runtime::m_runtime_genres.clear();
     
+    Logger::log()->info("Moving components...");
     for (const auto& entry : workspace.get_comps_by_id()) {
         Runtime::m_runtime_comps[entry.first] 
                 = std::move(entry.second->m_runtime);
     }
     
+    Logger::log()->info("Moving archetypes...");
     for (const auto& entry : workspace.get_arches_by_id()) {
         Runtime::m_runtime_arches[entry.first] 
                 = std::move(entry.second->m_runtime);
     }
     
+    Logger::log()->info("Moving genres...");
     for (const auto& entry : workspace.get_genres_by_id()) {
         Runtime::m_runtime_genres[entry.first] 
                 = std::move(entry.second->m_runtime);
     }
+    
+    Logger::log()->info("Compilation complete");
 }
 
 void overwrite(std::string id_str, const char* attacker) {
