@@ -21,10 +21,14 @@ void setup() {
 
 void run() {
     Script::Regref_Guard sandbox(Script::new_sandbox());
-    Script::Regref_Guard init_fun(
-            Script::load_lua_function("init.lua", sandbox));
-    Script::Regref_Guard postinit_fun(
-            Script::load_lua_function("postinit.lua", sandbox));
+    Script::Regref_Guard init_fun;
+    Script::Regref_Guard postinit_fun;
+    try {
+        init_fun = Script::load_lua_function("init.lua", sandbox);
+        postinit_fun = Script::load_lua_function("postinit.lua", sandbox);
+    } catch (std::runtime_error e) {
+        Logger::log()->warn(e.what());
+    }
     
     try {
         Script::Helper::run_simple_function(init_fun, 0);
@@ -32,7 +36,7 @@ void run() {
         Logger::log()->warn(e.what());
     }
     Gensys::LI::stage_all();
-    Gensys::Compiler::compile();
+    Gensys::compile();
     try {
         Script::Helper::run_simple_function(postinit_fun, 0);
     } catch (std::runtime_error e) {

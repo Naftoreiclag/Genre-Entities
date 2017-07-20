@@ -21,6 +21,7 @@ void initialize() {
 }
 void compile() {
     assert(m_global_state == GlobalState::MUTABLE);
+    Compiler::compile();
     m_global_state = GlobalState::EXECUTABLE;
 }
 void cleanup() {
