@@ -452,17 +452,24 @@ Regref new_sandbox() {
 
 void drop_reference(Regref ref) {
     assert(is_initialized());
+    if (ref == LUA_REFNIL) return;
     --m_total_grab_delta;
     luaL_unref(m_l, LUA_REGISTRYINDEX, ref);
 }
 
 void push_reference(Regref ref) {
     assert(is_initialized());
+    assert_balance(1);
     lua_rawgeti(m_l, LUA_REGISTRYINDEX, ref);
 }
 
 Regref grab_reference() {
     assert(is_initialized());
+    assert_balance(-1);
+    if (lua_isnil(m_l, -1)) {
+        lua_pop(m_l, 1);
+        return LUA_REFNIL;
+    }
     ++m_total_grab_delta;
     return luaL_ref(m_l, LUA_REGISTRYINDEX);
 }
