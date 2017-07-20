@@ -74,6 +74,57 @@ pegr.add_archetype('cookie.at', {
 })
 print('added cookie.at')
 
+pegr.add_archetype('pizza.at', {
+  position = {
+    -- (Resource ids should never be keys)
+    __is = 'position.c',
+    
+    -- Start at (30, 10) for no particular reason
+    x = {'f64', 30},
+    y = {'f64', 10},
+  },
+  velocity = {
+    __is = 'velocity.c',
+    -- Keep all default default values
+  },
+  body = {
+    __is = 'circle.c',
+    
+    -- Pizzas are big
+    radius = {'f32', 2.0},
+  },
+  edible = {
+    __is = 'edible.c',
+    
+    -- 0.63 foodiness (this is a deep dish)
+    food_value = {'f32', 0.63},
+    
+    -- The "self" argument is an archetype-view on the entity
+    on_eaten = {'func', function(self)
+      if food_value > 0.2 then
+        print('This pizza sure is juicy!')
+      else
+        print('This pizza sure is crispy!')
+      end
+    end},
+  },
+})
+print('added pizza.at')
+
+pegr.add_archetype('bowling_ball.at', {
+  position = {
+    __is = 'position.c',
+  },
+  velocity = {
+    __is = 'velocity.c',
+  },
+  body = {
+    __is = 'circle.c',
+    radius = {'f32', 1.0},
+  }
+})
+print('added bowling_ball.at')
+    
 -------------------------------------------------------------------------------
 
 --[[
