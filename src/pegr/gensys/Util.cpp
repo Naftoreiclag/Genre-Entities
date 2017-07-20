@@ -116,7 +116,7 @@ Pod::Chunk_Ptr new_pod_chunk_from_interm_prims(
             }
             
             std::size_t off = 0;
-            while (!ptrack.can_occupy(off, size)) { off += alignment_interval; }
+            while (!ptrack.can_occupy(off, size)) off += alignment_interval;
             
             ptrack.occupy(off, size);
             symbol_to_offset[member_symbol] = off;
@@ -134,7 +134,17 @@ void copy_named_prims_into_pod_chunk(
         Pod::Chunk_Ptr pcp, std::size_t dest_offset) {
     for (const auto& symbol_offset_pair : symbol_to_offset) {
         const Interm::Symbol& symb = symbol_offset_pair.first;
-        const Interm::Prim& val = members.at(symb);
+        
+        const auto& member_iter = members.find(symb);
+        
+        /* Skip any members that are not specified
+         * (such as when an archetype sets new defaults)
+         */
+        if (member_iter == members.end()) {
+            continue;
+        }
+        
+        const Interm::Prim& val = member_iter->second;
         
         // Skip any empty values (such as when an archetype sets new defaults)
         if (val.is_empty()) {
