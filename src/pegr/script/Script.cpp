@@ -567,9 +567,11 @@ int li_print(lua_State* l) {
                 luaL_argerror(l, idx, 
                     "calling 'tostring' on this value did not return a string");
             }
+            log << str;
             lua_pop(l, 1);
+        } else {
+            log << str;
         }
-        log << str;
         if (idx < nargs) {
             log << "\t";
         }
