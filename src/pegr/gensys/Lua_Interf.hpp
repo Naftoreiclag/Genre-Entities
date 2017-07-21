@@ -94,27 +94,27 @@ std::unique_ptr<Interm::Genre> parse_genre(int table_idx);
  */
 void stage_all();
 
-int add_component(lua_State* l);
-int edit_component(lua_State* l);
-int add_archetype(lua_State* l);
-int edit_archetype(lua_State* l);
-int add_genre(lua_State* l);
+int li_add_component(lua_State* l);
+int li_edit_component(lua_State* l);
+int li_add_archetype(lua_State* l);
+int li_edit_archetype(lua_State* l);
+int li_add_genre(lua_State* l);
 
 //// RUNTIME ////
 
 Runtime::Arche** argcheck_archetype(lua_State* l, int idx);
 Runtime::Entity_Handle* argcheck_entity(lua_State* l, int idx);
 
-int archetype_mt_tostring(lua_State* l);
+int li_archetype_mt_tostring(lua_State* l);
 
-int entity_mt_gc(lua_State* l);
-int entity_mt_index(lua_State* l);
-int entity_mt_tostring(lua_State* l);
+int li_entity_mt_gc(lua_State* l);
+int li_entity_mt_index(lua_State* l);
+int li_entity_mt_tostring(lua_State* l);
 
 // ...
-int find_archetype(lua_State* l);
+int li_find_archetype(lua_State* l);
 
-int new_entity(lua_State* l);
+int li_new_entity(lua_State* l);
 
 lua_Number entity_handle_to_lua_number(int64_t data);
 

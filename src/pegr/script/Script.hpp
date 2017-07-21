@@ -281,7 +281,7 @@ namespace LI {
 /**
  * @brief Replacement print for lua, uses logger
  */
-int print(lua_State* l);
+int li_print(lua_State* l);
 
 } // namespace LI
 } // namespace Script

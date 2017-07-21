@@ -70,7 +70,7 @@ void initialize_userdata_metatables(lua_State* l) {
     assert(success && "Archetype metatable id already taken!");
     {
         const luaL_Reg metatable[] = {
-            {"__tostring", archetype_mt_tostring},
+            {"__tostring", li_archetype_mt_tostring},
             // No __gc, since this userdata is POD pointer
             
             // End of the list
@@ -85,9 +85,9 @@ void initialize_userdata_metatables(lua_State* l) {
     assert(success && "Entity metatable id already taken!");
     {
         const luaL_Reg metatable[] = {
-            {"__gc", entity_mt_gc},
-            {"__index", entity_mt_index},
-            {"__tostring", entity_mt_tostring},
+            {"__gc", li_entity_mt_gc},
+            {"__index", li_entity_mt_index},
+            {"__tostring", li_entity_mt_tostring},
             
             // End of the list
             {nullptr, nullptr}
@@ -97,7 +97,7 @@ void initialize_userdata_metatables(lua_State* l) {
     popg.pop(1);
 }
 
-int archetype_mt_tostring(lua_State* l) {
+int li_archetype_mt_tostring(lua_State* l) {
     // The first argument is guaranteed to be the right type
     Runtime::Arche* arche = 
             *(static_cast<Runtime::Arche**>(lua_touserdata(l, 1)));
@@ -123,7 +123,7 @@ std::string to_string_entity(Runtime::Entity_Handle ent) {
     return sss.str();
 }
 
-int entity_mt_gc(lua_State* l) {
+int li_entity_mt_gc(lua_State* l) {
     // The first argument is guaranteed to be the right type
     Runtime::Entity_Handle& ent = 
             *(static_cast<Runtime::Entity_Handle*>(lua_touserdata(l, 1)));
@@ -141,7 +141,7 @@ int entity_mt_gc(lua_State* l) {
     ent.Runtime::Entity_Handle::~Entity_Handle();
     return 0;
 }
-int entity_mt_index(lua_State* l) {
+int li_entity_mt_index(lua_State* l) {
     /* 1: The entity userdata
      * 2: Index: string
      */
@@ -163,7 +163,7 @@ int entity_mt_index(lua_State* l) {
     return 0;
 }
 
-int entity_mt_tostring(lua_State* l) {
+int li_entity_mt_tostring(lua_State* l) {
     // The first argument is guaranteed to be the right type
     Runtime::Entity_Handle ent = 
             *(static_cast<Runtime::Entity_Handle*>(lua_touserdata(l, 1)));
@@ -171,7 +171,7 @@ int entity_mt_tostring(lua_State* l) {
     return 1;
 }
 
-int find_archetype(lua_State* l) {
+int li_find_archetype(lua_State* l) {
     if (Gensys::get_global_state() != GlobalState::EXECUTABLE) {
         luaL_error(l, "find_archetype is only available during execution");
     }
@@ -194,7 +194,7 @@ int find_archetype(lua_State* l) {
     return 1;
 }
 
-int new_entity(lua_State* l) {
+int li_new_entity(lua_State* l) {
     if (Gensys::get_global_state() != GlobalState::EXECUTABLE) {
         luaL_error(l, "new_entity is only available during execution");
     }

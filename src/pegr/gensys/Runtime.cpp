@@ -14,9 +14,9 @@ namespace pegr {
 namespace Gensys {
 namespace Runtime {
 
-std::map<std::string, std::unique_ptr<Runtime::Comp> > m_runtime_comps;
-std::map<std::string, std::unique_ptr<Runtime::Arche> > m_runtime_arches;
-std::map<std::string, std::unique_ptr<Runtime::Genre> > m_runtime_genres;
+std::map<std::string, std::unique_ptr<Runtime::Comp> > n_runtime_comps;
+std::map<std::string, std::unique_ptr<Runtime::Arche> > n_runtime_arches;
+std::map<std::string, std::unique_ptr<Runtime::Genre> > n_runtime_genres;
 
 const uint64_t ENT_IDX_FLAGS = 0;
 const uint64_t ENT_IDX_INST = ENT_IDX_FLAGS + 8;
@@ -209,9 +209,9 @@ void cleanup() {
     n_handle_to_index.clear();
     
     n_next_handle = 0;
-    m_runtime_comps.clear();
-    m_runtime_arches.clear();
-    m_runtime_genres.clear();
+    n_runtime_comps.clear();
+    n_runtime_arches.clear();
+    n_runtime_genres.clear();
 }
 
 Entity_Handle reserve_new_handle() {
@@ -219,15 +219,15 @@ Entity_Handle reserve_new_handle() {
 }
 
 Runtime::Comp* find_component(std::string id_str) {
-    return Util::find_something(m_runtime_comps, id_str, 
+    return Util::find_something(n_runtime_comps, id_str, 
             "Could not find component: %v");
 }
 Runtime::Arche* find_archetype(std::string id_str) {
-    return Util::find_something(m_runtime_arches, id_str, 
+    return Util::find_something(n_runtime_arches, id_str, 
             "Could not find archetype: %v");
 }
 Runtime::Genre* find_genre(std::string id_str) {
-    return Util::find_something(m_runtime_genres, id_str, 
+    return Util::find_something(n_runtime_genres, id_str, 
             "Could not find genre: %v");
 }
 

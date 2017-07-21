@@ -269,7 +269,7 @@ void get_and_print_lua_version() {
 void replace_std_functions() {
     assert_balance(0);
     push_reference(m_luaglob_tostring);
-    lua_pushcclosure(m_l, LI::print, 1);
+    lua_pushcclosure(m_l, LI::li_print, 1);
     lua_setglobal(m_l, "print");
 }
 
@@ -550,7 +550,7 @@ int absolute_idx(int idx) {
 
 namespace LI {
 
-int print(lua_State* l) {
+int li_print(lua_State* l) {
     /* Expects upvalues:
      * 1: default lua tostring() function
      */

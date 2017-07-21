@@ -7,7 +7,7 @@ namespace pegr {
 namespace Sched {
 namespace LI {
     
-int schedule_task(lua_State* l);
+int li_schedule_task(lua_State* l);
     
 } // namspace LI
 } // namespace Sched
