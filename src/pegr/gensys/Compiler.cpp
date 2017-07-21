@@ -219,11 +219,11 @@ void compile_component_record_offsets(Work::Space& workspace,
             case Runtime::Prim::Type::I64:
             case Runtime::Prim::Type::F32:
             case Runtime::Prim::Type::F64: {
-                runtime_prim.m_byte_offset = offset;
+                runtime_prim.m_u_byte_offset = offset;
                 break;
             }
             case Runtime::Prim::Type::STR: {
-                runtime_prim.m_index = offset;
+                runtime_prim.m_u_index = offset;
                 break;
             }
             case Runtime::Prim::Type::FUNC: {

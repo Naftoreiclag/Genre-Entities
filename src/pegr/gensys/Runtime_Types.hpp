@@ -16,6 +16,13 @@ namespace Runtime {
 
 typedef std::string Symbol;
 
+/**
+ * @class Prim
+ * @brief Not really a primitive, but rather a way of locating the data within
+ * the entity. The type determines both how to read/write the data, and which
+ * unionized index to use when searching in the entity aggregate arrays and POD
+ * chunk.
+ */
 struct Prim {
     enum struct Type {
         // Uses size_t, goes into string array
@@ -38,9 +45,27 @@ struct Prim {
     // What this actually points to depends on the type and whether this is a
     // member of an archetype or a member of a genre
     union {
-        Script::Arridx m_table_idx;
-        std::size_t m_byte_offset;
-        std::size_t m_index;
+        /**
+         * @brief This is an index into the global gensys Lua table that holds
+         * Lua-exclusve data.
+         * This member is a part of a union with other members prefixed by "u".
+         * Used for [FUNC]
+         */
+        Script::Arridx m_u_table_idx;
+        
+        /**
+         * @brief This is a location within the entity chunk. Measured in bytes.
+         * This member is a part of a union with other members prefixed by "u".
+         * Used for pod data types, [F32, F64, I32, I64]
+         */
+        std::size_t m_u_byte_offset;
+        
+        /**
+         * @brief This is an index into various arrays that store C++ types.
+         * This member is a part of a union with other members prefixed by "u".
+         * Used for everything else [STR]
+         */
+        std::size_t m_u_index;
     };
 };
 
@@ -49,6 +74,12 @@ struct Prim {
  * @brief Maps archetypes to where the component is within the chunk
  */
 struct Comp {
+    /**
+     * @brief Maps a symbol to the primitive. When read/writing from an entity
+     * instance, we must first look into this map to find where within a
+     * component the data lives, and then add this offset to the corresponding
+     * "component offset" as given by the entity's archetype.
+     */
     std::map<Symbol, Prim> m_member_offsets;
 };
 
@@ -57,15 +88,21 @@ struct Comp {
  * Component::m_member_offsets
  */
 struct Aggindex {
+    /**
+     * @brief Index for the first byte of the entity pod chunk.
+     */
     std::size_t m_pod_idx;
+    
+    /**
+     * @brief Index for the first string in the entity aggregate string array.
+     */
     std::size_t m_string_idx;
 };
 
 /**
  * @class Arche
- * @brief
- * Memory management of the contained pointers is not the responsibility of
- * this class.
+ * @brief Memory management of the contained pointers is not the responsibility 
+ * of this class.
  */
 struct Arche {
     /* Archetypes are composed of components. This maps the internal name to
@@ -91,13 +128,16 @@ struct Arche {
     std::vector<std::string> m_default_strings;
 };
 
+/**
+ * @class Genre
+ */
 struct Genre {
     /* First, look into this array to convert symbol into an index into the
-     * vector in the map m_archetype_lookup
+     * vector in the map m_archetype_lookup:
      */
     std::map<Symbol, Prim> m_member_indices;
 
-    /* Then, lookup the archetype in this map
+    /* Then, lookup the archetype in this map:
      */
     std::map<Arche*, std::vector<Aggindex> > m_archetype_lookup;
 };
