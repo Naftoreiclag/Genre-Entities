@@ -305,10 +305,14 @@ void compile_archetype_fill_pod(Work::Space& workspace,
                 comp->m_symbol_to_offset,
                 arche->m_runtime->m_default_chunk.get(),
                 accumulated);
-                
+        
+        // Also record the symbol for this implementation
+        const Runtime::Symbol symb = implem_pair.first;
+        Runtime::Comp* run_comp = comp->m_runtime.get();
+        arche->m_runtime->m_components[symb] = run_comp;
+        
         // Remember how to find this data later
-        arche->m_runtime->m_comp_offsets[comp->m_runtime.get()].m_pod_idx 
-                = accumulated;
+        arche->m_runtime->m_comp_offsets[run_comp].m_pod_idx = accumulated;
 
         // Keep track of how much space has been used
         accumulated += comp->m_compiled_chunk.get().get_size();

@@ -66,7 +66,7 @@ Entity* Entity_Handle::get_entity() const {
     return &(n_entities[idx]);
 }
 
-Entity::Entity(const Arche* arche)
+Entity::Entity(Arche* arche)
 : m_arche(arche)
 , m_handle(reserve_new_handle()) {
     
@@ -88,7 +88,7 @@ Entity::Entity(const Arche* arche)
 Entity::Entity()
 : m_arche(nullptr) {}
 
-Entity_Handle Entity::new_entity(const Arche* arche) {
+Entity_Handle Entity::new_entity(Arche* arche) {
     // Record what the entity's index in the vector will be
     std::size_t index = n_entities.size();
     
@@ -158,7 +158,7 @@ void Entity::delete_entity(Entity_Handle handle_a) {
     //Logger::log()->info("delete swapped #%v with #%v", index_a, index_b);
 }
 
-const Arche* Entity::get_arche() const {
+Arche* Entity::get_arche() const {
     return m_arche;
 }
 Pod::Chunk_Ptr Entity::get_chunk() const {

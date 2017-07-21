@@ -101,14 +101,31 @@ int li_add_genre(lua_State* l);
 
 //// RUNTIME ////
 
+struct Cview {
+    Runtime::Entity_Handle m_ent;
+    Runtime::Comp* m_comp;
+};
+
 Runtime::Arche** argcheck_archetype(lua_State* l, int idx);
 Runtime::Entity_Handle* argcheck_entity(lua_State* l, int idx);
 
-int li_archetype_mt_tostring(lua_State* l);
+void push_arche_pointer(lua_State* l, Runtime::Arche* ptr);
+void push_entity_handle(lua_State* l, Runtime::Entity_Handle ent);
+void push_cview(lua_State* l, Cview ent);
+
+std::string to_string_arche(Runtime::Arche* arche);
+std::string to_string_entity(Runtime::Entity_Handle ent);
+std::string to_string_cview(Cview cview);
+
+int li_arche_mt_tostring(lua_State* l);
 
 int li_entity_mt_gc(lua_State* l);
 int li_entity_mt_index(lua_State* l);
 int li_entity_mt_tostring(lua_State* l);
+
+int li_cview_mt_gc(lua_State* l);
+int li_cview_mt_index(lua_State* l);
+int li_cview_mt_tostring(lua_State* l);
 
 int li_find_archetype(lua_State* l);
 

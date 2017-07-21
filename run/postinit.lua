@@ -4,7 +4,6 @@ print('post init')
 
 -------------------------------------------------------------------------------
 
-
 cookie_at = pegr.find_archetype('cookie.at')
 print('cookie_at ' .. tostring(cookie_at))
 pizza_at = pegr.find_archetype('pizza.at')
@@ -12,9 +11,8 @@ print('pizza_at ' .. tostring(pizza_at))
 ball_at = pegr.find_archetype('bowling_ball.at')
 print('ball_at ' .. tostring(ball_at))
 
-for i=1,1000,1 do
+for i=1,100,1 do
   local cookien = pegr.new_entity(cookie_at)
-  print(cookien)
 end
 
 local cookie1 = pegr.new_entity(cookie_at)
@@ -30,13 +28,17 @@ local bb1 = pegr.new_entity(ball_at)
 print('bb1 ' .. tostring(bb1))
 
 print('cookie1 id ' .. cookie1.__id)
+print('cookie1 arche ' .. tostring(cookie1.__arche))
+print('cookie1 killed ' .. tostring(cookie1.__killed))
+print('cookie1 alive ' .. tostring(cookie1.__alive))
+print('cookie1 spawned ' .. tostring(cookie1.__spawned))
 
---[[
+print(cookie1.position)
+
 cookie1.position.x = 100
 cookie1.position.y = 100
 cookie1.velocity.x = 2
 cookie1.velocity.y = 2
-]]
 
 --[[
 "entity" is not yet a "real" entity until it has been spawned into the

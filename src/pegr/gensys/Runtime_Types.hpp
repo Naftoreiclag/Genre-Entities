@@ -117,8 +117,6 @@ class Entity;
  * converting them into 64-bit floats), the bottom 52 bits must also guaranteed
  * be unique. (2^53 is the smallest positive value that, when stored in a 
  * 64-bit IEEE 754 double, cannot be incremented by one).
- * 
- * Acts like plain ol data.
  */
 class Entity_Handle {
 public:
@@ -230,7 +228,7 @@ extern const uint64_t ENT_FLAGS_DEFAULT;
  */
 class Entity {
 public:
-    static Entity_Handle new_entity(const Arche* arche);
+    static Entity_Handle new_entity(Arche* arche);
     static void delete_entity(Entity_Handle handle);
     
     Entity(const Entity& rhs) = delete;
@@ -241,7 +239,7 @@ public:
     /**
      * @return m_archetype, pointer to the archetype which created the entity.
      */
-    const Arche* get_arche() const;
+    Arche* get_arche() const;
     
     /**
      * @return m_chunk, the data chunk which holds instance data
@@ -301,7 +299,7 @@ public:
      * @brief Constructor. You likely do not want to use this. Use the static
      * factory methods instead.
      */ 
-    explicit Entity(const Arche* arche);
+    explicit Entity(Arche* arche);
     
     /**
      * @brief Default constructor for moving to. Use the static factory methods
@@ -311,7 +309,7 @@ public:
     
 private:
     // The archetype used by the entity (maybe add to the chunk?)
-    const Arche* m_arche;
+    Arche* m_arche;
 
     /* The POD chunk containing flags, lua reference counts, and instance data
      * This chunk is aligned for 64-bit values. This guarantees that it is also
