@@ -18,24 +18,25 @@ std::map<std::string, std::unique_ptr<Runtime::Comp> > m_runtime_comps;
 std::map<std::string, std::unique_ptr<Runtime::Arche> > m_runtime_arches;
 std::map<std::string, std::unique_ptr<Runtime::Genre> > m_runtime_genres;
 
-const int64_t ENT_IDX_FLAGS = 0;
-const int64_t ENT_IDX_INST = ENT_IDX_FLAGS + 8;
+const uint64_t ENT_IDX_FLAGS = 0;
+const uint64_t ENT_IDX_INST = ENT_IDX_FLAGS + 8;
 
-const int64_t ENT_FLAG_SPAWNED =        1 << 0;
-const int64_t ENT_FLAG_KILLED =           1 << 1;
-const int64_t ENT_FLAGS_DEFAULT =       0;
+const uint64_t ENT_FLAG_SPAWNED =           1 << 0;
+const uint64_t ENT_FLAG_KILLED =            1 << 1;
+const uint64_t ENT_FLAG_LUA_OWNED =         1 << 2;
+const uint64_t ENT_FLAGS_DEFAULT =          0;
 
-int64_t n_next_handle = 0;
+uint64_t n_next_handle = 0;
 std::vector<Entity> n_entities;
-std::unordered_map<int64_t, std::size_t> n_handle_to_index;
+std::unordered_map<uint64_t, std::size_t> n_handle_to_index;
 
-Entity_Handle::Entity_Handle(int64_t id)
+Entity_Handle::Entity_Handle(uint64_t id)
 : m_data(id) {}
 
 Entity_Handle::Entity_Handle()
 : m_data(-1) {}
 
-int64_t Entity_Handle::get_id() const {
+uint64_t Entity_Handle::get_id() const {
     return m_data;
 }
 bool Entity_Handle::does_exist() const {
@@ -49,7 +50,7 @@ Entity* Entity_Handle::operator ->() const {
 Entity_Handle::operator bool() const {
     return does_exist();
 }
-Entity_Handle::operator int64_t() const {
+Entity_Handle::operator uint64_t() const {
     return get_id();
 }
 
@@ -76,7 +77,7 @@ Entity::Entity(const Arche* arche)
             m_chunk.get(), 8,
             m_arche->m_default_chunk.get().get_size());
     
-    m_chunk.get().set_value<int64_t>(0, ENT_FLAGS_DEFAULT);
+    m_chunk.get().set_value<uint64_t>(0, ENT_FLAGS_DEFAULT);
     m_strings = m_arche->m_default_strings;
 }
 
@@ -109,22 +110,44 @@ Entity_Handle Entity::new_entity(const Arche* arche) {
     return hand;
 }
 
-void Entity::delete_entity(Entity_Handle hand) {
-    // The handle should always exist in the map
-    assert(n_handle_to_index.find(hand) != n_handle_to_index.end());
+void Entity::delete_entity(Entity_Handle handle_a) {
+    /* Delete the entity given by the handle (entity "A") by swapping it with
+     * the last entity in the vector (entity "B"), then popping off the last
+     * entity (A). Must also update B's index (set B's index to A's old index).
+     * 
+     * The special case where A and B are the same entity is handled implicitly.
+     */
+    
+    assert(n_entities.size() > 0);
     
     // Find the pair in the handle-to-index map
-    auto idx_iter = n_handle_to_index.find(hand);
+    auto map_entry_a = n_handle_to_index.find(handle_a);
+    assert(map_entry_a != n_handle_to_index.end());
     
     // Get the index of the entity in the entity vector
-    std::size_t index = idx_iter->second;
+    std::size_t index_a = map_entry_a->second;
+    
+    // Get the index of the last entity
+    std::size_t index_b = n_entities.size() - 1;
+    
+    // Get the handle of the last entity
+    Entity_Handle handle_b = n_entities[index_b].get_handle();
+    
+    // Find the pair in the handle-to-index map
+    auto map_entry_b = n_handle_to_index.find(handle_b);
+    assert(map_entry_b != n_handle_to_index.end());
+    
+    // Set the index
+    map_entry_b->second = index_b;
     
     // Swap this entity with the back and remove
-    std::iter_swap(n_entities.begin() + index, n_entities.end() - 1);
+    std::iter_swap(n_entities.begin() + index_a, n_entities.begin() + index_b);
     n_entities.pop_back();
+    assert(n_entities.size() == index_b);
     
     // Remove the corresponding entry from the handle-to-index map
-    n_handle_to_index.erase(idx_iter);
+    n_handle_to_index.erase(map_entry_a);
+    assert(n_handle_to_index.find(handle_a) == n_handle_to_index.end());
 }
 
 const Arche* Entity::get_arche() const {
@@ -137,15 +160,15 @@ Entity_Handle Entity::get_handle() const {
     return m_handle;
 }
 
-int64_t Entity::get_flags() const {
-    return m_chunk.get().get_value<int64_t>(ENT_IDX_FLAGS);
+uint64_t Entity::get_flags() const {
+    return m_chunk.get().get_value<uint64_t>(ENT_IDX_FLAGS);
 }
 
 bool Entity::has_been_spawned() const {
     return get_flags() & ENT_FLAG_SPAWNED == ENT_FLAG_SPAWNED;
 }
 bool Entity::is_alive() const {
-    int64_t flags = get_flags();
+    uint64_t flags = get_flags();
     // Spawned and not killed
     return (flags & ENT_FLAG_SPAWNED == ENT_FLAG_SPAWNED)
             && (flags & ENT_FLAG_KILLED != ENT_FLAG_KILLED);
@@ -156,11 +179,35 @@ bool Entity::has_been_killed() const {
 bool Entity::can_be_spawned() const {
     return !has_been_spawned();
 }
+bool Entity::is_lua_owned() const {
+    return get_flags() & ENT_FLAG_LUA_OWNED == ENT_FLAG_LUA_OWNED;
+}
 
+void Entity::set_flags(uint64_t flags, bool set) {
+    uint64_t& my_flags = m_chunk.get().get_value<uint64_t>(ENT_IDX_FLAGS);
+    if (set) {
+        my_flags |= flags;
+    } else {
+        my_flags &= ~flags;
+    }
+}
+    
+void Entity::set_flag_spawned(bool flag) {
+    set_flags(ENT_FLAG_SPAWNED, flag);
+}
+void Entity::set_flag_lua_owned(bool flag) {
+    set_flags(ENT_FLAG_LUA_OWNED, flag);
+}
+void Entity::set_flag_killed(bool flag) {
+    set_flags(ENT_FLAG_KILLED, flag);
+}
 void initialize() {
 }
 void cleanup() {
     n_entities.clear();
+    // Very important: otherwise entity handles may wrongly report existence.
+    n_handle_to_index.clear();
+    
     n_next_handle = 0;
     m_runtime_comps.clear();
     m_runtime_arches.clear();

@@ -112,14 +112,20 @@ class Entity;
  * lifetime of a gensys ecosystem. This is not true for Entity, and so we
  * cannot use raw pointers because those can 1) become invalidated and 2)
  * suddenly point to another Entity.
+ * 
+ * Note that since we will be passing these ids to Lua (and therefore be 
+ * converting them into 64-bit floats), the bottom 52 bits must also guaranteed
+ * be unique. (2^53 is the smallest positive value that, when stored in a 
+ * 64-bit IEEE 754 double, cannot be incremented by one).
+ * 
  * Acts like plain ol data.
  */
 class Entity_Handle {
 public:
     Entity_Handle();
-    explicit Entity_Handle(int64_t id);
+    explicit Entity_Handle(uint64_t id);
     
-    int64_t get_id() const;
+    uint64_t get_id() const;
     
     /**
      * @brief Returns false if any of the following conditions are true:
@@ -147,10 +153,10 @@ public:
     Entity* operator ->() const;
     
     explicit operator bool() const;
-    operator int64_t() const;
+    operator uint64_t() const;
     
 private:
-    int64_t m_data;
+    uint64_t m_data;
     
     /**
      * @brief Returns the memory address of the enclosed entity. Note that there
@@ -164,29 +170,52 @@ private:
 };
 
 
-extern const int64_t ENT_FLAG_SPAWNED;
-extern const int64_t ENT_FLAG_KILLED;
-extern const int64_t ENT_FLAGS_DEFAULT;
+extern const uint64_t ENT_FLAG_SPAWNED;
+extern const uint64_t ENT_FLAG_KILLED;
+extern const uint64_t ENT_FLAG_LUA_OWNED;
+extern const uint64_t ENT_FLAGS_DEFAULT;
 
 /**
  * @class Entity
  * 
  * Typical entity lifecycle:
- * +---+--------+---------+-------+--------+----------------+
- * | i | exists | spawned | alive | killed | can be spawned |
- * +---+--------+---------+-------+--------+----------------+
- * | 0 |   -    |    -    |   -   |   -    |       -        |
- * | 1 |   X    |    -    |   -   |   -    |       X        |
- * | 2 |   X    |    X    |   X   |   -    |       -        |
- * | 3 |   X    |    X    |   -   |   X    |       -        |
- * | 4 |   -    |    -    |   -   |   -    |       -        |
- * +---+--------+---------+-------+--------+----------------+
+ * +----+--------+---------+-------+--------+-----------+-------+------+
+ * | #  | exists | spawned | alive | killed | spawnable | Lua-o | next |
+ * +----+--------+---------+-------+--------+-----------+-------+------+
+ * | A  |   -    |    -    |   -   |   -    |    -      |   -   | BC   |
+ * | B  |   X    |    -    |   -   |   -    |    X      |   X   | CF   |
+ * | C  |   X    |    -    |   -   |   -    |    X      |   -   | DF   |
+ * | D  |   X    |    X    |   X   |   -    |    -      |   -   | E    |
+ * | E  |   X    |    X    |   -   |   X    |    -      |   -   | F    |
+ * | F  |   -    |    -    |   -   |   -    |    -      |   -   | -    |
+ * +----+--------+---------+-------+--------+-----------+-------+------+
  * 
- * 0. No call to new_entity, no handle can report that this entity exists.
- * 1. Call to new_entity, entity exists and can be spawned
- * 2. Entity spawned, entity has been spawned and is alive, can not be spawned.
- * 3. Entity despawned, entity has been spawned and is dead, still unspawnable.
- * 4. Call to delete_entity, entity does not exist anymore
+ * Lifetime flow: (see column "next")
+ *      +--------------+
+ *      |              v
+ * A -> C -> D -> E -> F
+ * v    ^              ^
+ * B ---+--------------+
+ * 
+ * A. No call to new_entity, there are no handles to the entity and not even
+ *    an ID reserved for it.
+ * B. Entity was created via new_entity within a Lua script. If a handle to
+ *    this entity is cleaned up during a Lua GC cycle, then this also deletes
+ *    the entity (go to F). Entities in this state or later have a unique ID
+ *    that can never be used by another Entity during a single gensys lifetime, 
+ *    even if the entity is deleted.
+ * C. Either a) the entity was created via new_entity within C++, b) or entity 
+ *    in state B had its ownership passed from Lua to C++. The entity can be
+ *    deleted in this state, since it hasn't been spawned yet (go to F).
+ * D. Entity spawned, entity has been spawned and is alive, can not be spawned
+ *    for a second time. The only way to delete the entity (arrive at F) is to
+ *    first despawn it (go to E).
+ * E. Entity despawned, entity has been spawned and is dead, still unspawnable.
+ *    Entity is ready to be deleted (go to E).
+ * F. Call to delete_entity, entity does not exist anymore. (In some sense, the
+ *    entity itself is indestinguishable from state A, but somewhere out there 
+ *    could still be handles with that entity's ID, and all of those handles
+ *    must report that the entity is non-existent.)
  * 
  * This table also shows all possible states that all entities can have.
  * 
@@ -196,6 +225,7 @@ extern const int64_t ENT_FLAGS_DEFAULT;
  * alive implies not killed
  * can be spawned implies not spawned
  * spawned implies not can be spawned
+ * spawned implies not Lua-owned
  * 
  */
 class Entity {
@@ -232,7 +262,7 @@ public:
      * @return The set of flags that all entity instances must have, particular
      * to this instance
      */
-    int64_t get_flags() const;
+    uint64_t get_flags() const;
     
     /**
      * @return If this entity has ever been spawned. This value can be true
@@ -256,6 +286,16 @@ public:
      * despawned.
      */
     bool has_been_killed() const;
+    
+    /**
+     * @return If deletion of the entity is the responsibility of the Lua GC
+     */
+    bool is_lua_owned() const;
+    
+    void set_flags(uint64_t flags, bool set);
+    void set_flag_spawned(bool flag);
+    void set_flag_lua_owned(bool flag);
+    void set_flag_killed(bool flag);
 
     /**
      * @brief Constructor. You likely do not want to use this. Use the static
@@ -297,6 +337,7 @@ private:
     std::vector<std::string> m_strings;
     
     Entity_Handle m_handle;
+    
 };
 
 } // namespace Runtime

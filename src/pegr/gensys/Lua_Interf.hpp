@@ -107,13 +107,16 @@ Runtime::Entity_Handle* argcheck_entity(lua_State* l, int idx);
 
 int archetype_mt_tostring(lua_State* l);
 
-int entity_mt_tostring(lua_State* l);
 int entity_mt_gc(lua_State* l);
+int entity_mt_index(lua_State* l);
+int entity_mt_tostring(lua_State* l);
 
 // ...
 int find_archetype(lua_State* l);
 
 int new_entity(lua_State* l);
+
+lua_Number entity_handle_to_lua_number(int64_t data);
 
 } // namespace LI
 } // namespace Gensys

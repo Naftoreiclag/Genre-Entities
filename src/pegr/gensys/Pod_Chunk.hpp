@@ -70,7 +70,7 @@ public:
      * @return "T" representation of the data
      */
     template <typename T>
-    T get_value(std::size_t off) const {
+    T& get_value(std::size_t off) const {
         if (sizeof(T) <= 1) {
             return *static_cast<T*>(get_aligned<int8_t>(off));
         } else if (sizeof(T) <= 2) {
