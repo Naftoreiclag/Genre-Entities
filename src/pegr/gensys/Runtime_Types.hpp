@@ -207,6 +207,8 @@ private:
     Entity* get_entity() const;
 };
 
+extern const uint64_t ENT_HEADER_FLAGS;
+extern const uint64_t ENT_HEADER_SIZE;
 
 extern const uint64_t ENT_FLAG_SPAWNED;
 extern const uint64_t ENT_FLAG_KILLED;

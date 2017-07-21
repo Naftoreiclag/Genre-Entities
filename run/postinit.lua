@@ -35,6 +35,11 @@ print('cookie1 spawned ' .. tostring(cookie1.__spawned))
 
 print(cookie1.position)
 
+print(cookie1.position.x)
+print(cookie1.position.y)
+print(cookie1.velocity.x)
+print(cookie1.velocity.y)
+
 cookie1.position.x = 100
 cookie1.position.y = 100
 cookie1.velocity.x = 2

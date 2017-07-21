@@ -105,6 +105,7 @@ void initialize_userdata_metatables(lua_State* l) {
         const luaL_Reg metatable[] = {
             {"__gc", li_cview_mt_gc},
             {"__index", li_cview_mt_index},
+            {"__newindex", li_cview_mt_newindex},
             {"__tostring", li_cview_mt_tostring},
             
             // End of the list
@@ -277,7 +278,90 @@ int li_cview_mt_gc(lua_State* l) {
     return 0;
 }
 int li_cview_mt_index(lua_State* l) {
-    // TODO
+    Cview& cview = *(static_cast<Cview*>(lua_touserdata(l, 1)));
+    
+    std::size_t keystrlen;
+    const char* keystr = luaL_checklstring(l, 2, &keystrlen);
+    
+    if (!keystr) {
+        return 0;
+    }
+    
+    // Member symbol argument
+    Runtime::Symbol member_symb(keystr, keystrlen);
+    
+    // Find where the member is stored within the component
+    auto offset_entry = cview.m_comp->m_member_offsets.find(member_symb);
+    if (offset_entry == cview.m_comp->m_member_offsets.end()) {
+        return 0;
+    }
+    Runtime::Prim member_signature = offset_entry->second;
+    
+    /* Get the component offset (where this component's data begins within the
+     * aggregate arrays stored inside of every instance of this archetype)
+     */
+    Runtime::Arche* arche = cview.m_ent->get_arche();
+    assert(arche);
+    assert(arche->m_comp_offsets.find(cview.m_comp) 
+            != arche->m_comp_offsets.end());
+    Runtime::Aggindex component_offset = arche->m_comp_offsets[cview.m_comp];
+    
+    /* Depending on the member's type, where we read the data and how we
+     * intepret it changes. For POD types, the data comes from the chunk. Other
+     * types are stored in other arrays. Note that the member signature uses
+     * a union to store the different offsets, and so there is only one defined
+     * way to read the data.
+     */
+    switch(member_signature.m_type) {
+        case Runtime::Prim::Type::I32:
+        case Runtime::Prim::Type::I64:
+        case Runtime::Prim::Type::F32:
+        case Runtime::Prim::Type::F64: {
+            std::size_t pod_offset = Runtime::ENT_HEADER_SIZE
+                                    + component_offset.m_pod_idx 
+                                    + member_signature.m_u_byte_offset;
+            switch(member_signature.m_type) {
+                case Runtime::Prim::Type::I32: {
+                    int32_t val = cview.m_ent->get_chunk()
+                            .get_value<int32_t>(pod_offset);
+                    lua_pushnumber(l, val);
+                    return 1;
+                }
+                case Runtime::Prim::Type::I64: {
+                    int64_t val = cview.m_ent->get_chunk()
+                            .get_value<int64_t>(pod_offset);
+                    lua_pushnumber(l, val);
+                    return 1;
+                }
+                case Runtime::Prim::Type::F32: {
+                    float val = cview.m_ent->get_chunk()
+                            .get_value<float>(pod_offset);
+                    lua_pushnumber(l, val);
+                    return 1;
+                }
+                case Runtime::Prim::Type::F64: {
+                    double val = cview.m_ent->get_chunk()
+                            .get_value<double>(pod_offset);
+                    lua_pushnumber(l, val);
+                    return 1;
+                }
+                default: {
+                    assert(0);
+                    return 0;
+                }
+            }
+        }
+        default: {
+            assert(false && "TODO");
+            break;
+        }
+    }
+    
+    // ???? huh
+    return 0;
+}
+int li_cview_mt_newindex(lua_State* l) {
+    Cview& cview = *(static_cast<Cview*>(lua_touserdata(l, 1)));
     return 0;
 }
 int li_cview_mt_tostring(lua_State* l) {

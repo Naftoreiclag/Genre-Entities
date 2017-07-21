@@ -125,6 +125,7 @@ int li_entity_mt_tostring(lua_State* l);
 
 int li_cview_mt_gc(lua_State* l);
 int li_cview_mt_index(lua_State* l);
+int li_cview_mt_newindex(lua_State* l);
 int li_cview_mt_tostring(lua_State* l);
 
 int li_find_archetype(lua_State* l);

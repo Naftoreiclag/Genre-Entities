@@ -18,8 +18,8 @@ std::map<std::string, std::unique_ptr<Runtime::Comp> > n_runtime_comps;
 std::map<std::string, std::unique_ptr<Runtime::Arche> > n_runtime_arches;
 std::map<std::string, std::unique_ptr<Runtime::Genre> > n_runtime_genres;
 
-const uint64_t ENT_IDX_FLAGS = 0;
-const uint64_t ENT_IDX_END = ENT_IDX_FLAGS + 8;
+const uint64_t ENT_HEADER_FLAGS = 0;
+const uint64_t ENT_HEADER_SIZE = ENT_HEADER_FLAGS + 8;
 
 const uint64_t ENT_FLAG_SPAWNED =           1 << 0;
 const uint64_t ENT_FLAG_KILLED =            1 << 1;
@@ -71,14 +71,14 @@ Entity::Entity(Arche* arche)
 , m_handle(reserve_new_handle()) {
     
     m_chunk.reset(Pod::new_pod_chunk(
-            ENT_IDX_END + m_arche->m_default_chunk.get().get_size()));
+            ENT_HEADER_SIZE + m_arche->m_default_chunk.get().get_size()));
     
     Pod::copy_pod_chunk(
             m_arche->m_default_chunk.get(), 0, 
-            m_chunk.get(), ENT_IDX_END,
+            m_chunk.get(), ENT_HEADER_SIZE,
             m_arche->m_default_chunk.get().get_size());
     
-    m_chunk.get().set_value<uint64_t>(ENT_IDX_FLAGS, ENT_FLAGS_DEFAULT);
+    m_chunk.get().set_value<uint64_t>(ENT_HEADER_FLAGS, ENT_FLAGS_DEFAULT);
     m_strings = m_arche->m_default_strings;
     
     assert(get_flags() == ENT_FLAGS_DEFAULT);
@@ -169,7 +169,7 @@ Entity_Handle Entity::get_handle() const {
 }
 
 uint64_t Entity::get_flags() const {
-    return m_chunk.get().get_value<uint64_t>(ENT_IDX_FLAGS);
+    return m_chunk.get().get_value<uint64_t>(ENT_HEADER_FLAGS);
 }
 
 bool Entity::has_been_spawned() const {
@@ -192,7 +192,7 @@ bool Entity::is_lua_owned() const {
 }
 
 void Entity::set_flags(uint64_t arg_flags, bool set) {
-    uint64_t flags = m_chunk.get().get_value<uint64_t>(ENT_IDX_FLAGS);
+    uint64_t flags = m_chunk.get().get_value<uint64_t>(ENT_HEADER_FLAGS);
     if (set) {
         flags |= arg_flags;
         assert((flags & arg_flags) == arg_flags);
@@ -200,7 +200,7 @@ void Entity::set_flags(uint64_t arg_flags, bool set) {
         flags &= ~arg_flags;
         assert((flags & arg_flags) == 0);
     }
-    m_chunk.get().set_value<uint64_t>(ENT_IDX_FLAGS, flags);
+    m_chunk.get().set_value<uint64_t>(ENT_HEADER_FLAGS, flags);
 }
     
 void Entity::set_flag_spawned(bool flag) {
