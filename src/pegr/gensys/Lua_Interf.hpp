@@ -14,7 +14,6 @@ namespace pegr {
 namespace Gensys {
 namespace LI {
 
-
 /**
  * @brief Initializes. Sets up workspaces for adding new components,
  * genres, archetypes, etc.
@@ -111,10 +110,10 @@ int li_entity_mt_gc(lua_State* l);
 int li_entity_mt_index(lua_State* l);
 int li_entity_mt_tostring(lua_State* l);
 
-// ...
 int li_find_archetype(lua_State* l);
 
 int li_new_entity(lua_State* l);
+int li_delete_entity(lua_State* l);
 
 lua_Number entity_handle_to_lua_number(int64_t data);
 

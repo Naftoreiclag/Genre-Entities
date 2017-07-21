@@ -37,6 +37,7 @@ foreach(fname
 "script/ScriptHelper.cpp"
 "test.cpp"
 "test/DebugTest.cpp"
+"test/FlagTest.cpp"
 "test/GensysIntermediateTest.cpp"
 "test/GensysLITest.cpp"
 "test/InitializationSanityTest.cpp"

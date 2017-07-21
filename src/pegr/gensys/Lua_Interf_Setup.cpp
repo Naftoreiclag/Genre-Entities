@@ -45,6 +45,7 @@ void initialize_expose_global_functions(lua_State* l) {
         
         {"find_archetype", li_find_archetype},
         {"new_entity", li_new_entity},
+        {"delete_entity", li_delete_entity},
         
         // End of the list
         {nullptr, nullptr}

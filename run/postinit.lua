@@ -12,9 +12,9 @@ print('pizza_at ' .. tostring(pizza_at))
 ball_at = pegr.find_archetype('bowling_ball.at')
 print('ball_at ' .. tostring(ball_at))
 
-for i=1,100,1 do
+for i=1,1000,1 do
   local cookien = pegr.new_entity(cookie_at)
-  print('cookien ' .. tostring(cookien))
+  print(cookien)
 end
 
 local cookie1 = pegr.new_entity(cookie_at)

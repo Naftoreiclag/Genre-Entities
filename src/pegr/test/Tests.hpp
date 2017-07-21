@@ -8,6 +8,7 @@ namespace Test {
 
 void test_0000_memory_test();
 void test_0000_ptr_cast();
+void test_0001_flags();
 void test_0001_init_sanity();
 void test_0002_unique_ptr_test();
 void test_0005_assertion_test();
@@ -38,6 +39,7 @@ const NamedTest m_tests[] = {
 
     {"Memory Test", test_0000_memory_test},
     {"Pointer cast", test_0000_ptr_cast},
+    {"Flag test", test_0001_flags},
     {"Initialization Sanity Test", test_0001_init_sanity},
     {"Unique Ptr Test", test_0002_unique_ptr_test},
     {"Assertion test", test_0005_assertion_test},

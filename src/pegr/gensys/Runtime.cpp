@@ -19,7 +19,7 @@ std::map<std::string, std::unique_ptr<Runtime::Arche> > n_runtime_arches;
 std::map<std::string, std::unique_ptr<Runtime::Genre> > n_runtime_genres;
 
 const uint64_t ENT_IDX_FLAGS = 0;
-const uint64_t ENT_IDX_INST = ENT_IDX_FLAGS + 8;
+const uint64_t ENT_IDX_END = ENT_IDX_FLAGS + 8;
 
 const uint64_t ENT_FLAG_SPAWNED =           1 << 0;
 const uint64_t ENT_FLAG_KILLED =            1 << 1;
@@ -61,6 +61,7 @@ Entity* Entity_Handle::get_entity() const {
         return nullptr;
     }
     std::size_t idx = iter->second;
+    //Logger::log()->info("get %v %v", idx, n_entities.size());
     assert(idx >= 0 && idx < n_entities.size());
     return &(n_entities[idx]);
 }
@@ -69,16 +70,19 @@ Entity::Entity(const Arche* arche)
 : m_arche(arche)
 , m_handle(reserve_new_handle()) {
     
-    m_chunk.reset(
-            Pod::new_pod_chunk(8 + m_arche->m_default_chunk.get().get_size()));
+    m_chunk.reset(Pod::new_pod_chunk(
+            ENT_IDX_END + m_arche->m_default_chunk.get().get_size()));
     
     Pod::copy_pod_chunk(
             m_arche->m_default_chunk.get(), 0, 
-            m_chunk.get(), 8,
+            m_chunk.get(), ENT_IDX_END,
             m_arche->m_default_chunk.get().get_size());
     
-    m_chunk.get().set_value<uint64_t>(0, ENT_FLAGS_DEFAULT);
+    m_chunk.get().set_value<uint64_t>(ENT_IDX_FLAGS, ENT_FLAGS_DEFAULT);
     m_strings = m_arche->m_default_strings;
+    
+    assert(get_flags() == ENT_FLAGS_DEFAULT);
+    assert(!has_been_spawned());
 }
 
 Entity::Entity()
@@ -138,16 +142,20 @@ void Entity::delete_entity(Entity_Handle handle_a) {
     assert(map_entry_b != n_handle_to_index.end());
     
     // Set the index
-    map_entry_b->second = index_b;
+    map_entry_b->second = index_a;
     
     // Swap this entity with the back and remove
     std::iter_swap(n_entities.begin() + index_a, n_entities.begin() + index_b);
     n_entities.pop_back();
     assert(n_entities.size() == index_b);
+    assert(n_entities.size() == 0 || 
+            n_handle_to_index[n_entities[index_a].get_handle()] == index_a);
     
     // Remove the corresponding entry from the handle-to-index map
     n_handle_to_index.erase(map_entry_a);
     assert(n_handle_to_index.find(handle_a) == n_handle_to_index.end());
+    
+    //Logger::log()->info("delete swapped #%v with #%v", index_a, index_b);
 }
 
 const Arche* Entity::get_arche() const {
@@ -165,41 +173,47 @@ uint64_t Entity::get_flags() const {
 }
 
 bool Entity::has_been_spawned() const {
-    return get_flags() & ENT_FLAG_SPAWNED == ENT_FLAG_SPAWNED;
+    return (get_flags() & ENT_FLAG_SPAWNED) == ENT_FLAG_SPAWNED;
 }
 bool Entity::is_alive() const {
     uint64_t flags = get_flags();
     // Spawned and not killed
-    return (flags & ENT_FLAG_SPAWNED == ENT_FLAG_SPAWNED)
-            && (flags & ENT_FLAG_KILLED != ENT_FLAG_KILLED);
+    
+    return (flags & (ENT_FLAG_SPAWNED | ENT_FLAG_KILLED)) == ENT_FLAG_SPAWNED;
 }
 bool Entity::has_been_killed() const {
-    return get_flags() & ENT_FLAG_KILLED == ENT_FLAG_KILLED;
+    return (get_flags() & ENT_FLAG_KILLED) == ENT_FLAG_KILLED;
 }
 bool Entity::can_be_spawned() const {
     return !has_been_spawned();
 }
 bool Entity::is_lua_owned() const {
-    return get_flags() & ENT_FLAG_LUA_OWNED == ENT_FLAG_LUA_OWNED;
+    return (get_flags() & ENT_FLAG_LUA_OWNED) == ENT_FLAG_LUA_OWNED;
 }
 
-void Entity::set_flags(uint64_t flags, bool set) {
-    uint64_t& my_flags = m_chunk.get().get_value<uint64_t>(ENT_IDX_FLAGS);
+void Entity::set_flags(uint64_t arg_flags, bool set) {
+    uint64_t flags = m_chunk.get().get_value<uint64_t>(ENT_IDX_FLAGS);
     if (set) {
-        my_flags |= flags;
+        flags |= arg_flags;
+        assert((flags & arg_flags) == arg_flags);
     } else {
-        my_flags &= ~flags;
+        flags &= ~arg_flags;
+        assert((flags & arg_flags) == 0);
     }
+    m_chunk.get().set_value<uint64_t>(ENT_IDX_FLAGS, flags);
 }
     
 void Entity::set_flag_spawned(bool flag) {
     set_flags(ENT_FLAG_SPAWNED, flag);
+    assert(has_been_spawned() == flag);
 }
 void Entity::set_flag_lua_owned(bool flag) {
     set_flags(ENT_FLAG_LUA_OWNED, flag);
+    assert(is_lua_owned() == flag);
 }
 void Entity::set_flag_killed(bool flag) {
     set_flags(ENT_FLAG_KILLED, flag);
+    assert(has_been_killed() == flag);
 }
 void initialize() {
 }

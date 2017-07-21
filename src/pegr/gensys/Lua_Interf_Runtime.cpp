@@ -133,7 +133,6 @@ int li_entity_mt_gc(lua_State* l) {
      * have been any copies made of it)
      */
     if (ent.does_exist() && ent->is_lua_owned()) {
-        Logger::log()->info("Entity deleted via gc");
         assert(!ent->has_been_spawned());
         Runtime::Entity::delete_entity(ent);
     }
@@ -203,6 +202,7 @@ int li_new_entity(lua_State* l) {
     
     Runtime::Entity_Handle ent = Runtime::Entity::new_entity(arche);
     ent->set_flag_lua_owned(true);
+    assert(ent->is_lua_owned());
     assert(ent->can_be_spawned());
     
     void* lua_mem = lua_newuserdata(l, sizeof(Runtime::Entity_Handle));
@@ -212,7 +212,27 @@ int li_new_entity(lua_State* l) {
     *(new (lua_mem) Runtime::Entity_Handle) = ent;
     
     return 1;
-} 
+}
+int li_delete_entity(lua_State* l) {
+    if (Gensys::get_global_state() != GlobalState::EXECUTABLE) {
+        luaL_error(l, "delete_entity is only available during execution");
+    }
+    
+    Runtime::Entity_Handle ent = *argcheck_entity(l, 1);
+    
+    if (!(ent.does_exist() && ent->is_lua_owned())) {
+        lua_pushboolean(l , false);
+        return 1;
+    }
+
+    assert(!ent->has_been_spawned());
+    Runtime::Entity::delete_entity(ent);
+    
+    lua_pushboolean(l , true);
+    return 1;
+}
+
+
 } // namespace LI
 } // namespace Gensys
 } // namespace pegr
