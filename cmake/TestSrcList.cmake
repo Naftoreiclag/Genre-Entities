@@ -40,6 +40,7 @@ foreach(fname
 "test/FlagTest.cpp"
 "test/GensysIntermediateTest.cpp"
 "test/GensysLITest.cpp"
+"test/GensysRuntimeTest.cpp"
 "test/InitializationSanityTest.cpp"
 "test/MemoryTest.cpp"
 "test/PodChunkTest.cpp"
