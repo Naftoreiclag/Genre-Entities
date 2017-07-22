@@ -33,8 +33,9 @@ void initialize_working_tables(lua_State* l) {
     n_working_components = Script::grab_reference();
 }
 
-// (This is defined in GensysLuaInterfaceExecution.cpp)
+// (This is defined in Lua_Interf_Runtime.cpp)
 void initialize_userdata_metatables(lua_State* l);
+void cleanup_userdata_metatables(lua_State* l);
 
 void initialize_expose_global_functions(lua_State* l) {
     assert_balance(0);
@@ -63,9 +64,11 @@ void initialize() {
 }
 
 void cleanup() {
+    lua_State* l = Script::get_lua_state();
     Script::drop_reference(n_working_archetypes);
     Script::drop_reference(n_working_components);
     Script::drop_reference(n_working_genres);
+    cleanup_userdata_metatables(l);
 }
 
 /**

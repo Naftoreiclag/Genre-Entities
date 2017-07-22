@@ -20,13 +20,11 @@ namespace pegr {
 namespace Gensys {
 namespace LI {
 
-// MTI = metatable id
-const char* MTI_COMPONENT = "pegr.Component";
-const char* MTI_ARCHETYPE = "pegr.Archetype";
-const char* MTI_GENRE = "pegr.Genre";
-const char* MTI_ENTITY = "pegr.Entity";
-const char* MTI_COMP_VIEW = "pegr.Component_View";
-
+Script::Regref n_comp_metatable = LUA_REFNIL;
+Script::Regref n_arche_metatable = LUA_REFNIL;
+Script::Regref n_genre_metatable = LUA_REFNIL;
+Script::Regref n_entity_metatable = LUA_REFNIL;
+Script::Regref n_cview_metatable = LUA_REFNIL;
 
 /**
  * @param num A 64 bit unsigned value
@@ -41,21 +39,39 @@ lua_Number entity_handle_to_lua_number(uint64_t data) {
     return static_cast<lua_Number>(bottom_52(data));
 }
 
+void* check_user_data(lua_State* l, int narg, Script::Regref metatable,
+            const char* tname) {
+    void* ptr = lua_touserdata(l, narg);
+    if (ptr) {
+        if (lua_getmetatable(l, narg)) {
+            Script::Pop_Guard pg(1);
+            Script::push_reference(metatable);
+            pg.on_push(1);
+            if (lua_rawequal(l, -1, -2)) {
+                return ptr;
+            }
+        }
+    }
+    luaL_typerror(l, narg, tname);
+    return nullptr;
+}
+
 Runtime::Arche** argcheck_archetype(lua_State* l, int idx) {
-    void* lua_mem = luaL_checkudata(l, 1, MTI_ARCHETYPE);
+    void* lua_mem = check_user_data(l, 1, n_arche_metatable, "pegr.Archetype");
     return static_cast<Runtime::Arche**>(lua_mem);
 }
 Runtime::Entity_Handle* argcheck_entity(lua_State* l, int idx) {
-    void* lua_mem = luaL_checkudata(l, 1, MTI_ENTITY);
+    void* lua_mem = check_user_data(l, 1, n_entity_metatable, "pegr.Entity");
     return static_cast<Runtime::Entity_Handle*>(lua_mem);
 }
 
 void initialize_userdata_metatables(lua_State* l) {
     assert_balance(0);
     
-    int success = luaL_newmetatable(l, MTI_COMPONENT);
+    lua_newtable(l);
     Script::Pop_Guard popg(1);
-    assert(success && "Component metatable id already taken!");
+    lua_pushvalue(l, -1);
+    n_comp_metatable = Script::grab_reference();
     {
         const luaL_Reg metatable[] = {
             // TODO
@@ -67,9 +83,10 @@ void initialize_userdata_metatables(lua_State* l) {
     }
     popg.pop(1);
     
-    success = luaL_newmetatable(l, MTI_ARCHETYPE);
+    lua_newtable(l);
     popg.on_push(1);
-    assert(success && "Archetype metatable id already taken!");
+    lua_pushvalue(l, -1);
+    n_arche_metatable = Script::grab_reference();
     {
         const luaL_Reg metatable[] = {
             {"__tostring", li_arche_mt_tostring},
@@ -82,9 +99,10 @@ void initialize_userdata_metatables(lua_State* l) {
     }
     popg.pop(1);
 
-    success = luaL_newmetatable(l, MTI_ENTITY);
+    lua_newtable(l);
     popg.on_push(1);
-    assert(success && "Entity metatable id already taken!");
+    lua_pushvalue(l, -1);
+    n_entity_metatable = Script::grab_reference();
     {
         const luaL_Reg metatable[] = {
             {"__gc", li_entity_mt_gc},
@@ -98,9 +116,10 @@ void initialize_userdata_metatables(lua_State* l) {
     }
     popg.pop(1);
     
-    success = luaL_newmetatable(l, MTI_COMP_VIEW);
+    lua_newtable(l);
     popg.on_push(1);
-    assert(success && "Component view metatable id already taken!");
+    lua_pushvalue(l, -1);
+    n_cview_metatable = Script::grab_reference();
     {
         const luaL_Reg metatable[] = {
             {"__gc", li_cview_mt_gc},
@@ -116,9 +135,17 @@ void initialize_userdata_metatables(lua_State* l) {
     popg.pop(1);
 }
 
+void cleanup_userdata_metatables(lua_State* l) {
+    Script::drop_reference(n_comp_metatable);
+    Script::drop_reference(n_arche_metatable);
+    Script::drop_reference(n_genre_metatable);
+    Script::drop_reference(n_entity_metatable);
+    Script::drop_reference(n_cview_metatable);
+}
+
 void push_arche_pointer(lua_State* l, Runtime::Arche* ptr) {
     void* lua_mem = lua_newuserdata(l, sizeof(Runtime::Arche*));
-    luaL_getmetatable(l, MTI_ARCHETYPE);
+    Script::push_reference(n_arche_metatable);
     lua_setmetatable(l, -2);
     Runtime::Arche*& lud_arche = *static_cast<Runtime::Arche**>(lua_mem);
     lud_arche = ptr;
@@ -126,14 +153,14 @@ void push_arche_pointer(lua_State* l, Runtime::Arche* ptr) {
 
 void push_entity_handle(lua_State* l, Runtime::Entity_Handle ent) {
     void* lua_mem = lua_newuserdata(l, sizeof(Runtime::Entity_Handle));
-    luaL_getmetatable(l, MTI_ENTITY);
+    Script::push_reference(n_entity_metatable);
     lua_setmetatable(l, -2);
     *(new (lua_mem) Runtime::Entity_Handle) = ent;
 }
 
 void push_cview(lua_State* l, Cview cview) {
     void* lua_mem = lua_newuserdata(l, sizeof(Cview));
-    luaL_getmetatable(l, MTI_COMP_VIEW);
+    Script::push_reference(n_cview_metatable);
     lua_setmetatable(l, -2);
     *(new (lua_mem) Cview) = cview;
 }
