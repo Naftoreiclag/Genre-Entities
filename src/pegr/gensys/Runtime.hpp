@@ -16,6 +16,8 @@ Runtime::Comp* find_component(std::string id);
 Runtime::Arche* find_archetype(std::string id);
 Runtime::Genre* find_genre(std::string id);
 
+const char* prim_typename(Runtime::Prim::Type t);
+
 } // namespace Runtime
 } // namespace Gensys
 } // namespace pegr

@@ -245,6 +245,18 @@ Runtime::Genre* find_genre(std::string id_str) {
             "Could not find genre: %v");
 }
 
+const char* prim_typename(Runtime::Prim::Type t) {
+    switch (t) {
+        case Prim::Type::F32: return "f32";
+        case Prim::Type::F64: return "f64";
+        case Prim::Type::I32: return "i32";
+        case Prim::Type::I64: return "i64";
+        case Prim::Type::STR: return "str";
+        case Prim::Type::FUNC: return "func";
+        default: assert(0); return "unknown_type";
+    }
+}
+
 } // namespace Runtime
 } // namespace Gensys
 } // namespace pegr
