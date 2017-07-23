@@ -12,8 +12,8 @@ void test_0010_check_script_loading() {
     lua_State* l = Script::get_lua_state();
     Script::Regref_Guard sandbox(Script::new_sandbox());
     try {
-        Script::Regref_Guard
-            error(Script::load_lua_function("test/error_syntax.lua", sandbox));
+        Script::Regref_Guard error(
+            Script::load_lua_function("test/common/error_syntax.lua", sandbox));
     }
     catch (std::runtime_error e) {
         lua_pop(l, 1);

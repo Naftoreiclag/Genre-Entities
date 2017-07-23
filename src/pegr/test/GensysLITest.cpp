@@ -18,7 +18,7 @@ void test_0080_00_gensys_primitive() {
     
     Script::Regref_Guard sandbox(Script::new_sandbox());
     Script::Regref_Guard func(
-        Script::load_lua_function("test/prim_cstr_table.lua", sandbox));
+        Script::load_lua_function("test/common/prim_cstr_table.lua", sandbox));
         
     Script::Helper::run_simple_function(func, 1);
     

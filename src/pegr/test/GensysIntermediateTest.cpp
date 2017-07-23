@@ -58,7 +58,7 @@ void test_0030_gensys_primitive() {
     
     Script::Regref_Guard sandbox(Script::new_sandbox());
     Script::Regref table_fun = 
-            Script::load_lua_function("test/simple_table.lua", sandbox);
+            Script::load_lua_function("test/common/simple_table.lua", sandbox);
     
     prim.set_function(Script::make_shared(table_fun));
     
@@ -116,9 +116,9 @@ void test_0030_gensys_primitive_multiple() {
     
     Script::Regref_Guard sandbox(Script::new_sandbox());
     Script::Regref_Shared func_foo = Script::make_shared(
-            Script::load_lua_function("test/return_foo.lua", sandbox));
+            Script::load_lua_function("test/common/return_foo.lua", sandbox));
     Script::Regref_Shared func_bar = Script::make_shared(
-            Script::load_lua_function("test/return_bar.lua", sandbox));
+            Script::load_lua_function("test/common/return_bar.lua", sandbox));
     
     prim_foo.set_function(func_foo);
     prim_bar.set_function(func_bar);
