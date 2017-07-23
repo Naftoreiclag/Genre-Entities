@@ -266,7 +266,8 @@ void test_0028_for_pairs_number_sorted() {
     lua_State* l = Script::get_lua_state();
     
     RG sandbox(Script::new_sandbox());
-    RG table_fun(Script::load_lua_function("test/common/sparse_array.lua", sandbox));
+    RG table_fun(Script::load_lua_function(
+            "test/common/sparse_array.lua", sandbox));
     
     Script::Helper::run_simple_function(table_fun, 1);
     Script::Pop_Guard pop_guard(1);

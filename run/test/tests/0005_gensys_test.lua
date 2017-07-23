@@ -11,6 +11,7 @@ pegr.add_archetype('simplex.at', {
   }
 })
 
+-- Proceed to the compilation stage
 pegr.debug_stage_compile()
 
 local arche = pegr.find_archetype('simplex.at')
