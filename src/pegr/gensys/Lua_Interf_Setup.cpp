@@ -14,6 +14,7 @@
 #include "pegr/gensys/Compiler.hpp"
 #include "pegr/script/ScriptHelper.hpp"
 #include "pegr/gensys/Gensys.hpp"
+#include "pegr/script/Lua_Interf_Util.hpp"
 
 namespace pegr {
 namespace Gensys {
@@ -735,29 +736,23 @@ void stage_all() {
         return true;
     }, false);
     pop_guard.pop(1);
+    
+    clear();
 }
 
 int li_add_component(lua_State* l) {
-    luaL_checktype(l, 2, LUA_TTABLE);
-    std::size_t strlen;
-    const char* strdata = luaL_checklstring(l, 1, &strlen);
-    std::string key(strdata, strlen);
-    // TODO: resolve namespace issues in key
-    Script::push_reference(n_working_components);
-    lua_pushstring(l, key.c_str());
-    Script::Helper::simple_deep_copy(2);
-    lua_settable(l, 3);
+    if (Gensys::get_global_state() != GlobalState::MUTABLE) {
+        luaL_error(l, "add_component is only available during setup");
+    }
+    Script::Util::generic_li_add_to_res_table(l, n_working_components);
     return 0;
 }
 
 int li_edit_component(lua_State* l) {
-    std::size_t strlen;
-    const char* strdata = luaL_checklstring(l, 1, &strlen);
-    std::string key(strdata, strlen);
-    // TODO: resolve namespace issues in key
-    Script::push_reference(n_working_components);
-    lua_pushvalue(l, 1);
-    lua_gettable(l, 2);
+    if (Gensys::get_global_state() != GlobalState::MUTABLE) {
+        luaL_error(l, "edit_component is only available during setup");
+    }
+    Script::Util::generic_li_edit_from_res_table(l, n_working_components);
     return 1;
 }
 
@@ -765,15 +760,7 @@ int li_add_archetype(lua_State* l) {
     if (Gensys::get_global_state() != GlobalState::MUTABLE) {
         luaL_error(l, "add_archetype is only available during setup");
     }
-    luaL_checktype(l, 2, LUA_TTABLE);
-    std::size_t strlen;
-    const char* strdata = luaL_checklstring(l, 1, &strlen);
-    std::string key(strdata, strlen);
-    // TODO: resolve namespace issues in key
-    Script::push_reference(n_working_archetypes);
-    lua_pushstring(l, key.c_str());
-    Script::Helper::simple_deep_copy(2);
-    lua_settable(l, 3);
+    Script::Util::generic_li_add_to_res_table(l, n_working_archetypes);
     return 0;
 }
 
@@ -781,13 +768,7 @@ int li_edit_archetype(lua_State* l) {
     if (Gensys::get_global_state() != GlobalState::MUTABLE) {
         luaL_error(l, "edit_archetype is only available during setup");
     }
-    std::size_t strlen;
-    const char* strdata = luaL_checklstring(l, 1, &strlen);
-    std::string key(strdata, strlen);
-    // TODO: resolve namespace issues in key
-    Script::push_reference(n_working_archetypes);
-    lua_pushstring(l, key.c_str());
-    lua_gettable(l, 2);
+    Script::Util::generic_li_edit_from_res_table(l, n_working_archetypes);
     return 1;
 }
 
@@ -813,18 +794,8 @@ int li_add_genre(lua_State* l) {
     if (Gensys::get_global_state() != GlobalState::MUTABLE) {
         luaL_error(l, "add_genre is only available during setup.");
     }
-    luaL_checktype(l, 2, LUA_TTABLE);
-    std::size_t strlen;
-    const char* strdata = luaL_checklstring(l, 1, &strlen);
-    std::string key(strdata, strlen);
-    // TODO: resolve namespace issues in key
-    Script::push_reference(n_working_genres);
-    lua_pushstring(l, key.c_str());
-    Script::Helper::simple_deep_copy(2);
-    
-    fix_genre_table(l);
-    
-    lua_settable(l, 3);
+    Script::Util::generic_li_add_to_res_table(l, n_working_archetypes, 
+                                            fix_genre_table);
     return 0;
 }
 
