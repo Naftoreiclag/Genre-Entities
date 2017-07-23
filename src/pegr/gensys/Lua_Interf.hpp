@@ -17,11 +17,17 @@ namespace LI {
 /**
  * @brief Initializes. Sets up workspaces for adding new components,
  * genres, archetypes, etc.
+ * 
+ * This should really only be called once during the program's lifetime.
  */
 void initialize();
 
+void clear();
+
 /**
  * @brief Undoes initialize()
+ * 
+ * This should really only be called once during the program's lifetime.
  */
 void cleanup();
 

@@ -19,9 +19,9 @@ namespace pegr {
 namespace Gensys {
 namespace LI {
 
-Script::Regref n_working_archetypes;
-Script::Regref n_working_genres;
-Script::Regref n_working_components;
+Script::Regref n_working_archetypes = LUA_REFNIL;
+Script::Regref n_working_genres = LUA_REFNIL;
+Script::Regref n_working_components = LUA_REFNIL;
 
 void initialize_working_tables(lua_State* l) {
     assert_balance(0);
@@ -33,25 +33,36 @@ void initialize_working_tables(lua_State* l) {
     n_working_components = Script::grab_reference();
 }
 
-// (This is defined in Lua_Interf_Runtime.cpp)
+void cleanup_working_tables(lua_State* l) {
+    assert_balance(0);
+    Script::drop_reference(n_working_archetypes);
+    n_working_archetypes = LUA_REFNIL;
+    Script::drop_reference(n_working_components);
+    n_working_components = LUA_REFNIL;
+    Script::drop_reference(n_working_genres);
+    n_working_genres = LUA_REFNIL;
+}
+
+// (These are defined in Lua_Interf_Runtime.cpp)
 void initialize_userdata_metatables(lua_State* l);
 void cleanup_userdata_metatables(lua_State* l);
 
+const luaL_Reg n_setup_api_safe[] = {
+    {"add_archetype", li_add_archetype},
+    {"add_genre", li_add_genre},
+    {"add_component", li_add_component},
+    
+    {"find_archetype", li_find_archetype},
+    {"new_entity", li_new_entity},
+    {"delete_entity", li_delete_entity},
+    
+    // End of the list
+    {nullptr, nullptr}
+};
+
 void initialize_expose_global_functions(lua_State* l) {
     assert_balance(0);
-    const luaL_Reg api_safe[] = {
-        {"add_archetype", li_add_archetype},
-        {"add_genre", li_add_genre},
-        {"add_component", li_add_component},
-        
-        {"find_archetype", li_find_archetype},
-        {"new_entity", li_new_entity},
-        {"delete_entity", li_delete_entity},
-        
-        // End of the list
-        {nullptr, nullptr}
-    };
-    Script::multi_expose_c_functions(api_safe);
+    Script::multi_expose_c_functions(n_setup_api_safe);
 }
 
 void initialize() {
@@ -63,11 +74,17 @@ void initialize() {
     initialize_expose_global_functions(l);
 }
 
+void clear() {
+    assert(Script::is_initialized());
+    assert_balance(0);
+    lua_State* l = Script::get_lua_state();
+    cleanup_working_tables(l);
+    initialize_working_tables(l);
+}
+
 void cleanup() {
     lua_State* l = Script::get_lua_state();
-    Script::drop_reference(n_working_archetypes);
-    Script::drop_reference(n_working_components);
-    Script::drop_reference(n_working_genres);
+    cleanup_working_tables(l);
     cleanup_userdata_metatables(l);
 }
 
