@@ -7,7 +7,6 @@ local unsafe = {
   'load',
   'loadfile',
   'loadstring',
-  'print',
 }
 
 local accessed = {}
