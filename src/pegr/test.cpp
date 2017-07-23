@@ -5,6 +5,7 @@
 #include "pegr/gensys/Lua_Interf.hpp"
 #include "pegr/scheduler/Lua_Interf.hpp"
 #include "pegr/script/Script.hpp"
+#include "pegr/script/ScriptHelper.hpp"
 #include "pegr/logger/Logger.hpp"
 #include "pegr/test/Tests.hpp"
 
@@ -22,13 +23,11 @@ void setup() {
     Gensys::initialize();
 }
 
-void run() {
-    int num_passes = 0;
-    int num_fails = 0;
+void run_tests(int& num_passes, int& num_fails) {
     lua_State* l = Script::get_lua_state();
     for (std::size_t idx = 0; /*Until sentiel reached*/; ++idx) {
         int original_stack_size = lua_gettop(l);
-        const Test::NamedTest& test = Test::m_tests[idx];
+        const Test::NamedTest& test = Test::n_tests[idx];
         if (!test.m_name) {
             break;
         }
@@ -59,6 +58,42 @@ void run() {
             continue;
         }
     }
+}
+
+void run_lua_tests(int& num_passes, int& num_fails) {
+    for (std::size_t idx = 0; /*Until sentiel reached*/; ++idx) {
+        const Test::NamedLuaTest& test = Test::n_lua_tests[idx];
+        if (!test.m_name) {
+            break;
+        }
+        Logger::log()->info(test.m_name);
+        try {
+            Script::Regref_Guard sandbox(Script::new_sandbox());
+            std::stringstream sss;
+            sss << "test/tests/" << test.m_lua_file;
+            Script::Regref_Guard func(
+                    Script::load_lua_function(
+                            sss.str().c_str(), sandbox, test.m_name));
+            Script::Helper::run_simple_function(func, 0);
+            
+            Logger::log()->info("\t...PASSED!");
+            ++num_passes;
+        }
+        catch (std::runtime_error e) {
+            Logger::log()->warn("\t...FAILED! %v", e.what());
+            ++num_fails;
+            continue;
+        }
+    }
+}
+
+void run() {
+    int num_passes = 0;
+    int num_fails = 0;
+    Logger::log()->info("=== C++ TESTS ===");
+    run_tests(num_passes, num_fails);
+    Logger::log()->info("=== Lua TESTS ===");
+    run_lua_tests(num_passes, num_fails);
     Logger::log()->info("%v passed\t%v failed", num_passes, num_fails);
 }
 

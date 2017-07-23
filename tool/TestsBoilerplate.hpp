@@ -20,7 +20,7 @@ struct NamedTest {
     std::function<void()> m_test;
 };
 
-const NamedTest m_tests[] = {
+const NamedTest n_tests[] = {
     
     {"Testing Framework", [](){}},
 
@@ -28,6 +28,19 @@ const NamedTest m_tests[] = {
     
     // Sentinel
     {nullptr, std::function<void()>()}
+};
+
+struct NamedLuaTest {
+    const char* m_name;
+    const char* m_lua_file;
+};
+
+const NamedLuaTest n_lua_tests[] = {
+    
+/*### LUA TESTS LIST ###*/
+    
+    // Sentinel
+    {nullptr, nullptr}
 };
 
 }
