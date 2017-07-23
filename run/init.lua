@@ -182,9 +182,9 @@ pegr.schedule_task('fizz.t', {
   -- Describes when this function should be called
   when = 'tick',
   
-  -- List of the function's arguments, in order
+  -- List of the function's arguments
   args = {
-    {'ent_view', 'food.g'}
+    entity = {'ent_view', 'food.g'}
   },
   
   -- The actual function to be called
