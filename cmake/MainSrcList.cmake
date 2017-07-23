@@ -33,7 +33,8 @@ foreach(fname
 "gensys/Util.cpp"
 "logger/Logger.cpp"
 "main.cpp"
-"scheduler/SchedLuaInterface.cpp"
+"scheduler/Lua_Interf.cpp"
+"script/Lua_Interf_Util.cpp"
 "script/Script.cpp"
 "script/ScriptHelper.cpp"
 

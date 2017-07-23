@@ -4,7 +4,7 @@
 #include "pegr/gensys/Compiler.hpp"
 #include "pegr/gensys/Lua_Interf.hpp"
 #include "pegr/gensys/Gensys.hpp"
-#include "pegr/scheduler/SchedLuaInterface.hpp"
+#include "pegr/scheduler/Lua_Interf.hpp"
 #include "pegr/script/Script.hpp"
 #include "pegr/script/ScriptHelper.hpp"
 #include "pegr/logger/Logger.hpp"
@@ -14,9 +14,14 @@ using namespace pegr;
 
 void setup() {
     Logger::initialize();
+    
     Script::initialize();
-    Gensys::initialize();
+    
     Gensys::LI::initialize();
+    Sched::LI::initialize();
+    
+    
+    Gensys::initialize();
 }
 
 void run() {
@@ -45,9 +50,13 @@ void run() {
 }
 
 void cleanup() {
-    Gensys::LI::cleanup();
     Gensys::cleanup();
+    
+    Sched::LI::cleanup();
+    Gensys::LI::cleanup();
+    
     Script::cleanup();
+    
     Logger::cleanup();
 }
 
