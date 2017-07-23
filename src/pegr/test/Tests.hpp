@@ -81,6 +81,7 @@ const NamedLuaTest n_lua_tests[] = {
     
     {"The simplest test possible", "0000_basic.lua"},
     {"Simple sandbox test", "0001_sandbox_test.lua"},
+    {"Basic Gensys test", "0005_gensys_test.lua"},
     
     // Sentinel
     {nullptr, nullptr}
