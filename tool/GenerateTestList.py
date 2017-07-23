@@ -54,8 +54,6 @@ for item in cppsFiles:
                 annotName = None
 
 luaFiles = {}
-                
-unnamedCount = 0
 for item in luasFiles:
     filename = luaSourcesDir + item
     with open(filename, 'r') as sourceFile:
@@ -67,7 +65,7 @@ for item in luasFiles:
                 break
         if not name:
             print('WARNING: Lua file ' + filename + ' has no name!')
-            name = ''.join('Unnamed Test #', str(unnamedCount))
+            name = 'Unnamed Test (' + item + ')'
         luaFiles[item] = name
 
 
