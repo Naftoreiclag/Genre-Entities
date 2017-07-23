@@ -47,9 +47,9 @@ void initialize() {
 void clear() {
     assert(Script::is_initialized());
     assert_balance(0);
-    
-    cleanup_tables();
-    initialize_tables();
+    lua_State* l = Script::get_lua_state();
+    cleanup_tables(l);
+    initialize_tables(l);
 }
 
 void cleanup() {
