@@ -11,6 +11,12 @@
 
 using namespace pegr;
 
+int li_debug_stage_compile(lua_State* l) {
+    Logger::log()->info("Compile triggered by Lua script");
+    Gensys::LI::stage_all();
+    Gensys::compile();
+}
+
 void setup() {
     Logger::initialize();
     
@@ -19,8 +25,30 @@ void setup() {
     Gensys::LI::initialize();
     Sched::LI::initialize();
     
+    const luaL_Reg test_api[] = {
+        {"debug_stage_compile", li_debug_stage_compile},
+        
+        // Sentinel
+        {nullptr, nullptr}
+    };
+    
+    Script::multi_expose_c_functions(test_api);
     
     Gensys::initialize();
+}
+
+void log_test_name(const char* name) {
+    int more = 80 - std::strlen(name);
+    if (more < 1) {
+        Logger::log()->info(name);
+    }
+    else {
+        std::stringstream sss;
+        sss << name
+            << ' '
+            << std::string(more, '-');
+        Logger::log()->info(sss.str());
+    }
 }
 
 void run_tests(int& num_passes, int& num_fails) {
@@ -31,7 +59,7 @@ void run_tests(int& num_passes, int& num_fails) {
         if (!test.m_name) {
             break;
         }
-        Logger::log()->info(test.m_name);
+        log_test_name(test.m_name);
         try {
             test.m_test();
             
@@ -66,7 +94,7 @@ void run_lua_tests(int& num_passes, int& num_fails) {
         if (!test.m_name) {
             break;
         }
-        Logger::log()->info(test.m_name);
+        log_test_name(test.m_name);
         try {
             Script::Regref_Guard sandbox(Script::new_sandbox());
             std::stringstream sss;
@@ -75,6 +103,10 @@ void run_lua_tests(int& num_passes, int& num_fails) {
                     Script::load_lua_function(
                             sss.str().c_str(), sandbox, test.m_name));
             Script::Helper::run_simple_function(func, 0);
+            
+            Gensys::cleanup();
+            Gensys::initialize();
+            Gensys::LI::clear();
             
             Logger::log()->info("\t...PASSED!");
             ++num_passes;
@@ -94,6 +126,7 @@ void run() {
     run_tests(num_passes, num_fails);
     Logger::log()->info("=== Lua TESTS ===");
     run_lua_tests(num_passes, num_fails);
+    Logger::log()->info("===== RESULTS =====");
     Logger::log()->info("%v passed\t%v failed", num_passes, num_fails);
 }
 
