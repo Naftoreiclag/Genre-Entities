@@ -44,6 +44,14 @@ void initialize() {
     initialize_expose_global_functions(l);
 }
 
+void clear() {
+    assert(Script::is_initialized());
+    assert_balance(0);
+    
+    cleanup_tables();
+    initialize_tables();
+}
+
 void cleanup() {
     assert(Script::is_initialized());
     assert_balance(0);

@@ -8,6 +8,7 @@ namespace Sched {
 namespace LI {
 
 void initialize();
+void clear();
 void cleanup();
     
 int li_schedule_task(lua_State* l);
