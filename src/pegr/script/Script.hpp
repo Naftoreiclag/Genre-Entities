@@ -79,6 +79,11 @@ public:
     Regref regref() const;
     
     /**
+     * @return Iff this is guarding nothing (nil via LUA_REFNIL)
+     */
+    bool is_nil() const;
+    
+    /**
      * @brief Replaces the currently guarded reference with this one. Properly
      * release the previously guarded value
      * @param value Reference to the new value to be guarded.

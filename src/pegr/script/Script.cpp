@@ -53,6 +53,10 @@ Regref_Guard::~Regref_Guard() {
 Regref Regref_Guard::regref() const {
     return m_reference;
 }
+
+bool Regref_Guard::is_nil() const {
+    return m_reference == LUA_REFNIL;
+}
     
 Regref_Guard::operator Regref() const {
     return regref();
