@@ -24,7 +24,15 @@ local ent = pegr.new_entity(arche)
 
 assert(ent.__exists, 'Entity does not exist!')
 
+local bad_cache = ent.position
+
+print('ent.positon = ', ent.position)
+print('bad_cache = ', bad_cache)
+
 pegr.delete_entity(ent)
+print('Entity manually deleted!')
 
 assert(not ent.__exists, 'Entity still exists!')
 
+print('ent.positon = ', ent.position)
+print('bad_cache = ', bad_cache)
