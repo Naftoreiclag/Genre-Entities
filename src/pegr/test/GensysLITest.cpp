@@ -16,8 +16,8 @@ void test_0080_00_gensys_primitive() {
     
     lua_State* l = Script::get_lua_state();
     
-    Script::Regref_Guard sandbox(Script::new_sandbox());
-    Script::Regref_Guard func(
+    Script::Unique_Regref sandbox(Script::new_sandbox());
+    Script::Unique_Regref func(
         Script::load_lua_function("test/common/prim_cstr_table.lua", sandbox));
         
     Script::Helper::run_simple_function(func, 1);

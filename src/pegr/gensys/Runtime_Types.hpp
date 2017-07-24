@@ -129,7 +129,7 @@ struct Arche {
      * does not populate this field automatically. A Lua userdata value is
      * created and handed to the Arche upon the first access.
      */
-    Script::Regref_Guard m_lua_userdata;
+    Script::Unique_Regref m_lua_userdata;
 };
 
 /**

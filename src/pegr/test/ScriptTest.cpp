@@ -10,9 +10,9 @@ namespace Test {
 //@Test Identifying syntax errors
 void test_0010_check_script_loading() {
     lua_State* l = Script::get_lua_state();
-    Script::Regref_Guard sandbox(Script::new_sandbox());
+    Script::Unique_Regref sandbox(Script::new_sandbox());
     try {
-        Script::Regref_Guard error(
+        Script::Unique_Regref error(
             Script::load_lua_function("test/common/error_syntax.lua", sandbox));
     }
     catch (std::runtime_error e) {
@@ -30,7 +30,7 @@ void test_0010_check_pop_guard() {
     Script::Pop_Guard pg(1);
 }
 
-//@Test Script Regref_Guard memory leaks
+//@Test Script Unique_Regref memory leaks
 void test_0010_check_guard_memory_leaks() {
     lua_State* l = Script::get_lua_state();
     Logger::log()->info("Testing explicit...");
@@ -48,7 +48,7 @@ void test_0010_check_guard_memory_leaks() {
     
     Script::Regref ref;
     {
-        Script::Regref_Guard sandbox(Script::new_sandbox());
+        Script::Unique_Regref sandbox(Script::new_sandbox());
         ref = sandbox;
         Logger::log()->info("Should drop reference...");
     }
@@ -61,16 +61,16 @@ void test_0010_check_guard_memory_leaks() {
     lua_pop(l, 1);
 }
 
-//@Test Script Regref_Shared memory leaks
+//@Test Script Shared_Regref memory leaks
 void test_0010_check_guard_memory_leaks_shared() {
     lua_State* l = Script::get_lua_state();
     Script::Regref ref;
     ref = Script::new_sandbox();
     
     {
-        Script::Regref_Shared shared1;
+        Script::Shared_Regref shared1;
         {
-            Script::Regref_Shared shared2 = Script::make_shared(ref);
+            Script::Shared_Regref shared2 = Script::make_shared(ref);
             shared1 = shared2;
         }
     }

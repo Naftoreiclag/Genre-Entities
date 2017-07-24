@@ -20,63 +20,63 @@ typedef int Regref;
 typedef int Arridx;
 
 /**
- * @class Regref_Guard
+ * @class Unique_Regref
  * @brief Handles the release of a value referenced in the lua registry (RAII)
  * Note that these must go out of scope before Script::cleanup() is called.
  */
-class Regref_Guard {
+class Unique_Regref {
 public:
     /**
      * @brief Guards nothing
      */
-    Regref_Guard();
+    Unique_Regref();
     
     /**
      * @brief Guards the given reference. When this guard is deleted (for
      * example, by going out of scope) the reference is freed from the lua
      * registry, possibly causing that value to be gc'd.
      */
-    Regref_Guard(Regref ref);
+    Unique_Regref(Regref ref);
     
     /**
      * @brief Copy construction not allowed
      * (there should only be one guard for a single reference)
      */
-    Regref_Guard(const Regref_Guard& other) = delete;
+    Unique_Regref(const Unique_Regref& other) = delete;
     
     /**
      * @brief Copy assignment not allowed 
      * (there should only be one guard for a single reference)
      */
-    Regref_Guard& operator =(const Regref_Guard& other) = delete;
+    Unique_Regref& operator =(const Unique_Regref& other) = delete;
     
     /**
      * @brief Allow assignment of references directly to the guard. The
      * currently guarded object will be released.
      * @param ref The reference to guard
      */
-    Regref_Guard& operator =(const Regref& value);
+    Unique_Regref& operator =(const Regref& value);
     
     /**
      * @brief Move construction
      */
-    Regref_Guard(Regref_Guard&& other);
+    Unique_Regref(Unique_Regref&& other);
     
     /**
      * @brief Move assignment
      */
-    Regref_Guard& operator=(Regref_Guard&& other);
+    Unique_Regref& operator=(Unique_Regref&& other);
     
     /**
      * @brief Deconstructor. Drops whatever reference it is guarding.
      */
-    ~Regref_Guard();
+    ~Unique_Regref();
     
     /**
      * @brief Get the Lua reference that this is guarding
      * @return the Lua reference that this is guarding
      */
-    Regref regref() const;
+    Regref get() const;
     
     /**
      * @return Iff this is guarding nothing (nil via LUA_REFNIL)
@@ -88,17 +88,12 @@ public:
      * release the previously guarded value
      * @param value Reference to the new value to be guarded.
      */
-    void replace(Regref value);
+    void reset(Regref value = LUA_REFNIL);
     
     /**
      * @brief Implicit conversion to the Regref type
      */
     operator Regref() const;
-    
-    /**
-     * @brief Releases whatever is being guarded
-     */
-    void release();
     
 private:
     
@@ -109,14 +104,14 @@ private:
  * @brief A shared pointer for a guard. Useful for having multiple references
  * to the same Lua object. Uses reference counting.
  */
-typedef std::shared_ptr<Regref_Guard> Regref_Shared;
+typedef std::shared_ptr<Unique_Regref> Shared_Regref;
 
 /**
  * @brief Make a referenced Lua value into a shared RAII object
  * @param ref The Lua reference to make shared
  * @return A shared RAII object for the provided reference
  */
-Regref_Shared make_shared(Regref ref);
+Shared_Regref make_shared(Regref ref);
 
 extern const char* PEGR_MODULE_NAME;
 

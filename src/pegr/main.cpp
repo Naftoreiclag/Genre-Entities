@@ -25,9 +25,9 @@ void setup() {
 }
 
 void run() {
-    Script::Regref_Guard sandbox(Script::new_sandbox());
-    Script::Regref_Guard init_fun;
-    Script::Regref_Guard postinit_fun;
+    Script::Unique_Regref sandbox(Script::new_sandbox());
+    Script::Unique_Regref init_fun;
+    Script::Unique_Regref postinit_fun;
     try {
         init_fun = Script::load_lua_function("init.lua", sandbox);
         postinit_fun = Script::load_lua_function("postinit.lua", sandbox);

@@ -10,7 +10,7 @@
 namespace pegr {
 namespace Test {
 
-typedef Script::Regref_Guard RG;
+typedef Script::Unique_Regref RG;
 
 void assert_expected_string_table(
         lua_State* l,

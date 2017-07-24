@@ -101,10 +101,10 @@ void run_lua_tests(int& num_passes, int& num_fails) {
         }
         log_header(test.m_name);
         try {
-            Script::Regref_Guard sandbox(Script::new_sandbox());
+            Script::Unique_Regref sandbox(Script::new_sandbox());
             std::stringstream sss;
             sss << "test/tests/" << test.m_lua_file;
-            Script::Regref_Guard func(
+            Script::Unique_Regref func(
                     Script::load_lua_function(
                             sss.str().c_str(), sandbox, test.m_name));
             Script::Helper::run_simple_function(func, 0);

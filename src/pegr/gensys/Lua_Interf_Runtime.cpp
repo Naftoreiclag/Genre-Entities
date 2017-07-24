@@ -153,9 +153,9 @@ void push_arche_pointer(lua_State* l, Runtime::Arche* ptr) {
         lud_arche = ptr;
         
         lua_pushvalue(l, -1);
-        ptr->m_lua_userdata.replace(Script::grab_reference());
+        ptr->m_lua_userdata.reset(Script::grab_reference());
     } else {
-        Script::push_reference(ptr->m_lua_userdata.regref());
+        Script::push_reference(ptr->m_lua_userdata.get());
     }
 }
 

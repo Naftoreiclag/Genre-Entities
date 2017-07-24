@@ -36,14 +36,14 @@ public:
     bool is_error() const;
 
     const std::string& get_string() const;
-    const Script::Regref_Shared& get_function() const;
+    const Script::Shared_Regref& get_function() const;
     float get_f32() const;
     double get_f64() const;
     int32_t get_i32() const;
     int64_t get_i64() const;
 
     void set_string(std::string str);
-    void set_function(Script::Regref_Shared func);
+    void set_function(Script::Shared_Regref func);
     void set_f32(float f32);
     void set_f64(double f64);
     void set_i32(int32_t i32);
@@ -63,7 +63,7 @@ private:
     std::string m_str;
     
     // We use a shared instead of unique because Prims need to be copiable..?
-    Script::Regref_Shared m_func;
+    Script::Shared_Regref m_func;
 
     void copy_from(const Prim& other_p);
     void move_from(Prim&& other_p);
@@ -121,7 +121,7 @@ struct Genre {
         // TODO: unionize?
         Type m_type;
 
-        Script::Regref_Shared m_function;
+        Script::Shared_Regref m_function;
         Comp* m_from_component;
         Genre* m_from_genre;
         std::map<Symbol, Symbol> m_aliases;

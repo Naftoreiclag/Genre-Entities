@@ -56,7 +56,7 @@ void test_0030_gensys_primitive() {
     ss << prim.get_f64();
     Logger::log()->info("Correct double: %v", ss.str());
     
-    Script::Regref_Guard sandbox(Script::new_sandbox());
+    Script::Unique_Regref sandbox(Script::new_sandbox());
     Script::Regref table_fun = 
             Script::load_lua_function("test/common/simple_table.lua", sandbox);
     
@@ -114,10 +114,10 @@ void test_0030_gensys_primitive_multiple() {
     Gensys::Interm::Prim prim_foo;
     Gensys::Interm::Prim prim_bar;
     
-    Script::Regref_Guard sandbox(Script::new_sandbox());
-    Script::Regref_Shared func_foo = Script::make_shared(
+    Script::Unique_Regref sandbox(Script::new_sandbox());
+    Script::Shared_Regref func_foo = Script::make_shared(
             Script::load_lua_function("test/common/return_foo.lua", sandbox));
-    Script::Regref_Shared func_bar = Script::make_shared(
+    Script::Shared_Regref func_bar = Script::make_shared(
             Script::load_lua_function("test/common/return_bar.lua", sandbox));
     
     prim_foo.set_function(func_foo);

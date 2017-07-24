@@ -15,60 +15,55 @@
 namespace pegr {
 namespace Script {
 
-Regref_Guard::Regref_Guard()
+Unique_Regref::Unique_Regref()
 : m_reference(LUA_REFNIL) { }
 
-Regref_Guard::Regref_Guard(Regref ref)
+Unique_Regref::Unique_Regref(Regref ref)
 : m_reference(ref) { }
 
-Regref_Guard::Regref_Guard(Regref_Guard&& other) {
-    release();
+Unique_Regref::Unique_Regref(Unique_Regref&& other) {
+    drop_reference(m_reference);
     m_reference = other.m_reference;
     other.m_reference = LUA_REFNIL;
 }
 
 // Move assignment
-Regref_Guard& Regref_Guard::operator =(Regref_Guard&& other) {
-    release();
+Unique_Regref& Unique_Regref::operator =(Unique_Regref&& other) {
+    drop_reference(m_reference);
     m_reference = other.m_reference;
     other.m_reference = LUA_REFNIL;
     return *this;
 }
 
 // Assignment of value
-Regref_Guard& Regref_Guard::operator =(const Regref& value) {
-    replace(value);
+Unique_Regref& Unique_Regref::operator =(const Regref& value) {
+    reset(value);
     return *this;
 }
 
-void Regref_Guard::replace(Regref value) {
-    release();
+void Unique_Regref::reset(Regref value) {
+    drop_reference(m_reference);
     m_reference = value;
 }
 
-Regref_Guard::~Regref_Guard() {
-    release();
+Unique_Regref::~Unique_Regref() {
+    drop_reference(m_reference);
 }
 
-Regref Regref_Guard::regref() const {
+Regref Unique_Regref::get() const {
     return m_reference;
 }
 
-bool Regref_Guard::is_nil() const {
+bool Unique_Regref::is_nil() const {
     return m_reference == LUA_REFNIL;
 }
     
-Regref_Guard::operator Regref() const {
-    return regref();
+Unique_Regref::operator Regref() const {
+    return get();
 }
 
-void Regref_Guard::release() {
-    drop_reference(m_reference);
-    m_reference = LUA_REFNIL;
-}
-
-Regref_Shared make_shared(Regref ref) {
-    return std::make_shared<Regref_Guard>(ref);
+Shared_Regref make_shared(Regref ref) {
+    return std::make_shared<Unique_Regref>(ref);
 }
 
 const char* PEGR_MODULE_NAME = "pegr";
