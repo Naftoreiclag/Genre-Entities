@@ -90,6 +90,7 @@ void initialize_userdata_metatables(lua_State* l) {
     {
         const luaL_Reg metatable[] = {
             {"__tostring", li_arche_mt_tostring},
+            // No __equal, since there should only be one global pointer
             // No __gc, since this userdata is POD pointer
             
             // End of the list
@@ -144,11 +145,18 @@ void cleanup_userdata_metatables(lua_State* l) {
 }
 
 void push_arche_pointer(lua_State* l, Runtime::Arche* ptr) {
-    void* lua_mem = lua_newuserdata(l, sizeof(Runtime::Arche*));
-    Script::push_reference(n_arche_metatable);
-    lua_setmetatable(l, -2);
-    Runtime::Arche*& lud_arche = *static_cast<Runtime::Arche**>(lua_mem);
-    lud_arche = ptr;
+    if (ptr->m_lua_userdata.is_nil()) {
+        void* lua_mem = lua_newuserdata(l, sizeof(Runtime::Arche*));
+        Script::push_reference(n_arche_metatable);
+        lua_setmetatable(l, -2);
+        Runtime::Arche*& lud_arche = *static_cast<Runtime::Arche**>(lua_mem);
+        lud_arche = ptr;
+        
+        lua_pushvalue(l, -1);
+        ptr->m_lua_userdata.replace(Script::grab_reference());
+    } else {
+        Script::push_reference(ptr->m_lua_userdata.regref());
+    }
 }
 
 void push_entity_handle(lua_State* l, Runtime::Entity_Handle ent) {
@@ -307,6 +315,10 @@ int li_cview_mt_gc(lua_State* l) {
 int li_cview_mt_index(lua_State* l) {
     Cview& cview = *(static_cast<Cview*>(lua_touserdata(l, 1)));
     
+    if (!cview.m_ent.does_exist()) {
+        return 0;
+    }
+    
     std::size_t keystrlen;
     const char* keystr = luaL_checklstring(l, 2, &keystrlen);
     
@@ -416,6 +428,10 @@ void check_write_compatible_prim_type(lua_State* l,
 
 int li_cview_mt_newindex(lua_State* l) {
     Cview& cview = *(static_cast<Cview*>(lua_touserdata(l, 1)));
+    
+    if (!cview.m_ent.does_exist()) {
+        return 0;
+    }
     
     std::size_t keystrlen;
     const char* keystr = luaL_checklstring(l, 2, &keystrlen);

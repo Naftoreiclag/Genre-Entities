@@ -101,8 +101,6 @@ struct Aggindex {
 
 /**
  * @class Arche
- * @brief Memory management of the contained pointers is not the responsibility 
- * of this class.
  */
 struct Arche {
     /* Archetypes are composed of components. This maps the internal name to
@@ -126,6 +124,12 @@ struct Arche {
     /* Default collection of default strings
      */
     std::vector<std::string> m_default_strings;
+    
+    /* Cached Lua value to provide when accessed in a Lua script. The compiler
+     * does not populate this field automatically. A Lua userdata value is
+     * created and handed to the Arche upon the first access.
+     */
+    Script::Regref_Guard m_lua_userdata;
 };
 
 /**

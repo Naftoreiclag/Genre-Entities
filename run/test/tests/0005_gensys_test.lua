@@ -17,6 +17,16 @@ pegr.debug_stage_compile()
 local arche = pegr.find_archetype('simplex.at')
 local ent = pegr.new_entity(arche)
 
+do
+  local other_ent = pegr.new_entity(arche)
+  assert(ent.__id ~= other_ent.__id, 'entity IDs must be unique!')
+end
+
+assert(ent.__arche == arche, 'Mismatched archetypes')
+assert(not ent.__killed, 'Entity already killed')
+assert(not ent.__alive, 'Entity already alive')
+assert(not ent.__spawned, 'Entity already spawned')
+
 assert(ent.position.x == 315, 'Expected 315')
 
 ent.position.x = 500
