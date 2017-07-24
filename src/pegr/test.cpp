@@ -1,5 +1,8 @@
 #include <stdexcept>
+#include <iostream>
 #include <sstream>
+#include <chrono>
+#include <ratio>
 
 #include "pegr/gensys/Gensys.hpp"
 #include "pegr/gensys/Lua_Interf.hpp"
@@ -11,15 +14,64 @@
 
 using namespace pegr;
 
+typedef std::chrono::time_point<std::chrono::high_resolution_clock> Time_Point;
+Time_Point n_start_time;
+bool n_timer_set = false;
+
 int li_debug_stage_compile(lua_State* l) {
     Logger::log()->info("Compile triggered by Lua script");
     Gensys::LI::stage_all();
     Gensys::compile();
+    return 0;
 }
 
 int li_debug_collect_garbage(lua_State* l) {
     Logger::log()->info("Compile triggered by Lua script");
     lua_gc(Script::get_lua_state(), LUA_GCCOLLECT, 0);
+    return 0;
+}
+
+int li_debug_timer_start(lua_State* l) {
+    Logger::log()->info("Timer start");
+    n_start_time = std::chrono::high_resolution_clock::now();
+    n_timer_set = true;
+    return 0;
+}
+
+int li_debug_timer_end(lua_State* l) {
+    Time_Point end_time = std::chrono::high_resolution_clock::now();
+    
+    if (!n_timer_set) {
+        luaL_error(l, "Timer not set!");
+    }
+    
+    const char* msg = luaL_checkstring(l, 1);
+    lua_Number sample_size = luaL_checknumber(l, 2);
+    luaL_argcheck(l, 2, sample_size > 0, "Sample size must be > 0");
+    const char* resol = "s";
+    if (lua_gettop(l) > 2) {
+        resol = luaL_checkstring(l, 3);
+    }
+    
+    std::chrono::duration<double> time_diff = end_time - n_start_time;
+    double duration = time_diff.count();
+    if (std::strcmp(resol, "s") == 0) {
+        duration *= 1e0;
+    } else if (std::strcmp(resol, "ms") == 0) {
+        duration *= 1e3;
+    } else if (std::strcmp(resol, "us") == 0) {
+        duration *= 1e6;
+    } else if (std::strcmp(resol, "ns") == 0) {
+        duration *= 1e9;
+    } else {
+        luaL_error(l, "Unknown resolution: %s", resol);
+    }
+    duration /= sample_size;
+    
+    Logger::log()->info("--> %v%v for %v",
+            duration, resol, msg);
+    n_timer_set = false;
+    return 0;
 }
 
 void setup() {
@@ -32,6 +84,9 @@ void setup() {
     
     const luaL_Reg test_api[] = {
         {"debug_stage_compile", li_debug_stage_compile},
+        {"debug_collect_garbage", li_debug_collect_garbage},
+        {"debug_timer_start", li_debug_timer_start},
+        {"debug_timer_end", li_debug_timer_end},
         
         // Sentinel
         {nullptr, nullptr}
@@ -108,12 +163,6 @@ void run_lua_tests(int& num_passes, int& num_fails) {
                     Script::load_lua_function(
                             sss.str().c_str(), sandbox, test.m_name));
             Script::Helper::run_simple_function(func, 0);
-            
-            Gensys::cleanup();
-            Gensys::initialize();
-            Gensys::LI::clear();
-            lua_gc(Script::get_lua_state(), LUA_GCCOLLECT, 0);
-            
             Logger::log()->info("\t...PASSED!");
             ++num_passes;
         }
@@ -122,6 +171,10 @@ void run_lua_tests(int& num_passes, int& num_fails) {
             ++num_fails;
             continue;
         }
+        Gensys::cleanup();
+        Gensys::initialize();
+        Gensys::LI::clear();
+        lua_gc(Script::get_lua_state(), LUA_GCCOLLECT, 0);
     }
 }
 
@@ -134,6 +187,32 @@ void run() {
     run_lua_tests(num_passes, num_fails);
     log_header("===== RESULTS", '=');
     Logger::log()->info("%v passed\t%v failed", num_passes, num_fails);
+    
+    std::string answer;
+    for(;;) {
+        Logger::log()->info("Run another file? (in test/more/)");
+        std::getline(std::cin, answer);
+        if (answer.size() == 0 || answer.at(0) == 'n' || answer.at(0) == 'N') {
+            break;
+        }
+        try {
+            Script::Unique_Regref sandbox(Script::new_sandbox());
+            std::stringstream sss;
+            sss << "test/more/" << answer << ".lua";
+            Script::Unique_Regref func(
+                    Script::load_lua_function(
+                            sss.str().c_str(), sandbox, sss.str().c_str()));
+            Script::Helper::run_simple_function(func, 0);
+            Logger::log()->info("\t...PASSED!");
+        }
+        catch (std::runtime_error e) {
+            Logger::log()->warn("\t...FAILED! %v", e.what());
+        }
+        Gensys::cleanup();
+        Gensys::initialize();
+        Gensys::LI::clear();
+        lua_gc(Script::get_lua_state(), LUA_GCCOLLECT, 0);
+    }
 }
 
 void cleanup() {
