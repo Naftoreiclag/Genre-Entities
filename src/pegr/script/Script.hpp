@@ -95,6 +95,12 @@ public:
      */
     operator Regref() const;
     
+    /**
+     * @brief Releases ownership of the held Regref (does not release the value
+     * from the Lua registry) and returns it
+     * @return The formerly guarded Regref
+     */
+    Regref release();
 private:
     
     Regref m_reference;

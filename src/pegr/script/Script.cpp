@@ -62,6 +62,12 @@ Unique_Regref::operator Regref() const {
     return get();
 }
 
+Regref Unique_Regref::release() {
+    Regref old = m_reference;
+    m_reference = LUA_REFNIL;
+    return old;
+}
+
 Shared_Regref make_shared(Regref ref) {
     return std::make_shared<Unique_Regref>(ref);
 }
