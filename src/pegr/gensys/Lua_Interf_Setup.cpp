@@ -794,7 +794,7 @@ int li_add_genre(lua_State* l) {
     if (Gensys::get_global_state() != GlobalState::MUTABLE) {
         luaL_error(l, "add_genre is only available during setup.");
     }
-    Script::Util::generic_li_add_to_res_table(l, n_working_archetypes, 
+    Script::Util::generic_li_add_to_res_table(l, n_working_genres, 
                                             fix_genre_table);
     return 0;
 }
