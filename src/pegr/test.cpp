@@ -14,6 +14,11 @@
 
 using namespace pegr;
 
+const char* const COLOR_RED = "\033[91m";
+const char* const COLOR_GREEN = "\033[92m";
+const char* const COLOR_YELLOW = "\033[93m";
+const char* const COLOR_RESET = "\033[0m";
+
 typedef std::chrono::time_point<std::chrono::high_resolution_clock> Time_Point;
 Time_Point n_start_time;
 bool n_timer_set = false;
@@ -68,8 +73,8 @@ int li_debug_timer_end(lua_State* l) {
     }
     duration /= sample_size;
     
-    Logger::log()->info("--> %v%v for %v",
-            duration, resol, msg);
+    Logger::log()->info("%v--> %v%v for %v%v",
+            COLOR_YELLOW, duration, resol, msg, COLOR_RESET);
     n_timer_set = false;
     return 0;
 }
@@ -137,11 +142,12 @@ void run_tests(int& num_passes, int& num_fails) {
                 throw std::runtime_error(ss.str());
             }
             
-            Logger::log()->info("\t...PASSED!");
+            Logger::log()->info("%v\t...PASSED!%v", COLOR_GREEN, COLOR_RESET);
             ++num_passes;
         }
         catch (std::runtime_error e) {
-            Logger::log()->warn("\t...FAILED! %v", e.what());
+            Logger::log()->warn("%v\t...FAILED! %v%v", 
+                    COLOR_RED, e.what(), COLOR_RESET);
             ++num_fails;
             continue;
         }
@@ -163,11 +169,12 @@ void run_lua_tests(int& num_passes, int& num_fails) {
                     Script::load_lua_function(
                             sss.str().c_str(), sandbox, test.m_name));
             Script::Helper::run_simple_function(func, 0);
-            Logger::log()->info("\t...PASSED!");
+            Logger::log()->info("%v\t...PASSED!%v", COLOR_GREEN, COLOR_RESET);
             ++num_passes;
         }
         catch (std::runtime_error e) {
-            Logger::log()->warn("\t...FAILED! %v", e.what());
+            Logger::log()->warn("%v\t...FAILED! %v%v", 
+                    COLOR_RED, e.what(), COLOR_RESET);
             ++num_fails;
             continue;
         }
@@ -186,13 +193,23 @@ void run() {
     log_header("=== Lua TESTS", '=');
     run_lua_tests(num_passes, num_fails);
     log_header("===== RESULTS", '=');
-    Logger::log()->info("%v passed\t%v failed", num_passes, num_fails);
+    if (num_passes > 0) {
+        Logger::log()->info("%v%v PASSED%v", 
+                COLOR_GREEN, num_passes, COLOR_RESET);
+    }
+    if (num_fails > 0) {
+        Logger::log()->info("%v%v FAILED%v", 
+                COLOR_RED, num_fails, COLOR_RESET);
+    } else {
+        Logger::log()->info("%vNO FAILURES%v", 
+                COLOR_GREEN, COLOR_RESET);
+    }
     
     std::string answer;
     for(;;) {
         Logger::log()->info("Run another file? (in test/more/)");
         std::getline(std::cin, answer);
-        if (answer.size() == 0 || answer.at(0) == 'n' || answer.at(0) == 'N') {
+        if (answer == "" || answer == "n" || answer == "N") {
             break;
         }
         try {
@@ -203,10 +220,11 @@ void run() {
                     Script::load_lua_function(
                             sss.str().c_str(), sandbox, sss.str().c_str()));
             Script::Helper::run_simple_function(func, 0);
-            Logger::log()->info("\t...PASSED!");
+            Logger::log()->info("%v\t...PASSED!%v", COLOR_GREEN, COLOR_RESET);
         }
         catch (std::runtime_error e) {
-            Logger::log()->warn("\t...FAILED! %v", e.what());
+            Logger::log()->warn("%v\t...FAILED! %v%v", 
+                    COLOR_RED, e.what(), COLOR_RESET);
         }
         Gensys::cleanup();
         Gensys::initialize();
