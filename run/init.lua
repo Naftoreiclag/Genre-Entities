@@ -180,7 +180,7 @@ print('added food.g')
 pegr.schedule_task('fizz.t', {
   
   -- Describes when this function should be called
-  when = 'tick',
+  when = 'world tick',
   
   -- List of the function's arguments
   args = {
