@@ -343,7 +343,8 @@ int li_cview_mt_index(lua_State* l) {
     assert(arche);
     assert(arche->m_comp_offsets.find(cview.m_comp) 
             != arche->m_comp_offsets.end());
-    Runtime::Aggindex component_offset = arche->m_comp_offsets[cview.m_comp];
+    Runtime::Arche::Aggindex component_offset = 
+            arche->m_comp_offsets[cview.m_comp];
     
     /* Depending on the member's type, where we read the data and how we
      * intepret it changes. For POD types, the data comes from the chunk. Other
@@ -358,7 +359,7 @@ int li_cview_mt_index(lua_State* l) {
         case Runtime::Prim::Type::F64: {
             std::size_t pod_offset = Runtime::ENT_HEADER_SIZE
                                     + component_offset.m_pod_idx 
-                                    + member_signature.m_u_byte_offset;
+                                    + member_signature.m_refer.m_byte_offset;
             switch(member_signature.m_type) {
                 case Runtime::Prim::Type::I32: {
                     int32_t val = cview.m_ent->get_chunk()
@@ -386,13 +387,17 @@ int li_cview_mt_index(lua_State* l) {
                 }
                 default: {
                     assert(0);
-                    return 0;
                 }
             }
         }
+        case Runtime::Prim::Type::STR: {
+            std::size_t string_idx = component_offset.m_string_idx
+                                    + member_signature.m_refer.m_index;
+            lua_pushstring(l, cview.m_ent->get_string(string_idx).c_str());
+            return 1;
+        }
         default: {
             assert(false && "TODO");
-            return 0;
         }
     }
 }
@@ -460,7 +465,8 @@ int li_cview_mt_newindex(lua_State* l) {
     assert(arche);
     assert(arche->m_comp_offsets.find(cview.m_comp) 
             != arche->m_comp_offsets.end());
-    Runtime::Aggindex component_offset = arche->m_comp_offsets[cview.m_comp];
+    Runtime::Arche::Aggindex component_offset = 
+            arche->m_comp_offsets[cview.m_comp];
     
     /* Depending on the member's type, where we write the data and how we
      * intepret it changes. For POD types, the data comes from the chunk. Other
@@ -476,7 +482,7 @@ int li_cview_mt_newindex(lua_State* l) {
             
             std::size_t pod_offset = Runtime::ENT_HEADER_SIZE
                                     + component_offset.m_pod_idx 
-                                    + member_signature.m_u_byte_offset;
+                                    + member_signature.m_refer.m_byte_offset;
             switch(member_signature.m_type) {
                 case Runtime::Prim::Type::I32: {
                     assert(lua_isnumber(l, 3));
@@ -511,6 +517,15 @@ int li_cview_mt_newindex(lua_State* l) {
                     return 0;
                 }
             }
+        }
+        case Runtime::Prim::Type::STR: {
+            std::size_t string_idx = component_offset.m_string_idx
+                                    + member_signature.m_refer.m_index;
+            std::size_t string_len;
+            const char* string_data = lua_tolstring(l, 3, &string_len);
+            cview.m_ent->set_string(string_idx, 
+                    std::string(string_data, string_len));
+            return 1;
         }
         default: {
             assert(false && "TODO");

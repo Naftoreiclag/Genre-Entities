@@ -167,7 +167,10 @@ Pod::Chunk_Ptr Entity::get_chunk() const {
 Entity_Handle Entity::get_handle() const {
     return m_handle;
 }
-
+std::string Entity::get_string(std::size_t idx) const {
+    assert(idx >= 0 && idx < m_strings.size());
+    return m_strings[idx];
+}
 uint64_t Entity::get_flags() const {
     return m_chunk.get().get_value<uint64_t>(ENT_HEADER_FLAGS);
 }
@@ -214,6 +217,10 @@ void Entity::set_flag_lua_owned(bool flag) {
 void Entity::set_flag_killed(bool flag) {
     set_flags(ENT_FLAG_KILLED, flag);
     assert(has_been_killed() == flag);
+}
+void Entity::set_string(std::size_t idx, std::string str) {
+    assert(idx >= 0 && idx < m_strings.size());
+    m_strings[idx] = str;
 }
 void initialize() {
 }

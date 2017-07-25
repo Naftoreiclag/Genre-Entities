@@ -24,20 +24,17 @@ Time_Point n_start_time;
 bool n_timer_set = false;
 
 int li_debug_stage_compile(lua_State* l) {
-    Logger::log()->info("Compile triggered by Lua script");
     Gensys::LI::stage_all();
     Gensys::compile();
     return 0;
 }
 
 int li_debug_collect_garbage(lua_State* l) {
-    Logger::log()->info("Compile triggered by Lua script");
     lua_gc(Script::get_lua_state(), LUA_GCCOLLECT, 0);
     return 0;
 }
 
 int li_debug_timer_start(lua_State* l) {
-    Logger::log()->info("Timer start");
     n_start_time = std::chrono::high_resolution_clock::now();
     n_timer_set = true;
     return 0;

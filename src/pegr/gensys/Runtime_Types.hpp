@@ -44,29 +44,31 @@ struct Prim {
 
     // What this actually points to depends on the type and whether this is a
     // member of an archetype or a member of a genre
-    union {
+    union Refer {
         /**
          * @brief This is an index into the global gensys Lua table that holds
          * Lua-exclusve data.
          * This member is a part of a union with other members prefixed by "u".
          * Used for [FUNC]
          */
-        Script::Arridx m_u_table_idx;
+        Script::Arridx m_table_idx;
         
         /**
          * @brief This is a location within the entity chunk. Measured in bytes.
          * This member is a part of a union with other members prefixed by "u".
          * Used for pod data types, [F32, F64, I32, I64]
          */
-        std::size_t m_u_byte_offset;
+        std::size_t m_byte_offset;
         
         /**
          * @brief This is an index into various arrays that store C++ types.
          * This member is a part of a union with other members prefixed by "u".
          * Used for everything else [STR]
          */
-        std::size_t m_u_index;
+        std::size_t m_index;
     };
+    
+    Refer m_refer;
 };
 
 /**
@@ -84,25 +86,27 @@ struct Comp {
 };
 
 /**
- * @brief These values are added to the "raw" index provided in the map
- * Component::m_member_offsets
- */
-struct Aggindex {
-    /**
-     * @brief Index for the first byte of the entity pod chunk.
-     */
-    std::size_t m_pod_idx;
-    
-    /**
-     * @brief Index for the first string in the entity aggregate string array.
-     */
-    std::size_t m_string_idx;
-};
-
-/**
  * @class Arche
  */
 struct Arche {
+
+    /**
+     * @brief These values are added to the "raw" index provided in the map
+     * Component::m_member_offsets
+     */
+    struct Aggindex {
+        /**
+         * @brief Index for the first byte of the entity pod chunk.
+         */
+        std::size_t m_pod_idx;
+        
+        /**
+         * @brief Index for the first string in the entity aggregate string 
+         * array.
+         */
+        std::size_t m_string_idx;
+    };
+    
     /* Archetypes are composed of components. This maps the internal name to
      * the actual component.
      */
@@ -136,14 +140,33 @@ struct Arche {
  * @class Genre
  */
 struct Genre {
+    /* These two maps produce a matrix of indices and byte offsets used to
+     * locate data inside of an archetypical entity.
+     * 
+     * The analogy is that the symbol identifies the column, while the
+     * archetype identifies the row. Every matching archetype has a row, and
+     * every valid symbol has a column. The intersection of the row and column
+     * give:
+     * - The prim type (given by the column)
+     * - Where to find the data (given by the )
+     */
+    
+    struct Column {
+        Prim::Type m_type;
+        std::size_t m_index;
+    };
+    
+    typedef std::vector<Prim::Refer> Row;
+     
     /* First, look into this array to convert symbol into an index into the
      * vector in the map m_archetype_lookup:
      */
-    std::map<Symbol, Prim> m_member_indices;
+    std::map<Symbol, Column> m_member_indices;
 
-    /* Then, lookup the archetype in this map:
+    /* Then, lookup the archetype in this map, use the index provided by
+     * m_member_indices and then 
      */
-    std::map<Arche*, std::vector<Aggindex> > m_archetype_lookup;
+    std::map<Arche*, Row> m_archetype_lookup;
 };
 
 class Entity;
@@ -300,7 +323,7 @@ public:
     /**
      * @return m_strings, the array of strings for replacement instance data
      */
-    const std::vector<std::string>& get_strings() const;
+    std::string get_string(std::size_t idx) const;
 
     /**
      * @return The set of flags that all entity instances must have, particular
@@ -340,6 +363,8 @@ public:
     void set_flag_spawned(bool flag);
     void set_flag_lua_owned(bool flag);
     void set_flag_killed(bool flag);
+    
+    void set_string(std::size_t idx, std::string str);
 
     /**
      * @brief Constructor. You likely do not want to use this. Use the static

@@ -8,7 +8,18 @@ pegr.add_component('position.c', {
   x = {'f64', 0},
   y = {'f64', 0},
   
-  -- The "self" argument is a component-view on the entity
+  --[[ Important: The function type is implicitly static. This means
+    that there are no per-entity functions. This is due to many reasons:
+    - Serialization: When storing an entity into "raw" data, such as when
+      writing to a save file or transmitting over the network, there is
+      no safe and efficient means of storing a function.
+    - Genre-specified functions: Genres can specify default values for
+      static members, and functions should naturally be included in
+      Genres. Therefore, to ease inclusion of functions in Genres,
+      functions are implicitly static.
+  
+    The "self" argument is a component-view on the entity.
+  ]]
   is_at_origin = {'func', function(self)
     return self.x == 0 and self.y == 0
   end},
@@ -132,12 +143,24 @@ print('added bowling_ball.at')
     For example, 'fany' can accept 'f32' or 'f64'
                  'iany' can accept 'i32' or 'i64'
   ... maybe?
+  
+  Alternatively, only allow floats and ints of predetermined size 
+  (64 bit float and 32 bit int would work well)
 ]]
 pegr.add_genre('food.g', {
-  -- nil values indicate that those fields must be filled in by
-  -- members of an archetype's components. Non-nils are optional
-  -- and will remain that value if not replaced by another
-  -- component
+  --[[ nil values indicate that those fields must be filled in by
+    members of an archetype's components. Non-nils are optional
+    and will remain that value if not replaced by another
+    component. Since there cannot be any memory associated with
+    non-nil default values, those default values must be static.
+    Functions are always static, so specifying default
+    functions does not break any read/write assumptions. Any
+    primitive types that the client would ordinarily expect to
+    write to, such as f64 or i32, CANNOT be specified within
+    the genre, as write access is mandatory. Specifying anything
+    other than nil as a value for such read/write types is an
+    error.
+  ]]
   interface = {
     pos_x = {'f64', nil},
     pos_y = {'f64', nil},
@@ -146,6 +169,11 @@ pegr.add_genre('food.g', {
     vel_y = {'f64', nil},
     is_stationary = {'func', nil},
     food_value = {'f32', nil},
+    
+    --[[ 
+    -- Soon? static types
+    essence = {'static i32', 100},
+    ]]
     
     -- The "self" argument is a genre-view on the entity
     on_eaten = {'func', function(self)
@@ -171,6 +199,13 @@ pegr.add_genre('food.g', {
       on_eaten = 'on_eaten',
       food_value = 'food_value',
     },
+    
+    --[[ Functions can also be specified in this list, which accept
+    Archetypes as arguments and output a table mapping aliases to
+    Archetype members.
+    
+    maybe...?
+    ]]
   },
 })
 print('added food.g')
