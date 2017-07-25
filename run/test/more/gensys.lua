@@ -1,3 +1,7 @@
+return function(sample_size)
+
+sample_size = sample_size or 100000
+
 pegr.add_component('position.c', {
   x = {'f64', 315},
   y = {'f64', 630},
@@ -17,9 +21,9 @@ local arche = pegr.find_archetype('simplex.at')
 
 local ent = pegr.new_entity(arche)
 
-local sample_size = 100000
-
 -------------------------------------------------------------------------------
+
+print('sample size: ', sample_size)
 
 do
   ent.position.x = 0
@@ -88,3 +92,5 @@ do
 end
 
 -------------------------------------------------------------------------------
+
+end

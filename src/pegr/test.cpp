@@ -7,6 +7,7 @@
 #include "pegr/gensys/Gensys.hpp"
 #include "pegr/gensys/Lua_Interf.hpp"
 #include "pegr/scheduler/Lua_Interf.hpp"
+#include "pegr/debug/DebugMacros.hpp"
 #include "pegr/script/Script.hpp"
 #include "pegr/script/ScriptHelper.hpp"
 #include "pegr/logger/Logger.hpp"
@@ -182,6 +183,52 @@ void run_lua_tests(int& num_passes, int& num_fails) {
     }
 }
 
+void run_extras() {
+    std::string answer;
+    lua_State* l = Script::get_lua_state();
+    for(;;) {
+        Logger::log()->info("Run another file? (in test/more/)");
+        std::getline(std::cin, answer);
+        if (answer == "" || answer == "n" || answer == "N") {
+            break;
+        }
+        std::istringstream iss(answer);
+        try {
+            Script::Unique_Regref sandbox(Script::new_sandbox());
+            std::string finput;
+            iss >> finput;
+            std::stringstream sss;
+            sss << "test/more/" << finput << ".lua";
+            Script::Unique_Regref func(
+                    Script::load_lua_function(
+                            sss.str().c_str(), sandbox, sss.str().c_str()));
+            Script::Helper::run_simple_function(func, 1);
+            Script::Pop_Guard pg(1);
+            
+            if (lua_isfunction(l, -1)) {
+                int num_args = 0;
+                std::string arg;
+                while (iss >> arg) {
+                    lua_pushstring(l, arg.c_str());
+                    ++ num_args;
+                }
+                Script::run_function(num_args, 0);
+                pg.on_pop(1);
+            }
+            
+            Logger::log()->info("%v\t...PASSED!%v", COLOR_GREEN, COLOR_RESET);
+        }
+        catch (std::runtime_error e) {
+            Logger::log()->warn("%v\t...FAILED! %v%v", 
+                    COLOR_RED, e.what(), COLOR_RESET);
+        }
+        Gensys::cleanup();
+        Gensys::initialize();
+        Gensys::LI::clear();
+        lua_gc(Script::get_lua_state(), LUA_GCCOLLECT, 0);
+    }
+}
+
 void run() {
     int num_passes = 0;
     int num_fails = 0;
@@ -201,33 +248,7 @@ void run() {
         Logger::log()->info("%vNO FAILURES%v", 
                 COLOR_GREEN, COLOR_RESET);
     }
-    
-    std::string answer;
-    for(;;) {
-        Logger::log()->info("Run another file? (in test/more/)");
-        std::getline(std::cin, answer);
-        if (answer == "" || answer == "n" || answer == "N") {
-            break;
-        }
-        try {
-            Script::Unique_Regref sandbox(Script::new_sandbox());
-            std::stringstream sss;
-            sss << "test/more/" << answer << ".lua";
-            Script::Unique_Regref func(
-                    Script::load_lua_function(
-                            sss.str().c_str(), sandbox, sss.str().c_str()));
-            Script::Helper::run_simple_function(func, 0);
-            Logger::log()->info("%v\t...PASSED!%v", COLOR_GREEN, COLOR_RESET);
-        }
-        catch (std::runtime_error e) {
-            Logger::log()->warn("%v\t...FAILED! %v%v", 
-                    COLOR_RED, e.what(), COLOR_RESET);
-        }
-        Gensys::cleanup();
-        Gensys::initialize();
-        Gensys::LI::clear();
-        lua_gc(Script::get_lua_state(), LUA_GCCOLLECT, 0);
-    }
+    run_extras();
 }
 
 void cleanup() {
