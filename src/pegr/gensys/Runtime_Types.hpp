@@ -221,7 +221,7 @@ public:
     operator uint64_t() const;
     
 private:
-    uint64_t m_data;
+    uint64_t m_entity_id;
     
     /**
      * @brief Returns the memory address of the enclosed entity. Note that there

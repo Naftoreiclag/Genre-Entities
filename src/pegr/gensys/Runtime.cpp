@@ -31,16 +31,16 @@ std::vector<Entity> n_entities;
 std::unordered_map<uint64_t, std::size_t> n_handle_to_index;
 
 Entity_Handle::Entity_Handle(uint64_t id)
-: m_data(id) {}
+: m_entity_id(id) {}
 
 Entity_Handle::Entity_Handle()
-: m_data(-1) {}
+: m_entity_id(-1) {}
 
 uint64_t Entity_Handle::get_id() const {
-    return m_data;
+    return m_entity_id;
 }
 bool Entity_Handle::does_exist() const {
-    return m_data != -1
+    return m_entity_id != -1
             && n_handle_to_index.find(*this) != n_handle_to_index.end();
 }
 Entity* Entity_Handle::operator ->() const {
@@ -55,7 +55,7 @@ Entity_Handle::operator uint64_t() const {
 }
 
 Entity* Entity_Handle::get_entity() const {
-    if (m_data == -1) return nullptr;
+    if (m_entity_id == -1) return nullptr;
     auto iter = n_handle_to_index.find(*this);
     if (iter == n_handle_to_index.end()) {
         return nullptr;
