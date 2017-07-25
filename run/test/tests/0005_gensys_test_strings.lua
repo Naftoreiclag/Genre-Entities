@@ -1,5 +1,4 @@
 --@Name Gensys string test
-
 pegr.add_component('position.c', {
   x = {'f64', 17},
   y = {'f64', 19},
@@ -45,4 +44,3 @@ assert(tas.flavor == 'salty')
 print('string modification check')
 tas.flavor = 'sour'
 assert(tas.flavor == 'sour')
-
