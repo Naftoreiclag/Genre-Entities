@@ -234,16 +234,59 @@ int li_entity_mt_gc(lua_State* l) {
     ent.Runtime::Entity_Handle::~Entity_Handle();
     return 0;
 }
+
+/*
+// Failed experiment: caching cviews
+void push_entity_cview_cache(lua_State* l, Runtime::Entity_Handle& ent) {
+    assert_balance(1);
+    Script::Regref ent_table = ent->get_lua_table();
+    Script::push_reference(ent_table); // +1
+    
+    lua_rawgeti(l, -1, Runtime::ENT_LTABLE_CVIEW_CACHE); // +1
+    
+    // No cache yet
+    if (lua_isnil(l, -1)) {
+        //Logger::log()->info("No cache. creating one");
+        
+        assert_balance(0);
+        // Erase the nil
+        lua_pop(l, 1); // -1
+        
+        // Create a new table
+        lua_newtable(l); // +1
+        
+        // Create a metatable to indicate that its values are weak
+        lua_createtable(l, 0, 1); // +1
+        lua_pushstring(l, "__mode"); // +1
+        lua_pushstring(l, "v"); // +1
+        lua_rawset(l, -3); // -2
+        
+        // Make table weak
+        lua_setmetatable(l, -2); // -1
+        
+        // Save the cache in the entity's lua table
+        lua_pushvalue(l, -1); // +1
+        lua_rawseti(l, -3, 1); // -1
+    }
+    lua_remove(l, -2); // Remove the entity's generic lua table
+}
+*/
+
 int li_entity_mt_index(lua_State* l) {
+    assert_balance(0, 1);
+    
+    const int ARG_ENT = 1;
+    const int ARG_MEMBER = 2;
+    
     /* 1: The entity userdata
      * 2: Index: string
      */
     // The first argument is guaranteed to be the right type
     Runtime::Entity_Handle ent = 
-            *(static_cast<Runtime::Entity_Handle*>(lua_touserdata(l, 1)));
+            *(static_cast<Runtime::Entity_Handle*>(lua_touserdata(l, ARG_ENT)));
     
     std::size_t keystrlen;
-    const char* keystr = luaL_checklstring(l, 2, &keystrlen);
+    const char* keystr = luaL_checklstring(l, ARG_MEMBER, &keystrlen);
     if (keystrlen >= 2 && keystr[0] == '_' && keystr[1] == '_') {
         const char* special_key = keystr + 2;
         if (std::strcmp(special_key, "id") == 0) {
@@ -267,7 +310,11 @@ int li_entity_mt_index(lua_State* l) {
             } else if (std::strcmp(special_key, "spawned") == 0) {
                 lua_pushboolean(l, ent->has_been_spawned());
                 return 1;
+            } else {
+                return 0;
             }
+        } else {
+            return 0;
         }
     } else {
         if (!ent.does_exist()) {
@@ -287,15 +334,56 @@ int li_entity_mt_index(lua_State* l) {
             return 0;
         }
         
+        /*
+        // Failed experiment: caching cviews
+        
+        // Get the entity's cview cache, making it if it does not exist
+        push_entity_cview_cache(l, ent); // +1
+        
+        // Push the component name
+        lua_pushvalue(l, ARG_MEMBER); // +1
+        
+        // Swap the component name with the cview or nil
+        lua_rawget(l, -2); // -1 +1
+        
+        // No cached cview
+        if (lua_isnil(l, -1)) {
+            // Pop nil
+            lua_pop(l, 1); // -1
+            
+            //Logger::log()->info("Creating a cview");
+            
+            // Make a new cview and push it
+            Cview cview;
+            cview.m_comp = comp_iter->second;
+            cview.m_ent = ent;
+            push_cview(l, cview); // +1
+            
+            // Push the component name again so we can store it in the cache
+            lua_pushvalue(l, ARG_MEMBER); // +1
+            
+            // Push the cview again
+            lua_pushvalue(l, -2); // +1
+            
+            // Set the table
+            lua_rawset(l, -4); // -2
+            
+            // Note that it is impossible for the cview to be gc'd right now
+            // because its presence on the stack is a strong reference.
+        }
+            
+        // Remove the cache
+        lua_remove(l, -2); // -1
+        */
+        
         Cview cview;
         cview.m_comp = comp_iter->second;
         cview.m_ent = ent;
-        //Logger::log()->info("%v", cview.m_comp);
+        push_cview(l, cview); // +1
         
-        push_cview(l, cview);
+        // Return the cview
         return 1;
     }
-    
     return 0;
 }
 int li_entity_mt_tostring(lua_State* l) {
