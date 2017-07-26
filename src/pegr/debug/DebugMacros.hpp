@@ -16,7 +16,8 @@
 
 #else
 
-#define assert_balance(delta) ((void*) 0)
+#define assert_balance_msg(...) ((void*) 0)
+#define assert_balance(...) ((void*) 0)
     
 #endif
 
