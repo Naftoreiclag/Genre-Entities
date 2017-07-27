@@ -28,8 +28,8 @@ Genre Entity System requires the following libraries to be built correctly.
 
 - [LuaJIT](http://luajit.org/)
   for scripting
-- [JsonCpp](https://github.com/open-source-parsers/jsoncpp/)
-  for serialization, config files
+- [Easylogging++](https://github.com/muflihun/easyloggingpp/)
+  for logging
 
 *Each library listed above is the copyright of its respective author(s). Please
 see individual library homepages for more accurate licensing information.*
