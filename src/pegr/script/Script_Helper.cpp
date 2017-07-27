@@ -225,6 +225,23 @@ bool to_number_safe(int idx, lua_Number& num) {
     */
 }
 
+void push_new_weak_table(const char* mode) {
+    assert_balance(1);
+    lua_State* l = Script::get_lua_state();
+        
+    // Create a new table
+    lua_newtable(l); // +1
+    
+    // Create a metatable to indicate that its values are weak
+    lua_createtable(l, 0, 1); // +1
+    lua_pushstring(l, "__mode"); // +1
+    lua_pushstring(l, mode); // +1
+    lua_rawset(l, -3); // -2
+    
+    // Make table weak
+    lua_setmetatable(l, -2); // -1
+}
+
 } // namespace Helper
 } // namespace Script
 } // namespace pegr

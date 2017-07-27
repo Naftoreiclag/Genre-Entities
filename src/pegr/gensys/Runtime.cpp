@@ -7,7 +7,9 @@
 #include <unordered_map>
 #include <cstring>
 
+#include "pegr/debug/Debug_Macros.hpp"
 #include "pegr/logger/Logger.hpp"
+#include "pegr/script/Script_Helper.hpp"
 #include "pegr/gensys/Util.hpp"
 
 namespace pegr {
@@ -25,8 +27,6 @@ const uint64_t ENT_FLAG_SPAWNED =           1 << 0;
 const uint64_t ENT_FLAG_KILLED =            1 << 1;
 const uint64_t ENT_FLAG_LUA_OWNED =         1 << 2;
 const uint64_t ENT_FLAGS_DEFAULT =          0;
-
-const Script::Arridx ENT_LTABLE_CVIEW_CACHE =          1;
 
 uint64_t n_next_handle = 0;
 std::vector<Entity> n_entities;
@@ -173,17 +173,27 @@ Entity_Handle Entity::get_handle() const {
     return m_handle;
 }
 
-Script::Regref Entity::get_lua_table() {
-    if (m_generic_lua_table.is_nil()) {
+Script::Regref Entity::get_table() {
+    if (m_generic_table.is_nil()) {
+        assert_balance(0);
         lua_State* l = Script::get_lua_state();
         lua_newtable(l);
-        m_generic_lua_table.reset(Script::grab_reference());
+        m_generic_table.reset(Script::grab_reference());
     }
-    return m_generic_lua_table.get();
+    return m_generic_table.get();
+}
+
+Script::Regref Entity::get_weak_table() {
+    if (m_generic_weak_table.is_nil()) {
+        assert_balance(0);
+        Script::Helper::push_new_weak_table("v"); // +1
+        m_generic_weak_table.reset(Script::grab_reference()); // -1
+    }
+    return m_generic_weak_table.get();
 }
 
 void Entity::free_lua_table() {
-    m_generic_lua_table.reset();
+    m_generic_table.reset();
 }
 
 std::string Entity::get_string(std::size_t idx) const {

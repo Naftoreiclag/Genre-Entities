@@ -244,8 +244,6 @@ extern const uint64_t ENT_FLAG_KILLED;
 extern const uint64_t ENT_FLAG_LUA_OWNED;
 extern const uint64_t ENT_FLAGS_DEFAULT;
 
-extern const Script::Arridx ENT_LTABLE_CVIEW_CACHE;
-
 /**
  * @class Entity
  * 
@@ -325,10 +323,17 @@ public:
     Entity_Handle get_handle() const;
     
     /**
-     * @return m_generic_lua_table The extra lua data associated with this
+     * @return m_generic_table The extra Lua data associated with this
      * entity. If no table exists, generate one.
      */
-    Script::Regref get_lua_table();
+    Script::Regref get_table();
+    
+    /**
+     * @return m_generic_weak_table The extra Lua data associated with this
+     * entity. The values are weak. If no table exists, generate one.
+     * Commonly used for caching.
+     */
+    Script::Regref get_weak_table();
     
     /**
      * @brief Drops the reference to the internal Lua table
@@ -427,7 +432,12 @@ private:
      * entity. This points to a Lua table with any such data, or nil if there
      * is no data.
      */
-    Script::Unique_Regref m_generic_lua_table;
+    Script::Unique_Regref m_generic_table;
+    
+    /**
+     * @brief Same as m_generic_table, except the values are weak.
+     */
+    Script::Unique_Regref m_generic_weak_table;
     
 };
 

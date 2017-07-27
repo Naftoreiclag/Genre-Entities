@@ -219,40 +219,6 @@ std::string to_string_cview(Cview cview) {
     return sss.str();
 }
 
-void push_entity_cview_cache(lua_State* l, Runtime::Entity_Handle& ent) {
-    assert_balance(1);
-    Script::Regref ent_table = ent->get_lua_table();
-    Script::push_reference(ent_table); // +1
-    
-    lua_rawgeti(l, -1, Runtime::ENT_LTABLE_CVIEW_CACHE); // +1
-    
-    // No cache yet
-    if (lua_isnil(l, -1)) {
-        //Logger::log()->info("No cache. creating one");
-        
-        assert_balance(0);
-        // Erase the nil
-        lua_pop(l, 1); // -1
-        
-        // Create a new table
-        lua_newtable(l); // +1
-        
-        // Create a metatable to indicate that its values are weak
-        lua_createtable(l, 0, 1); // +1
-        lua_pushstring(l, "__mode"); // +1
-        lua_pushstring(l, "v"); // +1
-        lua_rawset(l, -3); // -2
-        
-        // Make table weak
-        lua_setmetatable(l, -2); // -1
-        
-        // Save the cache in the entity's lua table
-        lua_pushvalue(l, -1); // +1
-        lua_rawseti(l, -3, 1); // -1
-    }
-    lua_remove(l, -2); // Remove the entity's generic lua table
-}
-
 void check_write_compatible_prim_type(lua_State* l, 
         Runtime::Prim::Type t, int idx) {
     // Check that the correct type was given
@@ -379,7 +345,7 @@ int li_entity_mt_index(lua_State* l) {
         // Failed experiment: caching cviews
         
         // Get the entity's cview cache, making it if it does not exist
-        push_entity_cview_cache(l, ent); // +1
+        Script::push_reference(ent->get_weak_table());
         
         // Push the component name
         lua_pushvalue(l, ARG_MEMBER); // +1
