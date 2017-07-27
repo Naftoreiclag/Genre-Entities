@@ -1,8 +1,10 @@
 #include <stdexcept>
+#include <vector>
 
 #include "pegr/script/ScriptHelper.hpp"
 #include "pegr/script/Script.hpp"
 #include "pegr/logger/Logger.hpp"
+#include "pegr/test/TestUtil.hpp"
 
 namespace pegr {
 namespace Test {
@@ -82,6 +84,46 @@ void test_0010_check_guard_memory_leaks_shared() {
     }
     lua_pop(l, 1);
     
+    
+}
+
+//@Test More Unique_Regref tests
+void test_0010_check_unique_regref() {
+    int orig = Script::debug_get_total_grab_delta();
+    
+    Logger::log()->info("Original: %v", orig);
+    Script::Unique_Regref rg;
+    verify_equals(LUA_REFNIL, rg.get());
+    
+    lua_State* l = Script::get_lua_state();
+    lua_newtable(l);
+    Script::Regref raw = Script::grab_reference();
+    
+    Logger::log()->info("Assign %v", raw);
+    rg = raw;
+    Logger::log()->info("Pass");
+    verify_equals(raw, rg.get());
+    verify_equals(orig + 1, Script::debug_get_total_grab_delta());
+    
+    Logger::log()->info("Reset");
+    rg.reset();
+    verify_equals(orig, Script::debug_get_total_grab_delta());
+    
+    Logger::log()->info("Should be nil", raw);
+    verify_equals(LUA_REFNIL, rg.get());
+    
+    Logger::log()->info("Making a vector of reg refs", orig);
+    std::vector<Script::Unique_Regref> reg_refs;
+    verify_equals(orig, Script::debug_get_total_grab_delta());
+    
+    Logger::log()->info("10 more", orig);
+    for (int i = 0; i < 10; ++i) {
+        lua_newtable(l);
+        reg_refs.emplace_back(Script::grab_reference());
+    }
+    Logger::log()->info("10 more", orig);
+    
+    verify_equals(orig + 10, Script::debug_get_total_grab_delta());
     
 }
 

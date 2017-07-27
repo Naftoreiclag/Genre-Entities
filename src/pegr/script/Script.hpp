@@ -42,13 +42,13 @@ public:
      * @brief Copy construction not allowed
      * (there should only be one guard for a single reference)
      */
-    Unique_Regref(const Unique_Regref& other) = delete;
+    Unique_Regref(const Unique_Regref& rhs) = delete;
     
     /**
      * @brief Copy assignment not allowed 
      * (there should only be one guard for a single reference)
      */
-    Unique_Regref& operator =(const Unique_Regref& other) = delete;
+    Unique_Regref& operator =(const Unique_Regref& rhs) = delete;
     
     /**
      * @brief Allow assignment of references directly to the guard. The
@@ -60,12 +60,12 @@ public:
     /**
      * @brief Move construction
      */
-    Unique_Regref(Unique_Regref&& other);
+    Unique_Regref(Unique_Regref&& rhs);
     
     /**
      * @brief Move assignment
      */
-    Unique_Regref& operator=(Unique_Regref&& other);
+    Unique_Regref& operator=(Unique_Regref&& rhs);
     
     /**
      * @brief Deconstructor. Drops whatever reference it is guarding.
@@ -165,6 +165,8 @@ private:
     int m_n;
     lua_State* m_lstate;
 };
+
+int debug_get_total_grab_delta();
 
 /**
  * @brief Creates the lua state and loads standard libraries

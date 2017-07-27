@@ -21,17 +21,20 @@ Unique_Regref::Unique_Regref()
 Unique_Regref::Unique_Regref(Regref ref)
 : m_reference(ref) { }
 
-Unique_Regref::Unique_Regref(Unique_Regref&& other) {
-    drop_reference(m_reference);
-    m_reference = other.m_reference;
-    other.m_reference = LUA_REFNIL;
+Unique_Regref::Unique_Regref(Unique_Regref&& rhs) {
+    m_reference = rhs.m_reference;
+    rhs.m_reference = LUA_REFNIL;
 }
 
 // Move assignment
-Unique_Regref& Unique_Regref::operator =(Unique_Regref&& other) {
-    drop_reference(m_reference);
-    m_reference = other.m_reference;
-    other.m_reference = LUA_REFNIL;
+Unique_Regref& Unique_Regref::operator =(Unique_Regref&& rhs) {
+    // Either the references are different or both are nil
+    assert(m_reference != rhs.m_reference || 
+            (m_reference == LUA_REFNIL && rhs.m_reference == LUA_REFNIL));
+    
+    reset();
+    m_reference = rhs.m_reference;
+    rhs.m_reference = LUA_REFNIL;
     return *this;
 }
 
@@ -47,7 +50,8 @@ void Unique_Regref::reset(Regref value) {
 }
 
 Unique_Regref::~Unique_Regref() {
-    drop_reference(m_reference);
+    reset();
+    assert(m_reference == LUA_REFNIL);
 }
 
 Regref Unique_Regref::get() const {
@@ -108,7 +112,11 @@ void Pop_Guard::pop(int n) {
 }
 
 // Keeps track of how many registry keys we are holding
-int m_total_grab_delta = 0;
+int n_total_grab_delta = 0;
+
+int debug_get_total_grab_delta() {
+    return n_total_grab_delta;
+}
 
 Regref m_pegr_table;
 Regref m_pegr_table_safe;
@@ -257,7 +265,7 @@ void cache_lua_std_lib() {
         lua_getglobal(m_l, cacher.m_name);
         Logger::log()->verbose(1, "Caching %v", cacher.m_name);
         (*cacher.m_cache) = grab_reference();
-        m_total_grab_delta -= 1; /*Ignore these grabs*/
+        n_total_grab_delta -= 1; /*Ignore these grabs*/
     }
 }
 
@@ -309,7 +317,7 @@ void setup_basic_pristine_sandbox() {
     m_pegr_table_safe = grab_reference();
     lua_setfield(m_l, -2, PEGR_MODULE_NAME);
     m_pristine_sandbox = grab_reference();
-    m_total_grab_delta -= 2; /*Ignore these grabs*/
+    n_total_grab_delta -= 2; /*Ignore these grabs*/
 }
 
 void setup_basic_pegr_module() {
@@ -317,7 +325,7 @@ void setup_basic_pegr_module() {
     lua_newtable(m_l);
     lua_pushvalue(m_l, -1);
     m_pegr_table = grab_reference();
-    m_total_grab_delta -= 1; /*Ignore these grabs*/
+    n_total_grab_delta -= 1; /*Ignore these grabs*/
     lua_setglobal(m_l, PEGR_MODULE_NAME);
 }
 
@@ -342,8 +350,8 @@ bool is_initialized() {
 void cleanup() {
     assert(is_initialized());
     assert(!m_torndown);
-    if (m_total_grab_delta != 0) {
-        Logger::log()->warn("Non-zero grab delta: %v", m_total_grab_delta);
+    if (n_total_grab_delta != 0) {
+        Logger::log()->warn("Non-zero grab delta: %v", n_total_grab_delta);
     }
     lua_close(m_l);
     m_l = nullptr;
@@ -458,7 +466,7 @@ Regref new_sandbox() {
 void drop_reference(Regref ref) {
     assert(is_initialized());
     if (ref == LUA_REFNIL) return;
-    --m_total_grab_delta;
+    --n_total_grab_delta;
     luaL_unref(m_l, LUA_REGISTRYINDEX, ref);
 }
 
@@ -475,8 +483,9 @@ Regref grab_reference() {
         lua_pop(m_l, 1);
         return LUA_REFNIL;
     }
-    ++m_total_grab_delta;
-    return luaL_ref(m_l, LUA_REGISTRYINDEX);
+    ++n_total_grab_delta;
+    Regref retval = luaL_ref(m_l, LUA_REGISTRYINDEX);
+    return retval;
 }
 
 lua_State* get_lua_state() {

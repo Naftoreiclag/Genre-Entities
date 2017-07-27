@@ -23,6 +23,7 @@ void test_0010_check_guard_memory_leaks();
 void test_0010_check_guard_memory_leaks_shared();
 void test_0010_check_pop_guard();
 void test_0010_check_script_loading();
+void test_0010_check_unique_regref();
 void test_0028_for_pairs();
 void test_0028_for_pairs_exception();
 void test_0028_for_pairs_number_sorted();
@@ -55,6 +56,7 @@ const NamedTest n_tests[] = {
     {"Script Shared_Regref memory leaks", test_0010_check_guard_memory_leaks_shared},
     {"Script Pop_Guard memory leaks", test_0010_check_pop_guard},
     {"Identifying syntax errors", test_0010_check_script_loading},
+    {"More Unique_Regref tests", test_0010_check_unique_regref},
     {"Script Helper for_pairs", test_0028_for_pairs},
     {"Script Helper for_pairs with exception", test_0028_for_pairs_exception},
     {"Script Helper for_number_pairs_sorted", test_0028_for_pairs_number_sorted},
