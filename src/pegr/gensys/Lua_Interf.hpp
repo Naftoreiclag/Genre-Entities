@@ -107,39 +107,120 @@ int li_add_genre(lua_State* l);
 
 //// RUNTIME ////
 
+lua_Number entity_handle_to_lua_number(int64_t data);
+
 struct Cview {
     Runtime::Entity_Handle m_ent;
     Runtime::Comp* m_comp;
 };
 
+Runtime::Comp** argcheck_comp(lua_State* l, int idx);
 Runtime::Arche** argcheck_archetype(lua_State* l, int idx);
 Runtime::Entity_Handle* argcheck_entity(lua_State* l, int idx);
 
+void push_comp_pointer(lua_State* l, Runtime::Comp* ptr);
 void push_arche_pointer(lua_State* l, Runtime::Arche* ptr);
 void push_entity_handle(lua_State* l, Runtime::Entity_Handle ent);
 void push_cview(lua_State* l, Cview ent);
 
+std::string to_string_comp(Runtime::Comp* comp);
 std::string to_string_arche(Runtime::Arche* arche);
 std::string to_string_entity(Runtime::Entity_Handle ent);
 std::string to_string_cview(Cview cview);
 
+/**
+ * @brief Attempts to get a component view for the provided entity. If this is
+ * impossible, return nil.
+ * 1: Comp (guaranteed)
+ * 2: Entity
+ */
+int li_comp_mt_call(lua_State* l);
+
+/**
+ * @brief Basic tostring for Archetype
+ * 1: Arche (guaranteed)
+ */
 int li_arche_mt_tostring(lua_State* l);
 
+/**
+ * @brief Attempts to get an archetype view for the provided entity. If this is
+ * impossible, return nil.
+ * 1: Arche (guaranteed)
+ */
+int li_arche_mt_call(lua_State* l);
+
+/**
+ * @brief Calls the deconstructor on the Entity_Handle. Also frees the entity
+ * if it's memory is managed solely by Lua.
+ * 1: Entity (guaranteed)
+ */
 int li_entity_mt_gc(lua_State* l);
+
+/**
+ * @brief Returns the component view for the requested component or something
+ * else if it matches one of the special members that begin with "__"
+ * 1: Entity (guaranteed)
+ * 2: String, member
+ */
 int li_entity_mt_index(lua_State* l);
+
+/**
+ * @brief Basic tostring for Entity
+ * 1: Entity (guaranteed)
+ */
 int li_entity_mt_tostring(lua_State* l);
 
+/**
+ * @brief Calls the deconstructor on the Cview.
+ * 1: Cview (guaranteed)
+ */
 int li_cview_mt_gc(lua_State* l);
+
+/**
+ * @brief Returns by value the member held by the underlying entity provided
+ * the symbol.
+ * 1: Cview (guaranteed)
+ * 2: String, symbol
+ */
 int li_cview_mt_index(lua_State* l);
+
+/**
+ * @brief Assigns to the member held by the underlying entity provided by the
+ * symbol.
+ * 1: Cview (guaranteed)
+ * 2: String, symbol
+ * 3: Value
+ */
 int li_cview_mt_newindex(lua_State* l);
+
+/**
+ * @brief Basic tostring for Cview
+ * 1: Cview (guaranteed)
+ */
 int li_cview_mt_tostring(lua_State* l);
 
+/**
+ * @brief Find the archetype given by the resource ID.
+ * 1: String, resource id
+ */
 int li_find_archetype(lua_State* l);
 
+/**
+ * @brief Creates a new entity, initially memory-managed by Lua. Note that
+ * such entities (memory managed by Lua) can only have one entity handle
+ * userdata.
+ * 1: Archetype
+ */
 int li_new_entity(lua_State* l);
-int li_delete_entity(lua_State* l);
 
-lua_Number entity_handle_to_lua_number(int64_t data);
+/**
+ * @brief Manually deletes an entity. Note that this is not required, and Lua
+ * can still gc the entity manually for you. Does not invalidate the provided
+ * Entity_Handle, but it does ensure that the handle reports correctly that
+ * its entity has been deleted.
+ * 1: Entity 
+ */
+int li_delete_entity(lua_State* l);
 
 } // namespace LI
 } // namespace Gensys

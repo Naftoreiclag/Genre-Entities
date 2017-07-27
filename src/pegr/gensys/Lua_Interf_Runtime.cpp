@@ -74,7 +74,7 @@ void initialize_userdata_metatables(lua_State* l) {
     n_comp_metatable = Script::grab_reference();
     {
         const luaL_Reg metatable[] = {
-            // TODO
+            {"__call", li_comp_mt_call},
             
             // End of the list
             {nullptr, nullptr}
@@ -92,6 +92,7 @@ void initialize_userdata_metatables(lua_State* l) {
             {"__tostring", li_arche_mt_tostring},
             // No __equal, since there should only be one global pointer
             // No __gc, since this userdata is POD pointer
+            {"__call", li_arche_mt_call},
             
             // End of the list
             {nullptr, nullptr}
@@ -144,6 +145,9 @@ void cleanup_userdata_metatables(lua_State* l) {
     Script::drop_reference(n_cview_metatable);
 }
 
+void push_comp_pointer(lua_State* l, Runtime::Comp* ptr) {
+    
+}
 void push_arche_pointer(lua_State* l, Runtime::Arche* ptr) {
     if (ptr->m_lua_userdata.is_nil()) {
         void* lua_mem = lua_newuserdata(l, sizeof(Runtime::Arche*));
@@ -158,19 +162,25 @@ void push_arche_pointer(lua_State* l, Runtime::Arche* ptr) {
         Script::push_reference(ptr->m_lua_userdata.get());
     }
 }
-
 void push_entity_handle(lua_State* l, Runtime::Entity_Handle ent) {
     void* lua_mem = lua_newuserdata(l, sizeof(Runtime::Entity_Handle));
     Script::push_reference(n_entity_metatable);
     lua_setmetatable(l, -2);
     *(new (lua_mem) Runtime::Entity_Handle) = ent;
 }
-
 void push_cview(lua_State* l, Cview cview) {
     void* lua_mem = lua_newuserdata(l, sizeof(Cview));
     Script::push_reference(n_cview_metatable);
     lua_setmetatable(l, -2);
     *(new (lua_mem) Cview) = cview;
+}
+
+std::string to_string_comp(Runtime::Comp* comp) {
+    std::stringstream sss;
+    sss << "<Component @"
+        << comp
+        << ">";
+    return sss.str();
 }
 
 std::string to_string_arche(Runtime::Arche* arche) {
@@ -209,33 +219,6 @@ std::string to_string_cview(Cview cview) {
     return sss.str();
 }
 
-int li_arche_mt_tostring(lua_State* l) {
-    // The first argument is guaranteed to be the right type
-    Runtime::Arche* arche = 
-            *(static_cast<Runtime::Arche**>(lua_touserdata(l, 1)));
-    lua_pushstring(l, to_string_arche(arche).c_str());
-    return 1;
-}
-
-int li_entity_mt_gc(lua_State* l) {
-    // The first argument is guaranteed to be the right type
-    Runtime::Entity_Handle& ent = 
-            *(static_cast<Runtime::Entity_Handle*>(lua_touserdata(l, 1)));
-    
-    /* If the entity exists and can still be spawned, then that means that this
-     * entity handle is unique (the last remaining one, since there could not
-     * have been any copies made of it)
-     */
-    if (ent.does_exist() && ent->is_lua_owned()) {
-        assert(!ent->has_been_spawned());
-        Runtime::Entity::delete_entity(ent);
-    }
-    
-    ent.Runtime::Entity_Handle::~Entity_Handle();
-    return 0;
-}
-
-// Failed experiment: caching cviews
 void push_entity_cview_cache(lua_State* l, Runtime::Entity_Handle& ent) {
     assert_balance(1);
     Script::Regref ent_table = ent->get_lua_table();
@@ -270,6 +253,67 @@ void push_entity_cview_cache(lua_State* l, Runtime::Entity_Handle& ent) {
     lua_remove(l, -2); // Remove the entity's generic lua table
 }
 
+void check_write_compatible_prim_type(lua_State* l, 
+        Runtime::Prim::Type t, int idx) {
+    // Check that the correct type was given
+    bool correct = false;
+    switch (t) {
+        case Runtime::Prim::Type::I32:
+        case Runtime::Prim::Type::I64:
+        case Runtime::Prim::Type::F32:
+        case Runtime::Prim::Type::F64: {
+            // (Can't cache the lua type, as this function also conditionally
+            // accepts strings as numbers)
+            if (lua_isnumber(l, idx)) correct = true;
+            break;
+        }
+        case Runtime::Prim::Type::STR: {
+            if (lua_isstring(l, idx)) correct = true;
+            break;
+        }
+        case Runtime::Prim::Type::FUNC: {
+            if (lua_isfunction(l, idx)) correct = true;
+            break;
+        }
+    }
+    if (!correct) {
+        luaL_error(l, "Expected %s, got %s", 
+                Runtime::prim_typename(t), lua_typename(l, 3));
+    }
+}
+
+int li_comp_mt_call(lua_State* l) {
+    
+}
+
+int li_arche_mt_tostring(lua_State* l) {
+    // The first argument is guaranteed to be the right type
+    Runtime::Arche* arche = 
+            *(static_cast<Runtime::Arche**>(lua_touserdata(l, 1)));
+    lua_pushstring(l, to_string_arche(arche).c_str());
+    return 1;
+}
+int li_arche_mt_call(lua_State* l) {
+    
+}
+
+int li_entity_mt_gc(lua_State* l) {
+    // The first argument is guaranteed to be the right type
+    Runtime::Entity_Handle& ent = 
+            *(static_cast<Runtime::Entity_Handle*>(lua_touserdata(l, 1)));
+    
+    /* If the entity exists and can still be spawned, then that means that this
+     * entity handle is unique (the last remaining one, since there could not
+     * have been any copies made of it)
+     */
+    if (ent.does_exist() && ent->is_lua_owned()) {
+        assert(!ent->has_been_spawned());
+        Runtime::Entity::delete_entity(ent);
+    }
+    
+    ent.Runtime::Entity_Handle::~Entity_Handle();
+    return 0;
+}
 int li_entity_mt_index(lua_State* l) {
     assert_balance(0, 1);
     
@@ -481,36 +525,6 @@ int li_cview_mt_index(lua_State* l) {
         }
     }
 }
-
-void check_write_compatible_prim_type(lua_State* l, 
-        Runtime::Prim::Type t, int idx) {
-    // Check that the correct type was given
-    bool correct = false;
-    switch (t) {
-        case Runtime::Prim::Type::I32:
-        case Runtime::Prim::Type::I64:
-        case Runtime::Prim::Type::F32:
-        case Runtime::Prim::Type::F64: {
-            // (Can't cache the lua type, as this function also conditionally
-            // accepts strings as numbers)
-            if (lua_isnumber(l, idx)) correct = true;
-            break;
-        }
-        case Runtime::Prim::Type::STR: {
-            if (lua_isstring(l, idx)) correct = true;
-            break;
-        }
-        case Runtime::Prim::Type::FUNC: {
-            if (lua_isfunction(l, idx)) correct = true;
-            break;
-        }
-    }
-    if (!correct) {
-        luaL_error(l, "Expected %s, got %s", 
-                Runtime::prim_typename(t), lua_typename(l, 3));
-    }
-}
-
 int li_cview_mt_newindex(lua_State* l) {
     Cview& cview = *(static_cast<Cview*>(lua_touserdata(l, 1)));
     
@@ -638,7 +652,6 @@ int li_find_archetype(lua_State* l) {
     
     return 1;
 }
-
 int li_new_entity(lua_State* l) {
     if (Gensys::get_global_state() != GlobalState::EXECUTABLE) {
         luaL_error(l, "new_entity is only available during execution");

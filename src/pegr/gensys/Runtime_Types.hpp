@@ -140,33 +140,7 @@ struct Arche {
  * @class Genre
  */
 struct Genre {
-    /* These two maps produce a matrix of indices and byte offsets used to
-     * locate data inside of an archetypical entity.
-     * 
-     * The analogy is that the symbol identifies the column, while the
-     * archetype identifies the row. Every matching archetype has a row, and
-     * every valid symbol has a column. The intersection of the row and column
-     * give:
-     * - The prim type (given by the column)
-     * - Where to find the data (given by the )
-     */
     
-    struct Column {
-        Prim::Type m_type;
-        std::size_t m_index;
-    };
-    
-    typedef std::vector<Prim::Refer> Row;
-     
-    /* First, look into this array to convert symbol into an index into the
-     * vector in the map m_archetype_lookup:
-     */
-    std::map<Symbol, Column> m_member_indices;
-
-    /* Then, lookup the archetype in this map, use the index provided by
-     * m_member_indices and then 
-     */
-    std::map<Arche*, Row> m_archetype_lookup;
 };
 
 class Entity;
