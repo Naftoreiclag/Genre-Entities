@@ -1,4 +1,4 @@
-#include "pegr/gensys/GensysIntermediate.hpp"
+#include "pegr/gensys/Interm_Types.hpp"
 
 #include <cassert>
 
@@ -27,7 +27,7 @@ const std::string& Prim::get_string() const {
     assert(m_type == Type::STR);
     return m_str;
 }
-const Script::Regref_Shared& Prim::get_function() const {
+const Script::Shared_Regref& Prim::get_function() const {
     assert(!m_empty);
     assert(m_type == Type::FUNC);
     return m_func;
@@ -165,7 +165,7 @@ void Prim::set_string(std::string str) {
     m_str = str;
     m_empty = false;
 }
-void Prim::set_function(Script::Regref_Shared func) {
+void Prim::set_function(Script::Shared_Regref func) {
     set_type(Type::FUNC);
     m_func = func;
     m_empty = false;
@@ -190,7 +190,7 @@ void Prim::set_i64(int64_t i64) {
     m_i64 = i64;
     m_empty = false;
 }
-bool Prim::is_empty() {
+bool Prim::is_empty() const {
     return m_empty;
 }
 void Prim::set_empty() {

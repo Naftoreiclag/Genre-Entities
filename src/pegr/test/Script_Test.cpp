@@ -1,8 +1,10 @@
 #include <stdexcept>
+#include <vector>
 
-#include "pegr/script/ScriptHelper.hpp"
+#include "pegr/script/Script_Helper.hpp"
 #include "pegr/script/Script.hpp"
 #include "pegr/logger/Logger.hpp"
+#include "pegr/test/Test_Util.hpp"
 
 namespace pegr {
 namespace Test {
@@ -10,10 +12,10 @@ namespace Test {
 //@Test Identifying syntax errors
 void test_0010_check_script_loading() {
     lua_State* l = Script::get_lua_state();
-    Script::Regref_Guard sandbox(Script::new_sandbox());
+    Script::Unique_Regref sandbox(Script::new_sandbox());
     try {
-        Script::Regref_Guard
-            error(Script::load_lua_function("test/error_syntax.lua", sandbox));
+        Script::Unique_Regref error(
+            Script::load_lua_function("test/common/error_syntax.lua", sandbox));
     }
     catch (std::runtime_error e) {
         lua_pop(l, 1);
@@ -30,8 +32,7 @@ void test_0010_check_pop_guard() {
     Script::Pop_Guard pg(1);
 }
 
-
-//@Test Script Regref_Guard memory leaks
+//@Test Script Unique_Regref memory leaks
 void test_0010_check_guard_memory_leaks() {
     lua_State* l = Script::get_lua_state();
     Logger::log()->info("Testing explicit...");
@@ -49,7 +50,7 @@ void test_0010_check_guard_memory_leaks() {
     
     Script::Regref ref;
     {
-        Script::Regref_Guard sandbox(Script::new_sandbox());
+        Script::Unique_Regref sandbox(Script::new_sandbox());
         ref = sandbox;
         Logger::log()->info("Should drop reference...");
     }
@@ -62,16 +63,16 @@ void test_0010_check_guard_memory_leaks() {
     lua_pop(l, 1);
 }
 
-//@Test Script Regref_Shared memory leaks
+//@Test Script Shared_Regref memory leaks
 void test_0010_check_guard_memory_leaks_shared() {
     lua_State* l = Script::get_lua_state();
     Script::Regref ref;
     ref = Script::new_sandbox();
     
     {
-        Script::Regref_Shared shared1;
+        Script::Shared_Regref shared1;
         {
-            Script::Regref_Shared shared2 = Script::make_shared(ref);
+            Script::Shared_Regref shared2 = Script::make_shared(ref);
             shared1 = shared2;
         }
     }
@@ -83,6 +84,46 @@ void test_0010_check_guard_memory_leaks_shared() {
     }
     lua_pop(l, 1);
     
+    
+}
+
+//@Test More Unique_Regref tests
+void test_0010_check_unique_regref() {
+    int orig = Script::debug_get_total_grab_delta();
+    
+    Logger::log()->info("Original: %v", orig);
+    Script::Unique_Regref rg;
+    verify_equals(LUA_REFNIL, rg.get());
+    
+    lua_State* l = Script::get_lua_state();
+    lua_newtable(l);
+    Script::Regref raw = Script::grab_reference();
+    
+    Logger::log()->info("Assign %v", raw);
+    rg = raw;
+    Logger::log()->info("Pass");
+    verify_equals(raw, rg.get());
+    verify_equals(orig + 1, Script::debug_get_total_grab_delta());
+    
+    Logger::log()->info("Reset");
+    rg.reset();
+    verify_equals(orig, Script::debug_get_total_grab_delta());
+    
+    Logger::log()->info("Should be nil", raw);
+    verify_equals(LUA_REFNIL, rg.get());
+    
+    Logger::log()->info("Making a vector of reg refs", orig);
+    std::vector<Script::Unique_Regref> reg_refs;
+    verify_equals(orig, Script::debug_get_total_grab_delta());
+    
+    Logger::log()->info("10 more", orig);
+    for (int i = 0; i < 10; ++i) {
+        lua_newtable(l);
+        reg_refs.emplace_back(Script::grab_reference());
+    }
+    Logger::log()->info("10 more", orig);
+    
+    verify_equals(orig + 10, Script::debug_get_total_grab_delta());
     
 }
 

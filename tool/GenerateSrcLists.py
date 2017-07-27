@@ -32,7 +32,7 @@ def generate(destination, sourceList):
 # Generate for main sources
 sourceList, dirList, _ = \
     indexFiles('../src/pegr/', ['.cpp'], ['deprecated/', 'test/'], False)
-sourceList.append('main.cpp')
+sourceList.append('Main.cpp')
 sourceList.sort()
 print('Main Sources: ' + str(len(sourceList)))
 print('Main Directories: ' + str(len(dirList)))
@@ -41,7 +41,7 @@ generate('../cmake/MainSrcList.cmake', sourceList)
 # Generate for test sources
 sourceList, dirList, _ = \
     indexFiles('../src/pegr/', ['.cpp'], ['deprecated/'], False)
-sourceList.append('test.cpp')
+sourceList.append('Test.cpp')
 sourceList.sort()
 print('Test Sources: ' + str(len(sourceList)))
 print('Test Directories: ' + str(len(dirList)))

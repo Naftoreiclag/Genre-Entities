@@ -1,5 +1,5 @@
-#ifndef PEGR_SCRIPT_LUAHELPER_HPP
-#define PEGR_SCRIPT_LUAHELPER_HPP
+#ifndef PEGR_SCRIPT_SCRIPTHELPER_HPP
+#define PEGR_SCRIPT_SCRIPTHELPER_HPP
 
 #include <functional>
 #include <string>
@@ -107,4 +107,4 @@ bool to_number_safe(int idx, lua_Number& num);
 } // namespace Script
 } // namespace pegr
 
-#endif // PEGR_SCRIPT_LUAHELPER_HPP
+#endif // PEGR_SCRIPT_SCRIPTHELPER_HPP

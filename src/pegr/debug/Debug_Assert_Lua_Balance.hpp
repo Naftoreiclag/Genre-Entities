@@ -1,17 +1,20 @@
 #ifndef PEGR_DEBUG_DEBUGASSERTLUABALANCE_HPP
 #define PEGR_DEBUG_DEBUGASSERTLUABALANCE_HPP
 
+#include <vector>
+
 namespace pegr {
 namespace Debug {
 
 class LuaBalanceGuard {
 public:
-    LuaBalanceGuard(int delta = 0, const char* msg = nullptr, int line = -1);
+    LuaBalanceGuard(std::vector<int> deltas = {0}, 
+            const char* msg = nullptr, int line = -1);
     ~LuaBalanceGuard();
 private:
     int m_original_size;
     const int m_line;
-    const int m_delta;
+    std::vector<int> m_deltas;
     const char* m_msg;
 };
 

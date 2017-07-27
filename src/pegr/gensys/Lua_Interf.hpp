@@ -1,5 +1,5 @@
-#ifndef PEGR_GENSYS_HPP
-#define PEGR_GENSYS_HPP
+#ifndef PEGR_GENSYS_LUAINTERF_HPP
+#define PEGR_GENSYS_LUAINTERF_HPP
 
 #include <cstdint>
 #include <map>
@@ -7,7 +7,8 @@
 #include <vector>
 
 #include "pegr/script/Script.hpp"
-#include "pegr/gensys/GensysIntermediate.hpp"
+#include "pegr/gensys/Interm_Types.hpp"
+#include "pegr/gensys/Runtime.hpp"
 
 namespace pegr {
 namespace Gensys {
@@ -16,8 +17,21 @@ namespace LI {
 /**
  * @brief Initializes. Sets up workspaces for adding new components,
  * genres, archetypes, etc.
+ * 
+ * This should really only be called once during the program's lifetime.
  */
 void initialize();
+
+void clear();
+
+/**
+ * @brief Undoes initialize()
+ * 
+ * This should really only be called once during the program's lifetime.
+ */
+void cleanup();
+
+//// SETUP ////
 
 /**
  * @brief Produces a typed primitive value from a Lua value.
@@ -39,7 +53,7 @@ Interm::Prim parse_primitive(int table_idx,
  * @param table_idx The index on the main Lua stack to translate
  * @return The component
  */
-Interm::Comp_Def* parse_component_definition(int table_idx);
+std::unique_ptr<Interm::Comp> parse_component_definition(int table_idx);
 
 /**
  * @brief Make an archetype implementation from the table at the given index.
@@ -58,7 +72,7 @@ Interm::Arche::Implement parse_archetype_implementation(int table_idx);
  * @param table_idx The index on the main Lua stack to translate
  * @return The archetype
  */
-Interm::Arche* parse_archetype(int table_idx);
+std::unique_ptr<Interm::Arche> parse_archetype(int table_idx);
 
 /**
  * @brief Make a genre pattern from the given Lua value.
@@ -77,7 +91,7 @@ Interm::Genre::Pattern parse_genre_pattern(int idx);
  * @param table_idx The index on the main Lua stack to translate
  * @return The genre
  */
-Interm::Genre* parse_genre(int table_idx);
+std::unique_ptr<Interm::Genre> parse_genre(int table_idx);
 
 /**
  * @brief Translates all submitted Lua tables into their intermediate forms and
@@ -85,19 +99,50 @@ Interm::Genre* parse_genre(int table_idx);
  */
 void stage_all();
 
-void cleanup();
+int li_add_component(lua_State* l);
+int li_edit_component(lua_State* l);
+int li_add_archetype(lua_State* l);
+int li_edit_archetype(lua_State* l);
+int li_add_genre(lua_State* l);
 
-int add_component(lua_State* l);
-int edit_component(lua_State* l);
-int add_archetype(lua_State* l);
-int edit_archetype(lua_State* l);
-int find_archetype(lua_State* l);
-int add_genre(lua_State* l);
+//// RUNTIME ////
 
-int entity_new(lua_State* l);
+struct Cview {
+    Runtime::Entity_Handle m_ent;
+    Runtime::Comp* m_comp;
+};
+
+Runtime::Arche** argcheck_archetype(lua_State* l, int idx);
+Runtime::Entity_Handle* argcheck_entity(lua_State* l, int idx);
+
+void push_arche_pointer(lua_State* l, Runtime::Arche* ptr);
+void push_entity_handle(lua_State* l, Runtime::Entity_Handle ent);
+void push_cview(lua_State* l, Cview ent);
+
+std::string to_string_arche(Runtime::Arche* arche);
+std::string to_string_entity(Runtime::Entity_Handle ent);
+std::string to_string_cview(Cview cview);
+
+int li_arche_mt_tostring(lua_State* l);
+
+int li_entity_mt_gc(lua_State* l);
+int li_entity_mt_index(lua_State* l);
+int li_entity_mt_tostring(lua_State* l);
+
+int li_cview_mt_gc(lua_State* l);
+int li_cview_mt_index(lua_State* l);
+int li_cview_mt_newindex(lua_State* l);
+int li_cview_mt_tostring(lua_State* l);
+
+int li_find_archetype(lua_State* l);
+
+int li_new_entity(lua_State* l);
+int li_delete_entity(lua_State* l);
+
+lua_Number entity_handle_to_lua_number(int64_t data);
 
 } // namespace LI
 } // namespace Gensys
 } // namespace pegr
 
-#endif // PEGR_GENSYS_HPP
+#endif // PEGR_GENSYS_LUAINTERF_HPP

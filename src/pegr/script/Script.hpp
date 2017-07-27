@@ -14,78 +14,94 @@ namespace Script {
 typedef int Regref;
 
 /**
- * @class Regref_Guard
+ * @brief An integer index into a Lua array (a table with consecutive integer 
+ * keys starting at 1)
+ */
+typedef int Arridx;
+
+/**
+ * @class Unique_Regref
  * @brief Handles the release of a value referenced in the lua registry (RAII)
  * Note that these must go out of scope before Script::cleanup() is called.
  */
-class Regref_Guard {
+class Unique_Regref {
 public:
     /**
      * @brief Guards nothing
      */
-    Regref_Guard();
+    Unique_Regref();
     
     /**
      * @brief Guards the given reference. When this guard is deleted (for
      * example, by going out of scope) the reference is freed from the lua
      * registry, possibly causing that value to be gc'd.
      */
-    Regref_Guard(Regref ref);
+    Unique_Regref(Regref ref);
     
     /**
      * @brief Copy construction not allowed
      * (there should only be one guard for a single reference)
      */
-    Regref_Guard(const Regref_Guard& other) = delete;
+    Unique_Regref(const Unique_Regref& rhs) = delete;
     
     /**
      * @brief Copy assignment not allowed 
      * (there should only be one guard for a single reference)
      */
-    Regref_Guard& operator =(const Regref_Guard& other) = delete;
+    Unique_Regref& operator =(const Unique_Regref& rhs) = delete;
     
     /**
      * @brief Allow assignment of references directly to the guard. The
      * currently guarded object will be released.
      * @param ref The reference to guard
      */
-    Regref_Guard& operator =(const Regref& value);
+    Unique_Regref& operator =(const Regref& value);
     
     /**
      * @brief Move construction
      */
-    Regref_Guard(Regref_Guard&& other);
+    Unique_Regref(Unique_Regref&& rhs);
     
     /**
      * @brief Move assignment
      */
-    Regref_Guard& operator=(Regref_Guard&& other);
+    Unique_Regref& operator=(Unique_Regref&& rhs);
     
     /**
      * @brief Deconstructor. Drops whatever reference it is guarding.
      */
-    ~Regref_Guard();
+    ~Unique_Regref();
     
     /**
      * @brief Get the Lua reference that this is guarding
      * @return the Lua reference that this is guarding
      */
-    Regref regref() const;
+    Regref get() const;
+    
+    /**
+     * @return Iff this is guarding nothing (nil via LUA_REFNIL)
+     */
+    bool is_nil() const;
     
     /**
      * @brief Replaces the currently guarded reference with this one. Properly
      * release the previously guarded value
      * @param value Reference to the new value to be guarded.
      */
-    void replace(Regref value);
+    void reset(Regref value = LUA_REFNIL);
     
     /**
      * @brief Implicit conversion to the Regref type
      */
     operator Regref() const;
     
+    /**
+     * @brief Releases ownership of the held Regref (does not release the value
+     * from the Lua registry) and returns it
+     * @return The formerly guarded Regref
+     */
+    Regref release();
 private:
-    void release_reference();
     
     Regref m_reference;
 };
@@ -94,14 +110,14 @@ private:
  * @brief A shared pointer for a guard. Useful for having multiple references
  * to the same Lua object. Uses reference counting.
  */
-typedef std::shared_ptr<Regref_Guard> Regref_Shared;
+typedef std::shared_ptr<Unique_Regref> Shared_Regref;
 
 /**
  * @brief Make a referenced Lua value into a shared RAII object
  * @param ref The Lua reference to make shared
  * @return A shared RAII object for the provided reference
  */
-Regref_Shared make_shared(Regref ref);
+Shared_Regref make_shared(Regref ref);
 
 extern const char* PEGR_MODULE_NAME;
 
@@ -149,6 +165,8 @@ private:
     int m_n;
     lua_State* m_lstate;
 };
+
+int debug_get_total_grab_delta();
 
 /**
  * @brief Creates the lua state and loads standard libraries
@@ -251,16 +269,12 @@ void expose_string(const char* key, const char* str, bool safe = true);
 
 /**
  * @brief Exposes multiple c functions to lua. Faster than repeatedly calling
- * expose_referenced_value with referenced functions
+ * expose_referenced_value with referenced functions.
+ * [BALANCED]
  * @param api Multiple registry entries. Array must end with a pair of nullptrs.
  * @param safe If true, then these values are accessible in sandboxes
  */
 void multi_expose_c_functions(const luaL_Reg* api, bool safe = true);
-
-/**
- * @brief Replacement print for lua, uses logger
- */
-int li_print(lua_State* l);
 
 /**
  * @brief Turns an index relative to the top of the stack (negative indices)
@@ -270,6 +284,14 @@ int li_print(lua_State* l);
  */
 int absolute_idx(int idx);
 
+namespace LI {
+
+/**
+ * @brief Replacement print for lua, uses logger
+ */
+int li_print(lua_State* l);
+
+} // namespace LI
 } // namespace Script
 } // namespace pegr
 

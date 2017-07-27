@@ -14,8 +14,8 @@
  *  limitations under the License.
  */
 
-#ifndef PEGR_LOGGER_HPP
-#define PEGR_LOGGER_HPP
+#ifndef PEGR_LOGGER_LOGGER_HPP
+#define PEGR_LOGGER_LOGGER_HPP
 
 #include <easylogging++.h>
 
@@ -31,4 +31,4 @@ el::Logger* alog(const char* addon_name);
 } // namespace Logger
 } // namespace pegr
 
-#endif // PEGR_LOGGER_HPP
+#endif // PEGR_LOGGER_LOGGER_HPP

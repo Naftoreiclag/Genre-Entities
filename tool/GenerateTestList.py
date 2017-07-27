@@ -16,53 +16,83 @@ import os
 from Common import indexFiles
 from Common import writeWithReplacements
 
-testsListVector = '/*### TESTS LIST ###*/'
-testsFwdDeclVector = '/*### TESTS FWD ###*/'
+luasListVector = '/*### LUA TESTS LIST ###*/'
+cppsListVector = '/*### TESTS LIST ###*/'
+cppsFwdDeclVector = '/*### TESTS FWD ###*/'
 boilerplateFilename = 'TestsBoilerplate.hpp'
 outputFilename = '../src/pegr/test/Tests.hpp'
-testSourcesDir = '../src/pegr/test/'
+cppSourcesDir = '../src/pegr/test/'
+luaSourcesDir = '../run/test/tests/'
 
-testCpps, _, __ = indexFiles(testSourcesDir, ['.cpp'], [], True)
+cppsFiles, _, __ = indexFiles(cppSourcesDir, ['.cpp'], [], True)
+luasFiles, _, __ = indexFiles(luaSourcesDir, ['.lua'], [], True)
 
 import re
 
-testAnnotationPattern = re.compile('\s*//@Test\s+(.*)')
-testFuncPattern = re.compile('\s*void\s+(\S+)\s*\(\s*\).*')
+patternCppTestAnnot = re.compile('\s*//@Test\s+(.*)')
+patternCppFunc = re.compile('\s*void\s+(\S+)\s*\(\s*\).*')
+patternLuaNameAnnot = re.compile('--@Name\s+(.*)')
 
-funcs = {}
+cppFuncs = {}
 
-for item in testCpps:
-    filename = testSourcesDir + item
+for item in cppsFiles:
+    filename = cppSourcesDir + item
     with open(filename, 'r') as sourceFile:
         annotName = None
         for line in sourceFile:
-            annotation = testAnnotationPattern.match(line)
+            annotation = patternCppTestAnnot.match(line)
             if annotation:
                 annotName = annotation.group(1)
                 continue
             if annotName is not None:
-                match = testFuncPattern.match(line)
+                match = patternCppFunc.match(line)
                 if match:
                     funcName = match.group(1)
-                    if funcName in funcs:
-                        print('WARNING: That function is duplicated')
-                    funcs[funcName] = annotName
+                    if funcName in cppFuncs:
+                        print('WARNING: Function ' + funcName + ' duplicated')
+                    cppFuncs[funcName] = annotName
                 annotName = None
 
-testsList = []
-testsFwdDecls = []
+luaFiles = {}
+for item in luasFiles:
+    filename = luaSourcesDir + item
+    with open(filename, 'r') as sourceFile:
+        name = None
+        for line in sourceFile:
+            nameComment = patternLuaNameAnnot.match(line)
+            if nameComment:
+                name = nameComment.group(1)
+                break
+        if not name:
+            print('WARNING: Lua file ' + filename + ' has no name!')
+            name = 'Unnamed Test (' + item + ')'
+        luaFiles[item] = name
 
-funcNamesSorted = []
-for funcName in funcs:
-    funcNamesSorted.append(funcName)
-funcNamesSorted.sort()
 
-for funcName in funcNamesSorted:
-    print('\t' + funcName)
-    testsFwdDecls.append('void ' + funcName + '();')
-    testsList.append('    {"' + funcs[funcName] + '", ' + funcName + '},')
+cppsList = []
+cppsFwdDecls = []
+luasList = []
+
+cppFuncNamesSorted = []
+for funcName in cppFuncs:
+    cppFuncNamesSorted.append(funcName)
+cppFuncNamesSorted.sort()
+
+luaFilenamesSorted = []
+for filename in luaFiles:
+    luaFilenamesSorted.append(filename)
+luaFilenamesSorted.sort()
+
+for funcName in cppFuncNamesSorted:
+    print('\tC++ Test: ' + funcName)
+    cppsFwdDecls.append('void ' + funcName + '();')
+    cppsList.append('    {"' + cppFuncs[funcName] + '", ' + funcName + '},')
+for filename in luaFilenamesSorted:
+    print('\tLua Test: ' + filename)
+    luasList.append('    {"' + luaFiles[filename] + '", "' + filename + '"},')
 
 replacements = {}
-replacements[testsListVector] = testsList
-replacements[testsFwdDeclVector] = testsFwdDecls
+replacements[cppsListVector] = cppsList
+replacements[cppsFwdDeclVector] = cppsFwdDecls
+replacements[luasListVector] = luasList
 writeWithReplacements(boilerplateFilename, outputFilename, replacements)

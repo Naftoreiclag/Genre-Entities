@@ -8,62 +8,72 @@
 #include <sstream>
 #include <vector>
 
-#include "pegr/debug/DebugMacros.hpp"
+#include "pegr/debug/Debug_Macros.hpp"
 #include "pegr/logger/Logger.hpp"
-#include "pegr/script/ScriptHelper.hpp"
+#include "pegr/script/Script_Helper.hpp"
 
 namespace pegr {
 namespace Script {
 
-Regref_Guard::Regref_Guard()
+Unique_Regref::Unique_Regref()
 : m_reference(LUA_REFNIL) { }
 
-Regref_Guard::Regref_Guard(Regref ref)
+Unique_Regref::Unique_Regref(Regref ref)
 : m_reference(ref) { }
 
-Regref_Guard::Regref_Guard(Regref_Guard&& other) {
-    release_reference();
-    m_reference = other.m_reference;
-    other.m_reference = LUA_REFNIL;
+Unique_Regref::Unique_Regref(Unique_Regref&& rhs) {
+    m_reference = rhs.m_reference;
+    rhs.m_reference = LUA_REFNIL;
 }
 
 // Move assignment
-Regref_Guard& Regref_Guard::operator =(Regref_Guard&& other) {
-    release_reference();
-    m_reference = other.m_reference;
-    other.m_reference = LUA_REFNIL;
+Unique_Regref& Unique_Regref::operator =(Unique_Regref&& rhs) {
+    // Either the references are different or both are nil
+    assert(m_reference != rhs.m_reference || 
+            (m_reference == LUA_REFNIL && rhs.m_reference == LUA_REFNIL));
+    
+    reset();
+    m_reference = rhs.m_reference;
+    rhs.m_reference = LUA_REFNIL;
     return *this;
 }
 
 // Assignment of value
-Regref_Guard& Regref_Guard::operator =(const Regref& value) {
-    replace(value);
+Unique_Regref& Unique_Regref::operator =(const Regref& value) {
+    reset(value);
     return *this;
 }
 
-void Regref_Guard::replace(Regref value) {
-    release_reference();
+void Unique_Regref::reset(Regref value) {
+    drop_reference(m_reference);
     m_reference = value;
 }
 
-Regref_Guard::~Regref_Guard() {
-    release_reference();
+Unique_Regref::~Unique_Regref() {
+    reset();
+    assert(m_reference == LUA_REFNIL);
 }
 
-Regref Regref_Guard::regref() const {
+Regref Unique_Regref::get() const {
     return m_reference;
 }
+
+bool Unique_Regref::is_nil() const {
+    return m_reference == LUA_REFNIL;
+}
     
-Regref_Guard::operator Regref() const {
-    return regref();
+Unique_Regref::operator Regref() const {
+    return get();
 }
 
-void Regref_Guard::release_reference() {
-    drop_reference(m_reference);
+Regref Unique_Regref::release() {
+    Regref old = m_reference;
+    m_reference = LUA_REFNIL;
+    return old;
 }
 
-Regref_Shared make_shared(Regref ref) {
-    return std::make_shared<Regref_Guard>(ref);
+Shared_Regref make_shared(Regref ref) {
+    return std::make_shared<Unique_Regref>(ref);
 }
 
 const char* PEGR_MODULE_NAME = "pegr";
@@ -102,7 +112,11 @@ void Pop_Guard::pop(int n) {
 }
 
 // Keeps track of how many registry keys we are holding
-int m_total_grab_delta = 0;
+int n_total_grab_delta = 0;
+
+int debug_get_total_grab_delta() {
+    return n_total_grab_delta;
+}
 
 Regref m_pegr_table;
 Regref m_pegr_table_safe;
@@ -251,7 +265,7 @@ void cache_lua_std_lib() {
         lua_getglobal(m_l, cacher.m_name);
         Logger::log()->verbose(1, "Caching %v", cacher.m_name);
         (*cacher.m_cache) = grab_reference();
-        m_total_grab_delta -= 1; /*Ignore these grabs*/
+        n_total_grab_delta -= 1; /*Ignore these grabs*/
     }
 }
 
@@ -268,7 +282,7 @@ void get_and_print_lua_version() {
 void replace_std_functions() {
     assert_balance(0);
     push_reference(m_luaglob_tostring);
-    lua_pushcclosure(m_l, li_print, 1);
+    lua_pushcclosure(m_l, LI::li_print, 1);
     lua_setglobal(m_l, "print");
 }
 
@@ -303,7 +317,7 @@ void setup_basic_pristine_sandbox() {
     m_pegr_table_safe = grab_reference();
     lua_setfield(m_l, -2, PEGR_MODULE_NAME);
     m_pristine_sandbox = grab_reference();
-    m_total_grab_delta -= 2; /*Ignore these grabs*/
+    n_total_grab_delta -= 2; /*Ignore these grabs*/
 }
 
 void setup_basic_pegr_module() {
@@ -311,7 +325,7 @@ void setup_basic_pegr_module() {
     lua_newtable(m_l);
     lua_pushvalue(m_l, -1);
     m_pegr_table = grab_reference();
-    m_total_grab_delta -= 1; /*Ignore these grabs*/
+    n_total_grab_delta -= 1; /*Ignore these grabs*/
     lua_setglobal(m_l, PEGR_MODULE_NAME);
 }
 
@@ -336,8 +350,8 @@ bool is_initialized() {
 void cleanup() {
     assert(is_initialized());
     assert(!m_torndown);
-    if (m_total_grab_delta != 0) {
-        Logger::log()->warn("Non-zero grab delta: %v", m_total_grab_delta);
+    if (n_total_grab_delta != 0) {
+        Logger::log()->warn("Non-zero grab delta: %v", n_total_grab_delta);
     }
     lua_close(m_l);
     m_l = nullptr;
@@ -451,19 +465,27 @@ Regref new_sandbox() {
 
 void drop_reference(Regref ref) {
     assert(is_initialized());
-    --m_total_grab_delta;
+    if (ref == LUA_REFNIL) return;
+    --n_total_grab_delta;
     luaL_unref(m_l, LUA_REGISTRYINDEX, ref);
 }
 
 void push_reference(Regref ref) {
     assert(is_initialized());
+    assert_balance(1);
     lua_rawgeti(m_l, LUA_REGISTRYINDEX, ref);
 }
 
 Regref grab_reference() {
     assert(is_initialized());
-    ++m_total_grab_delta;
-    return luaL_ref(m_l, LUA_REGISTRYINDEX);
+    assert_balance(-1);
+    if (lua_isnil(m_l, -1)) {
+        lua_pop(m_l, 1);
+        return LUA_REFNIL;
+    }
+    ++n_total_grab_delta;
+    Regref retval = luaL_ref(m_l, LUA_REGISTRYINDEX);
+    return retval;
 }
 
 lua_State* get_lua_state() {
@@ -509,6 +531,7 @@ void expose_string(const char* key, const char* str, bool safe) {
 }
 void multi_expose_c_functions(const luaL_Reg* api, bool safe) {
     assert(is_initialized());
+    assert_balance();
     push_reference(m_pegr_table);
     if (safe) {
         push_reference(m_pegr_table_safe);
@@ -525,7 +548,21 @@ void multi_expose_c_functions(const luaL_Reg* api, bool safe) {
         }
         lua_setfield(m_l, -2, reg.name); // Add to the remaining table
     }
+    if (safe) {
+        lua_pop(m_l, 2);
+    } else {
+        lua_pop(m_l, 1);
+    }
 }
+
+int absolute_idx(int idx) {
+    if (idx < 0) {
+        idx = lua_gettop(m_l) + idx + 1;
+    }
+    return idx;
+}
+
+namespace LI {
 
 int li_print(lua_State* l) {
     /* Expects upvalues:
@@ -544,9 +581,11 @@ int li_print(lua_State* l) {
                 luaL_argerror(l, idx, 
                     "calling 'tostring' on this value did not return a string");
             }
+            log << str;
             lua_pop(l, 1);
+        } else {
+            log << str;
         }
-        log << str;
         if (idx < nargs) {
             log << "\t";
         }
@@ -555,13 +594,7 @@ int li_print(lua_State* l) {
     return 0;
 }
 
-int absolute_idx(int idx) {
-    if (idx < 0) {
-        idx = lua_gettop(m_l) + idx + 1;
-    }
-    return idx;
-}
-
+} // namespace LI
 } // namespace Script
 } // namespace pegr
 

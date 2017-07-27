@@ -1,4 +1,4 @@
-#include "pegr/gensys/GensysLuaInterface.hpp"
+#include "pegr/gensys/Lua_Interf.hpp"
 
 #include <stdexcept>
 #include <sstream>
@@ -9,29 +9,84 @@
 #include <vector>
 #include <map>
 
-#include "pegr/debug/DebugMacros.hpp"
+#include "pegr/debug/Debug_Macros.hpp"
 #include "pegr/logger/Logger.hpp"
+#include "pegr/gensys/Compiler.hpp"
+#include "pegr/script/Script_Helper.hpp"
 #include "pegr/gensys/Gensys.hpp"
-#include "pegr/script/ScriptHelper.hpp"
+#include "pegr/script/Lua_Interf_Util.hpp"
 
 namespace pegr {
 namespace Gensys {
 namespace LI {
 
-Script::Regref m_working_archetypes;
-Script::Regref m_working_genres;
-Script::Regref m_working_components;
+Script::Regref n_working_archetypes = LUA_REFNIL;
+Script::Regref n_working_genres = LUA_REFNIL;
+Script::Regref n_working_components = LUA_REFNIL;
+
+void initialize_working_tables(lua_State* l) {
+    assert_balance(0);
+    lua_newtable(l);
+    n_working_archetypes = Script::grab_reference();
+    lua_newtable(l);
+    n_working_genres = Script::grab_reference();
+    lua_newtable(l);
+    n_working_components = Script::grab_reference();
+}
+
+void cleanup_working_tables(lua_State* l) {
+    assert_balance(0);
+    Script::drop_reference(n_working_archetypes);
+    n_working_archetypes = LUA_REFNIL;
+    Script::drop_reference(n_working_components);
+    n_working_components = LUA_REFNIL;
+    Script::drop_reference(n_working_genres);
+    n_working_genres = LUA_REFNIL;
+}
+
+// (These are defined in Lua_Interf_Runtime.cpp)
+void initialize_userdata_metatables(lua_State* l);
+void cleanup_userdata_metatables(lua_State* l);
+
+const luaL_Reg n_setup_api_safe[] = {
+    {"add_archetype", li_add_archetype},
+    {"add_genre", li_add_genre},
+    {"add_component", li_add_component},
+    
+    {"find_archetype", li_find_archetype},
+    {"new_entity", li_new_entity},
+    {"delete_entity", li_delete_entity},
+    
+    // End of the list
+    {nullptr, nullptr}
+};
+
+void initialize_expose_global_functions(lua_State* l) {
+    assert_balance(0);
+    Script::multi_expose_c_functions(n_setup_api_safe);
+}
 
 void initialize() {
     assert(Script::is_initialized());
     assert_balance(0);
     lua_State* l = Script::get_lua_state();
-    lua_newtable(l);
-    m_working_archetypes = Script::grab_reference();
-    lua_newtable(l);
-    m_working_genres = Script::grab_reference();
-    lua_newtable(l);
-    m_working_components = Script::grab_reference();
+    initialize_working_tables(l);
+    initialize_userdata_metatables(l);
+    initialize_expose_global_functions(l);
+}
+
+void clear() {
+    assert(Script::is_initialized());
+    assert_balance(0);
+    lua_State* l = Script::get_lua_state();
+    cleanup_working_tables(l);
+    initialize_working_tables(l);
+}
+
+void cleanup() {
+    lua_State* l = Script::get_lua_state();
+    cleanup_working_tables(l);
+    cleanup_userdata_metatables(l);
 }
 
 /**
@@ -216,12 +271,13 @@ Interm::Prim parse_primitive(int idx, Interm::Prim::Type required_t) {
     return ret_val;
 }
 
-Interm::Comp_Def* parse_component_definition(int table_idx) {
+std::unique_ptr<Interm::Comp> parse_component_definition(int table_idx) {
     assert_balance(0);
     lua_State* l = Script::get_lua_state();
     table_idx = Script::absolute_idx(table_idx);
     
-    Interm::Comp_Def comp_def;
+    std::unique_ptr<Interm::Comp> comp_def = 
+            std::make_unique<Interm::Comp>();
     
     Script::Helper::for_pairs(table_idx, [&]()->bool {
         Interm::Symbol symbol = 
@@ -238,17 +294,17 @@ Interm::Comp_Def* parse_component_definition(int table_idx) {
             throw std::runtime_error(sss.str());
         }
         // Check that no symbol is duplicated (possible through integer keys)
-        if (comp_def.m_members.find(symbol) != comp_def.m_members.end()) {
+        if (comp_def->m_members.find(symbol) != comp_def->m_members.end()) {
             std::stringstream sss;
             sss << "Symbol \"" << symbol
                 << "\" occurs multiple times in component table";
             throw std::runtime_error(sss.str());
         }
-        comp_def.m_members[symbol] = std::move(value);
+        comp_def->m_members[symbol] = std::move(value);
         return true;
     }, false);
     
-    return new Interm::Comp_Def(std::move(comp_def));
+    return comp_def;
 }
 
 Interm::Arche::Implement parse_archetype_implementation(int table_idx) {
@@ -276,7 +332,7 @@ Interm::Arche::Implement parse_archetype_implementation(int table_idx) {
     
     pop_guard.pop(1); // Pop __is string
     
-    implement.m_component = Gensys::get_staged_component(comp_id);
+    implement.m_component = Compiler::get_staged_component(comp_id);
     
     if (!implement.m_component) {
         std::stringstream sss;
@@ -327,12 +383,13 @@ Interm::Arche::Implement parse_archetype_implementation(int table_idx) {
     return implement;
 }
 
-Interm::Arche* parse_archetype(int table_idx) {
+std::unique_ptr<Interm::Arche> parse_archetype(int table_idx) {
     assert_balance(0);
     lua_State* l = Script::get_lua_state();
     table_idx = Script::absolute_idx(table_idx);
     
-    Interm::Arche arche;
+    std::unique_ptr<Interm::Arche> arche
+            = std::make_unique<Interm::Arche>();
     
     Script::Helper::for_pairs(table_idx, [&]()->bool {
         Interm::Symbol symbol = 
@@ -350,18 +407,18 @@ Interm::Arche* parse_archetype(int table_idx) {
             throw std::runtime_error(sss.str());
         }
         // Check that no symbol is duplicated (possible through integer keys)
-        if (arche.m_implements.find(symbol) != arche.m_implements.end()) {
+        if (arche->m_implements.find(symbol) != arche->m_implements.end()) {
             std::stringstream sss;
             sss << "Symbol \"" << symbol
                 << "\" occurs multiple times in archetype table";
             throw std::runtime_error(sss.str());
         }
-        arche.m_implements[symbol] = std::move(implement);
+        arche->m_implements[symbol] = std::move(implement);
         
         return true;
     }, false);
     
-    return new Interm::Arche(std::move(arche));
+    return arche;
 }
 
 void assert_pattern_source_has_symbol(
@@ -431,16 +488,16 @@ Interm::Genre::Pattern parse_genre_pattern(int value_idx) {
             pop_guard.pop(1); // Remove __from string
             
             // Determine what we are drawing data from
-            switch (Gensys::get_type(id)) {
+            switch (Compiler::get_staged_type(id)) {
                 // Object does not exist
-                case Gensys::ObjectType::NOT_FOUND: {
+                case Compiler::ObjectType::NOT_FOUND: {
                     std::stringstream sss;
                     sss << "No component or genre with id ["
                         << id << ']';
                     throw std::runtime_error(sss.str());
                 }
                 // Object is an archetype (not allowed)
-                case Gensys::ObjectType::ARCHETYPE: {
+                case Compiler::ObjectType::ARCHETYPE: {
                     std::stringstream sss;
                     sss << "Genres cannot depend on the existence of "
                             "particular archetypes, such as ["
@@ -448,20 +505,20 @@ Interm::Genre::Pattern parse_genre_pattern(int value_idx) {
                     throw std::runtime_error(sss.str());
                 }
                 // Object is a component
-                case Gensys::ObjectType::COMP_DEF: {
+                case Compiler::ObjectType::COMP_DEF: {
                     pattern.m_type = 
                             Interm::Genre::Pattern::Type::FROM_COMP;
                     pattern.m_from_component = 
-                            Gensys::get_staged_component(id);
+                            Compiler::get_staged_component(id);
                     assert(pattern.m_from_component);
                     break;
                 }
                 // Object is a genre
-                case Gensys::ObjectType::GENRE: {
+                case Compiler::ObjectType::GENRE: {
                     pattern.m_type = 
                             Interm::Genre::Pattern::Type::FROM_GENRE;
                     pattern.m_from_genre =
-                            Gensys::get_staged_genre(id);
+                            Compiler::get_staged_genre(id);
                     assert(pattern.m_from_genre);
                     break;
                 }
@@ -522,7 +579,7 @@ Interm::Genre::Pattern parse_genre_pattern(int value_idx) {
             pattern.m_type = Interm::Genre::Pattern::Type::FUNC;
             lua_pushvalue(l, value_idx);
             
-            // No need to to a function type check, that was done already
+            // No need to do a function type check, that was done already
             
             pattern.m_function = Script::make_shared(Script::grab_reference());
             return pattern;
@@ -537,12 +594,12 @@ Interm::Genre::Pattern parse_genre_pattern(int value_idx) {
     }
 }
 
-Interm::Genre* parse_genre(int table_idx) {
+std::unique_ptr<Interm::Genre> parse_genre(int table_idx) {
     assert_balance(0);
     lua_State* l = Script::get_lua_state();
     table_idx = Script::absolute_idx(table_idx);
     
-    Interm::Genre genre;
+    std::unique_ptr<Interm::Genre> genre = std::make_unique<Interm::Genre>();
     lua_getfield(l, table_idx, "interface"); // Field guaranteed to exist
     Script::Pop_Guard pop_guard(1);
     Script::Helper::for_pairs(-1, [&]()->bool {
@@ -560,13 +617,13 @@ Interm::Genre* parse_genre(int table_idx) {
             throw std::runtime_error(sss.str());
         }
         // Check that no symbol is duplicated (possible through integer keys)
-        if (genre.m_interface.find(symbol) != genre.m_interface.end()) {
+        if (genre->m_interface.find(symbol) != genre->m_interface.end()) {
             std::stringstream sss;
             sss << "Symbol \"" << symbol
                 << "\" occurs multiple times in interface table";
             throw std::runtime_error(sss.str());
         }
-        genre.m_interface[symbol] = std::move(value);
+        genre->m_interface[symbol] = std::move(value);
         return true;
     }, false);
     pop_guard.pop(1);
@@ -579,7 +636,7 @@ Interm::Genre* parse_genre(int table_idx) {
         try {
             Interm::Genre::Pattern pattern = parse_genre_pattern(-1);
             pattern.m_error_msg_idx = idx;
-            genre.m_patterns.push_back(pattern);
+            genre->m_patterns.push_back(pattern);
         }
         catch (std::runtime_error e) {
             std::stringstream sss;
@@ -590,7 +647,7 @@ Interm::Genre* parse_genre(int table_idx) {
     }, false);
     pop_guard.pop(1);
     
-    return new Interm::Genre(std::move(genre));
+    return genre;
 }
 
 void stage_all() {
@@ -601,7 +658,7 @@ void stage_all() {
     std::size_t strlen;
     const char* strdata;
     
-    Script::push_reference(m_working_components);
+    Script::push_reference(n_working_components);
     Script::Pop_Guard pop_guard(1);
     Script::Helper::for_pairs(-1, [&]()->bool {
         lua_pushvalue(l, -2); // Make a copy of the key
@@ -615,9 +672,9 @@ void stage_all() {
         pop_guard2.pop(1);
         std::string id(strdata, strlen);
         try {
-            Interm::Comp_Def* obj = parse_component_definition(-1);
+            auto obj = parse_component_definition(-1);
             obj->m_error_msg_name = id;
-            Gensys::stage_component(id, obj);
+            Compiler::stage_component(id, std::move(obj));
             Logger::log()->info("Successfully parsed compnent [%v]", id);
         }
         catch (std::runtime_error e) {
@@ -628,7 +685,7 @@ void stage_all() {
     }, false);
     pop_guard.pop(1);
     
-    Script::push_reference(m_working_archetypes);
+    Script::push_reference(n_working_archetypes);
     pop_guard.on_push(1);
     Script::Helper::for_pairs(-1, [&]()->bool {
         lua_pushvalue(l, -2); // Make a copy of the key
@@ -641,9 +698,9 @@ void stage_all() {
         pop_guard2.pop(1);
         std::string id(strdata, strlen);
         try {
-            Interm::Arche* obj = parse_archetype(-1);
+            auto obj = parse_archetype(-1);
             obj->m_error_msg_name = id;
-            Gensys::stage_archetype(id, obj);
+            Compiler::stage_archetype(id, std::move(obj));
             Logger::log()->info("Successfully parsed archetype [%v]", id);
         }
         catch (std::runtime_error e) {
@@ -654,7 +711,7 @@ void stage_all() {
     }, false);
     pop_guard.pop(1);
     
-    Script::push_reference(m_working_genres);
+    Script::push_reference(n_working_genres);
     pop_guard.on_push(1);
     Script::Helper::for_pairs(-1, [&]()->bool {
         lua_pushvalue(l, -2); // Make a copy of the key
@@ -667,9 +724,9 @@ void stage_all() {
         pop_guard2.pop(1);
         std::string id(strdata, strlen);
         try {
-            Interm::Genre* obj = parse_genre(-1);
+            auto obj = parse_genre(-1);
             obj->m_error_msg_name = id;
-            Gensys::stage_genre(id, obj);
+            Compiler::stage_genre(id, std::move(obj));
             Logger::log()->info("Successfully parsed genre [%v]", id);
         }
         catch (std::runtime_error e) {
@@ -679,83 +736,40 @@ void stage_all() {
         return true;
     }, false);
     pop_guard.pop(1);
+    
+    clear();
 }
 
-void cleanup() {
-    Script::drop_reference(m_working_archetypes);
-    Script::drop_reference(m_working_components);
-    Script::drop_reference(m_working_genres);
-}
-
-int add_component(lua_State* l) {
-    luaL_checktype(l, 2, LUA_TTABLE);
-    std::size_t strlen;
-    const char* strdata = luaL_checklstring(l, 1, &strlen);
-    std::string key(strdata, strlen);
-    // TODO: resolve namespace issues in key
-    Script::push_reference(m_working_components);
-    lua_pushstring(l, key.c_str());
-    Script::Helper::simple_deep_copy(2);
-    lua_settable(l, 3);
+int li_add_component(lua_State* l) {
+    if (Gensys::get_global_state() != GlobalState::MUTABLE) {
+        luaL_error(l, "add_component is only available during setup");
+    }
+    Script::Util::generic_li_add_to_res_table(l, n_working_components);
     return 0;
 }
 
-int edit_component(lua_State* l) {
-    std::size_t strlen;
-    const char* strdata = luaL_checklstring(l, 1, &strlen);
-    std::string key(strdata, strlen);
-    // TODO: resolve namespace issues in key
-    Script::push_reference(m_working_components);
-    lua_pushvalue(l, 1);
-    lua_gettable(l, 2);
+int li_edit_component(lua_State* l) {
+    if (Gensys::get_global_state() != GlobalState::MUTABLE) {
+        luaL_error(l, "edit_component is only available during setup");
+    }
+    Script::Util::generic_li_edit_from_res_table(l, n_working_components);
     return 1;
 }
 
-int add_archetype(lua_State* l) {
+int li_add_archetype(lua_State* l) {
     if (Gensys::get_global_state() != GlobalState::MUTABLE) {
         luaL_error(l, "add_archetype is only available during setup");
     }
-    luaL_checktype(l, 2, LUA_TTABLE);
-    std::size_t strlen;
-    const char* strdata = luaL_checklstring(l, 1, &strlen);
-    std::string key(strdata, strlen);
-    // TODO: resolve namespace issues in key
-    Script::push_reference(m_working_archetypes);
-    lua_pushstring(l, key.c_str());
-    Script::Helper::simple_deep_copy(2);
-    lua_settable(l, 3);
+    Script::Util::generic_li_add_to_res_table(l, n_working_archetypes);
     return 0;
 }
 
-int edit_archetype(lua_State* l) {
+int li_edit_archetype(lua_State* l) {
     if (Gensys::get_global_state() != GlobalState::MUTABLE) {
         luaL_error(l, "edit_archetype is only available during setup");
     }
-    std::size_t strlen;
-    const char* strdata = luaL_checklstring(l, 1, &strlen);
-    std::string key(strdata, strlen);
-    // TODO: resolve namespace issues in key
-    Script::push_reference(m_working_archetypes);
-    lua_pushstring(l, key.c_str());
-    lua_gettable(l, 2);
+    Script::Util::generic_li_edit_from_res_table(l, n_working_archetypes);
     return 1;
-}
-
-int find_archetype(lua_State* l) {
-    if (Gensys::get_global_state() != GlobalState::EXECUTABLE) {
-        luaL_error(l, "find_archetype is only available during execution");
-    }
-    std::size_t strlen;
-    const char* strdata = luaL_checklstring(l, 1, &strlen);
-    std::string key(strdata, strlen);
-    // TODO: resolve namespace issues in key
-    
-    /*
-    auto iter = m_archetypes.find(key);
-    if (iter == m_archetypes.end()) {
-        // ???
-    }
-    */
 }
 
 /**
@@ -776,27 +790,13 @@ void fix_genre_table(lua_State* l) {
     }
 }
 
-int add_genre(lua_State* l) {
+int li_add_genre(lua_State* l) {
     if (Gensys::get_global_state() != GlobalState::MUTABLE) {
         luaL_error(l, "add_genre is only available during setup.");
     }
-    luaL_checktype(l, 2, LUA_TTABLE);
-    std::size_t strlen;
-    const char* strdata = luaL_checklstring(l, 1, &strlen);
-    std::string key(strdata, strlen);
-    // TODO: resolve namespace issues in key
-    Script::push_reference(m_working_genres);
-    lua_pushstring(l, key.c_str());
-    Script::Helper::simple_deep_copy(2);
-    
-    fix_genre_table(l);
-    
-    lua_settable(l, 3);
+    Script::Util::generic_li_add_to_res_table(l, n_working_genres, 
+                                            fix_genre_table);
     return 0;
-}
-
-int entity_new(lua_State* l) {
-    
 }
 
 } // namespace LI
