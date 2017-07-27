@@ -1,4 +1,4 @@
-#include "pegr/debug/DebugAssertLuaBalance.hpp"
+#include "pegr/debug/Debug_Assert_Lua_Balance.hpp"
 
 #include <cassert>
 #include <sstream>

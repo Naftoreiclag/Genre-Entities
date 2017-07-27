@@ -7,9 +7,9 @@
 #include "pegr/gensys/Gensys.hpp"
 #include "pegr/gensys/Lua_Interf.hpp"
 #include "pegr/scheduler/Lua_Interf.hpp"
-#include "pegr/debug/DebugMacros.hpp"
+#include "pegr/debug/Debug_Macros.hpp"
 #include "pegr/script/Script.hpp"
-#include "pegr/script/ScriptHelper.hpp"
+#include "pegr/script/Script_Helper.hpp"
 #include "pegr/logger/Logger.hpp"
 #include "pegr/test/Tests.hpp"
 

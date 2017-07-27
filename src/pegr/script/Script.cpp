@@ -8,9 +8,9 @@
 #include <sstream>
 #include <vector>
 
-#include "pegr/debug/DebugMacros.hpp"
+#include "pegr/debug/Debug_Macros.hpp"
 #include "pegr/logger/Logger.hpp"
-#include "pegr/script/ScriptHelper.hpp"
+#include "pegr/script/Script_Helper.hpp"
 
 namespace pegr {
 namespace Script {

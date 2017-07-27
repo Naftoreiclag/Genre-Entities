@@ -22,7 +22,8 @@
 set(PGLOCAL_SOURCES_LIST "")
 foreach(fname 
 
-"debug/DebugAssertLuaBalance.cpp"
+"Test.cpp"
+"debug/Debug_Assert_Lua_Balance.cpp"
 "gensys/Compiler.cpp"
 "gensys/Gensys.cpp"
 "gensys/Interm_Types.cpp"
@@ -35,19 +36,18 @@ foreach(fname
 "scheduler/Lua_Interf.cpp"
 "script/Lua_Interf_Util.cpp"
 "script/Script.cpp"
-"script/ScriptHelper.cpp"
-"test.cpp"
-"test/DebugTest.cpp"
-"test/FlagTest.cpp"
-"test/GensysIntermediateTest.cpp"
-"test/GensysLITest.cpp"
-"test/GensysRuntimeTest.cpp"
-"test/InitializationSanityTest.cpp"
-"test/MemoryTest.cpp"
-"test/PodChunkTest.cpp"
-"test/ScriptHelperTest.cpp"
-"test/ScriptTest.cpp"
-"test/UniquePtrTest.cpp"
+"script/Script_Helper.cpp"
+"test/Debug_Test.cpp"
+"test/Flag_Test.cpp"
+"test/Gensys_Intermediate_Test.cpp"
+"test/Gensys_LI_Test.cpp"
+"test/Gensys_Runtime_Test.cpp"
+"test/Initialization_Sanity_Test.cpp"
+"test/Memory_Test.cpp"
+"test/Pod_Chunk_Test.cpp"
+"test/Script_Helper_Test.cpp"
+"test/Script_Test.cpp"
+"test/Unique_Ptr_Test.cpp"
 
 )
 list(APPEND PGLOCAL_SOURCES_LIST "${PGLOCAL_SOURCE_DIR}/pegr/${fname}")

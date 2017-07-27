@@ -1,10 +1,10 @@
-#include "pegr/script/ScriptHelper.hpp"
+#include "pegr/script/Script_Helper.hpp"
 
 #include <algorithm>
 #include <stdexcept>
 #include <cassert>
 
-#include "pegr/debug/DebugMacros.hpp"
+#include "pegr/debug/Debug_Macros.hpp"
 #include "pegr/script/Script.hpp"
 #include "pegr/logger/Logger.hpp"
 

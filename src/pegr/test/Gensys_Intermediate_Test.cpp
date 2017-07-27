@@ -3,7 +3,7 @@
 
 #include "pegr/gensys/Interm_Types.hpp"
 #include "pegr/logger/Logger.hpp"
-#include "pegr/script/ScriptHelper.hpp"
+#include "pegr/script/Script_Helper.hpp"
 
 namespace pegr {
 namespace Test {

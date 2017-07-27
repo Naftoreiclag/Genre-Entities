@@ -1,4 +1,4 @@
-#include "pegr/debug/DebugMacros.hpp"
+#include "pegr/debug/Debug_Macros.hpp"
 
 namespace pegr {
 namespace Test {

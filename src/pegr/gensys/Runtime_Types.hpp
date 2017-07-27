@@ -214,6 +214,10 @@ public:
      * @brief Rather than expose the get_entity() method, we use an arrow
      * operator. This also allows Entity members to be accessed directly.
      * Users should check does_exist() before using.
+     * 
+     * Note that it might be beneficial to use get_volatile_entity_ptr(), but
+     * doing so can be unsafe. The arrow operator is guaranteed to always return
+     * a valid single-use pointer to the entity.
      */
     Entity* operator ->() const;
     

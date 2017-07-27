@@ -2,7 +2,7 @@
 
 #include <cassert>
 
-#include "pegr/debug/DebugMacros.hpp"
+#include "pegr/debug/Debug_Macros.hpp"
 #include "pegr/script/Script.hpp"
 #include "pegr/script/Lua_Interf_Util.hpp"
 

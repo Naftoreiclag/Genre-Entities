@@ -1,6 +1,6 @@
 #include <stdexcept>
 
-#include "pegr/script/ScriptHelper.hpp"
+#include "pegr/script/Script_Helper.hpp"
 #include "pegr/script/Script.hpp"
 #include "pegr/logger/Logger.hpp"
 #include "pegr/gensys/Compiler.hpp"

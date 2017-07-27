@@ -1,5 +1,5 @@
 #include "pegr/gensys/Runtime_Types.hpp"
-#include "pegr/test/TestUtil.hpp"
+#include "pegr/test/Test_Util.hpp"
 
 namespace pegr {
 namespace Test {

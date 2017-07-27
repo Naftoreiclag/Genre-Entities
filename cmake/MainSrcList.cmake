@@ -22,7 +22,8 @@
 set(PGLOCAL_SOURCES_LIST "")
 foreach(fname 
 
-"debug/DebugAssertLuaBalance.cpp"
+"Main.cpp"
+"debug/Debug_Assert_Lua_Balance.cpp"
 "gensys/Compiler.cpp"
 "gensys/Gensys.cpp"
 "gensys/Interm_Types.cpp"
@@ -32,11 +33,10 @@ foreach(fname
 "gensys/Runtime.cpp"
 "gensys/Util.cpp"
 "logger/Logger.cpp"
-"main.cpp"
 "scheduler/Lua_Interf.cpp"
 "script/Lua_Interf_Util.cpp"
 "script/Script.cpp"
-"script/ScriptHelper.cpp"
+"script/Script_Helper.cpp"
 
 )
 list(APPEND PGLOCAL_SOURCES_LIST "${PGLOCAL_SOURCE_DIR}/pegr/${fname}")
