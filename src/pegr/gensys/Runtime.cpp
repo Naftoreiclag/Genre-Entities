@@ -55,6 +55,9 @@ Entity_Handle::operator bool() const {
 Entity_Handle::operator uint64_t() const {
     return get_id();
 }
+Entity* Entity_Handle::get_volatile_entity_ptr() const {
+    return get_entity();
+}
 
 Entity* Entity_Handle::get_entity() const {
     if (m_entity_id == -1) return nullptr;

@@ -394,7 +394,8 @@ int li_cview_mt_gc(lua_State* l) {
 int li_cview_mt_index(lua_State* l) {
     Cview& cview = *(static_cast<Cview*>(lua_touserdata(l, 1)));
     
-    if (!cview.m_ent.does_exist()) {
+    Runtime::Entity* ent_unsafe = cview.m_ent.get_volatile_entity_ptr();
+    if (!ent_unsafe) {
         return 0;
     }
     
@@ -418,7 +419,7 @@ int li_cview_mt_index(lua_State* l) {
     /* Get the component offset (where this component's data begins within the
      * aggregate arrays stored inside of every instance of this archetype)
      */
-    Runtime::Arche* arche = cview.m_ent->get_arche();
+    Runtime::Arche* arche = ent_unsafe->get_arche();
     assert(arche);
     assert(arche->m_comp_offsets.find(cview.m_comp) 
             != arche->m_comp_offsets.end());
@@ -441,25 +442,25 @@ int li_cview_mt_index(lua_State* l) {
                                     + member_signature.m_refer.m_byte_offset;
             switch(member_signature.m_type) {
                 case Runtime::Prim::Type::I32: {
-                    int32_t val = cview.m_ent->get_chunk()
+                    int32_t val = ent_unsafe->get_chunk()
                             .get_value<int32_t>(pod_offset);
                     lua_pushnumber(l, val);
                     return 1;
                 }
                 case Runtime::Prim::Type::I64: {
-                    int64_t val = cview.m_ent->get_chunk()
+                    int64_t val = ent_unsafe->get_chunk()
                             .get_value<int64_t>(pod_offset);
                     lua_pushnumber(l, val);
                     return 1;
                 }
                 case Runtime::Prim::Type::F32: {
-                    float val = cview.m_ent->get_chunk()
+                    float val = ent_unsafe->get_chunk()
                             .get_value<float>(pod_offset);
                     lua_pushnumber(l, val);
                     return 1;
                 }
                 case Runtime::Prim::Type::F64: {
-                    double val = cview.m_ent->get_chunk()
+                    double val = ent_unsafe->get_chunk()
                             .get_value<double>(pod_offset);
                     lua_pushnumber(l, val);
                     return 1;
@@ -472,7 +473,7 @@ int li_cview_mt_index(lua_State* l) {
         case Runtime::Prim::Type::STR: {
             std::size_t string_idx = component_offset.m_string_idx
                                     + member_signature.m_refer.m_index;
-            lua_pushstring(l, cview.m_ent->get_string(string_idx).c_str());
+            lua_pushstring(l, ent_unsafe->get_string(string_idx).c_str());
             return 1;
         }
         default: {
@@ -513,7 +514,8 @@ void check_write_compatible_prim_type(lua_State* l,
 int li_cview_mt_newindex(lua_State* l) {
     Cview& cview = *(static_cast<Cview*>(lua_touserdata(l, 1)));
     
-    if (!cview.m_ent.does_exist()) {
+    Runtime::Entity* ent_unsafe = cview.m_ent.get_volatile_entity_ptr();
+    if (!ent_unsafe) {
         return 0;
     }
     
@@ -540,7 +542,7 @@ int li_cview_mt_newindex(lua_State* l) {
     /* Get the component offset (where this component's data begins within the
      * aggregate arrays stored inside of every instance of this archetype)
      */
-    Runtime::Arche* arche = cview.m_ent->get_arche();
+    Runtime::Arche* arche = ent_unsafe->get_arche();
     assert(arche);
     assert(arche->m_comp_offsets.find(cview.m_comp) 
             != arche->m_comp_offsets.end());
@@ -566,28 +568,28 @@ int li_cview_mt_newindex(lua_State* l) {
                 case Runtime::Prim::Type::I32: {
                     assert(lua_isnumber(l, 3));
                     int32_t val = lua_tonumber(l, 3);
-                    cview.m_ent->get_chunk()
+                    ent_unsafe->get_chunk()
                             .set_value<int32_t>(pod_offset, val);
                     return 1;
                 }
                 case Runtime::Prim::Type::I64: {
                     assert(lua_isnumber(l, 3));
                     int64_t val = lua_tonumber(l, 3);
-                    cview.m_ent->get_chunk()
+                    ent_unsafe->get_chunk()
                             .set_value<int64_t>(pod_offset, val);
                     return 1;
                 }
                 case Runtime::Prim::Type::F32: {
                     assert(lua_isnumber(l, 3));
                     float val = lua_tonumber(l, 3);
-                    cview.m_ent->get_chunk()
+                    ent_unsafe->get_chunk()
                             .set_value<float>(pod_offset, val);
                     return 1;
                 }
                 case Runtime::Prim::Type::F64: {
                     assert(lua_isnumber(l, 3));
                     double val = lua_tonumber(l, 3);
-                    cview.m_ent->get_chunk()
+                    ent_unsafe->get_chunk()
                             .set_value<double>(pod_offset, val);
                     return 1;
                 }
@@ -602,7 +604,7 @@ int li_cview_mt_newindex(lua_State* l) {
                                     + member_signature.m_refer.m_index;
             std::size_t string_len;
             const char* string_data = lua_tolstring(l, 3, &string_len);
-            cview.m_ent->set_string(string_idx, 
+            ent_unsafe->set_string(string_idx, 
                     std::string(string_data, string_len));
             return 1;
         }

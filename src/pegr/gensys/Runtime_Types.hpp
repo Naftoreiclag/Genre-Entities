@@ -220,6 +220,30 @@ public:
     explicit operator bool() const;
     operator uint64_t() const;
     
+    /**
+     * @brief WARNING! THIS POINTER STAYS VALID ONLY UNDER VERY SPECIFIC 
+     * CONDITIONS! Segfaults ahoy!
+     * 
+     * This is only used when there are many calls to -> that are guaranteed
+     * to have the same return value over time. This should happen so long as
+     * no other entities are created or destroyed during that time.
+     * 
+     * On destruction:
+     *      It's possible that the soon-to-be-deleted entity swaps places with 
+     *      this one, causing the memory address for the entity to change.
+     * On creation:
+     *      Following vector iterator invalidation rules, if a resize occurs,
+     *      then all pointers are invalidated. A resize may occur when adding
+     *      an Entity (i.e. during creation)
+     * 
+     * In general, use this pointer only within the scope of single function,
+     * don't store this value in any long-term container, and do not use this
+     * value if there is any chance of entity creation or deletion during its
+     * usage. For example, don't use this if you are also calling an addon's
+     * function, which could create an entity.
+     */
+    Entity* get_volatile_entity_ptr() const;
+    
 private:
     uint64_t m_entity_id;
     
