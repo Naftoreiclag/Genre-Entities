@@ -73,9 +73,10 @@ pegr.add_archetype('cookie.at', {
     -- 0.315 foodiness (this is a VERY hearty cookie)
     food_value = {'f32', 0.315},
     
-    -- The "self" argument is an archetype-view on the entity
+    -- The "self" argument is still a component view. 
+    -- Use __arche to retrieve the underlying archetype
     on_eaten = {'func', function(self)
-      if food_value > 0.2 then
+      if self.food_value > 0.2 then
         print('This cookie sure is chewy!')
       else
         print('This cookie sure is sweet!')
@@ -110,9 +111,10 @@ pegr.add_archetype('pizza.at', {
     -- 0.63 foodiness (this is a deep dish)
     food_value = {'f32', 0.63},
     
-    -- The "self" argument is an archetype-view on the entity
+    -- The "self" argument is still a component view. 
+    -- Use __arche to retrieve the underlying archetype
     on_eaten = {'func', function(self)
-      if food_value > 0.2 then
+      if self.food_value > 0.2 then
         print('This pizza sure is juicy!')
       else
         print('This pizza sure is crispy!')
@@ -138,6 +140,11 @@ print('added bowling_ball.at')
     
 -------------------------------------------------------------------------------
 
+
+--[[ 
+-- Soon? static types
+essence = 'static i32',
+]]
 --[[
   Todo: allow for "super" types for primitives.
     For example, 'fany' can accept 'f32' or 'f64'
@@ -162,50 +169,57 @@ pegr.add_genre('food.g', {
     error.
   ]]
   interface = {
-    pos_x = {'f64', nil},
-    pos_y = {'f64', nil},
-    is_at_origin = {'func', nil},
-    vel_x = {'f64', nil},
-    vel_y = {'f64', nil},
-    is_stationary = {'func', nil},
-    food_value = {'f32', nil},
-    
-    --[[ 
-    -- Soon? static types
-    essence = {'static i32', 100},
-    ]]
-    
+    pos_x = 'f64',
+    pos_y = 'f64',
+    is_at_origin = 'func',
+    vel_x = 'f64',
+    vel_y = 'f64',
+    is_stationary = 'func',
+    food_value = 'f32',
+    on_eaten = 'func',
+  },
+  
+  -- This allows certain members to be optional. If any of those
+  -- members are missing, then 
+  default = {
     -- The "self" argument is a genre-view on the entity
-    on_eaten = {'func', function(self)
+    on_eaten = function(self)
       print(string.format(
           'I was eaten at x: %f y:%f', self.pos_x, self.pos_y))
-    end}
+    end,
   },
+  
+  -- Patterns are matched from the least index to the greatest.
+  -- Indices can be negative, zero, or decimal. The first pattern
+  -- to match is the one applied to the entity.
   patterns = {
     {
-      __from = 'position.c',
-      pos_x = 'x',
-      pos_y = 'y',
-      is_at_origin = 'is_at_origin',
+      matching = {
+        position = 'position.c',
+        velocity = 'velocity.c',
+        edible = 'edible.c',
+      },
+      aliases = {
+        pos_x = 'position.x',
+        pos_y = 'position.y',
+        is_at_origin = 'position.is_at_origin',
+        vel_x = 'velocity.x',
+        vel_y = 'velocity.y',
+        -- Note that aliasing functions requires wrapping it in a
+        -- c closure to replace the genre view with a cview
+        is_stationary = 'velocity.is_stationary',
+        on_eaten = 'edible.on_eaten',
+        food_value = 'edible.food_value',
+      },
+      
+      -- Static members can also be redefined. Functions take a
+      -- genre view of the entity.
+      static = {
+        on_eaten = function(self)
+          print('on_eaten called through a genre!')
+        end,
+      },
     },
-    {
-      __from = 'velocity.c',
-      vel_x = 'x',
-      vel_y = 'y',
-      is_stationary = 'is_stationary',
-    },
-    {
-      __from = 'edible.c',
-      on_eaten = 'on_eaten',
-      food_value = 'food_value',
-    },
-    
-    --[[ Functions can also be specified in this list, which accept
-    Archetypes as arguments and output a table mapping aliases to
-    Archetype members.
-    
-    maybe...?
-    ]]
   },
 })
 print('added food.g')
