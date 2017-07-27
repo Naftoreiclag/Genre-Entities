@@ -235,7 +235,6 @@ int li_entity_mt_gc(lua_State* l) {
     return 0;
 }
 
-/*
 // Failed experiment: caching cviews
 void push_entity_cview_cache(lua_State* l, Runtime::Entity_Handle& ent) {
     assert_balance(1);
@@ -270,7 +269,6 @@ void push_entity_cview_cache(lua_State* l, Runtime::Entity_Handle& ent) {
     }
     lua_remove(l, -2); // Remove the entity's generic lua table
 }
-*/
 
 int li_entity_mt_index(lua_State* l) {
     assert_balance(0, 1);
@@ -334,7 +332,6 @@ int li_entity_mt_index(lua_State* l) {
             return 0;
         }
         
-        /*
         // Failed experiment: caching cviews
         
         // Get the entity's cview cache, making it if it does not exist
@@ -374,12 +371,6 @@ int li_entity_mt_index(lua_State* l) {
             
         // Remove the cache
         lua_remove(l, -2); // -1
-        */
-        
-        Cview cview;
-        cview.m_comp = comp_iter->second;
-        cview.m_ent = ent;
-        push_cview(l, cview); // +1
         
         // Return the cview
         return 1;

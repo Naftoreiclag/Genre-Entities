@@ -242,7 +242,7 @@ extern const uint64_t ENT_FLAG_KILLED;
 extern const uint64_t ENT_FLAG_LUA_OWNED;
 extern const uint64_t ENT_FLAGS_DEFAULT;
 
-//extern const Script::Arridx ENT_LTABLE_CVIEW_CACHE;
+extern const Script::Arridx ENT_LTABLE_CVIEW_CACHE;
 
 /**
  * @class Entity
@@ -326,12 +326,12 @@ public:
      * @return m_generic_lua_table The extra lua data associated with this
      * entity. If no table exists, generate one.
      */
-    //Script::Regref get_lua_table();
+    Script::Regref get_lua_table();
     
     /**
      * @brief Drops the reference to the internal Lua table
      */
-    //void free_lua_table();
+    void free_lua_table();
 
     /**
      * @return m_strings, the array of strings for replacement instance data
@@ -425,7 +425,7 @@ private:
      * entity. This points to a Lua table with any such data, or nil if there
      * is no data.
      */
-    //Script::Unique_Regref m_generic_lua_table;
+    Script::Unique_Regref m_generic_lua_table;
     
 };
 
