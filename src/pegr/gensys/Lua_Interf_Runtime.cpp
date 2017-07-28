@@ -57,15 +57,15 @@ void* check_user_data(lua_State* l, int narg, Script::Regref metatable,
 }
 
 Runtime::Comp** argcheck_comp(lua_State* l, int idx) {
-    void* lua_mem = check_user_data(l, 1, n_comp_metatable, "pegr.Component");
+    void* lua_mem = check_user_data(l, idx, n_comp_metatable, "pegr.Component");
     return static_cast<Runtime::Comp**>(lua_mem);
 }
 Runtime::Arche** argcheck_archetype(lua_State* l, int idx) {
-    void* lua_mem = check_user_data(l, 1, n_arche_metatable, "pegr.Archetype");
+    void* lua_mem = check_user_data(l, idx, n_arche_metatable, "pegr.Archetype");
     return static_cast<Runtime::Arche**>(lua_mem);
 }
 Runtime::Entity_Handle* argcheck_entity(lua_State* l, int idx) {
-    void* lua_mem = check_user_data(l, 1, n_entity_metatable, "pegr.Entity");
+    void* lua_mem = check_user_data(l, idx, n_entity_metatable, "pegr.Entity");
     return static_cast<Runtime::Entity_Handle*>(lua_mem);
 }
 
@@ -409,11 +409,15 @@ int li_comp_mt_tostring(lua_State* l) {
 }
 
 int li_comp_mt_call(lua_State* l) {
+    
+    const int ARG_COMP = 1;
+    const int ARG_ENT = 2;
+    
     // The first argument is guaranteed to be the right type
     Runtime::Comp* comp = 
-            *(static_cast<Runtime::Comp**>(lua_touserdata(l, 1)));
+            *(static_cast<Runtime::Comp**>(lua_touserdata(l, ARG_COMP)));
     
-    Runtime::Entity_Handle ent_h = *argcheck_entity(l, 2);
+    Runtime::Entity_Handle ent_h = *argcheck_entity(l, ARG_ENT);
     
     Runtime::Entity* ent_unsafe = ent_h.get_volatile_entity_ptr();
     Runtime::Arche* arche = ent_unsafe->get_arche();
