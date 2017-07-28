@@ -53,6 +53,7 @@ const luaL_Reg n_setup_api_safe[] = {
     {"add_genre", li_add_genre},
     {"add_component", li_add_component},
     
+    {"find_component", li_find_comp},
     {"find_archetype", li_find_archetype},
     {"new_entity", li_new_entity},
     {"delete_entity", li_delete_entity},

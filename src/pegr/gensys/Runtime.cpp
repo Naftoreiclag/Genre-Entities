@@ -192,8 +192,12 @@ Script::Regref Entity::get_weak_table() {
     return m_generic_weak_table.get();
 }
 
-void Entity::free_lua_table() {
+void Entity::free_table() {
     m_generic_table.reset();
+}
+
+void Entity::free_weak_table() {
+    m_generic_weak_table.reset();
 }
 
 std::string Entity::get_string(std::size_t idx) const {

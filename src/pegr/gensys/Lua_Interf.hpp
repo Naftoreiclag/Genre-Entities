@@ -111,6 +111,7 @@ lua_Number entity_handle_to_lua_number(int64_t data);
 
 struct Cview {
     Runtime::Entity_Handle m_ent;
+    Runtime::Arche::Aggindex m_cached_aggidx;
     Runtime::Comp* m_comp;
 };
 
@@ -127,6 +128,12 @@ std::string to_string_comp(Runtime::Comp* comp);
 std::string to_string_arche(Runtime::Arche* arche);
 std::string to_string_entity(Runtime::Entity_Handle ent);
 std::string to_string_cview(Cview cview);
+
+/**
+ * @brief Basic tostring for Component
+ * 1: Comp (guaranteed)
+ */
+int li_comp_mt_tostring(lua_State* l);
 
 /**
  * @brief Attempts to get a component view for the provided entity. If this is
@@ -198,6 +205,12 @@ int li_cview_mt_newindex(lua_State* l);
  * 1: Cview (guaranteed)
  */
 int li_cview_mt_tostring(lua_State* l);
+
+/**
+ * @brief Find the component given by the resource ID.
+ * 1: String, resource id
+ */
+int li_find_comp(lua_State* l);
 
 /**
  * @brief Find the archetype given by the resource ID.

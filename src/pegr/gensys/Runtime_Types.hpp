@@ -83,6 +83,12 @@ struct Comp {
      * "component offset" as given by the entity's archetype.
      */
     std::map<Symbol, Prim> m_member_offsets;
+    
+    /* Cached Lua value to provide when accessed in a Lua script. The compiler
+     * does not populate this field automatically. A Lua userdata value is
+     * created and handed to the Comp upon the first access.
+     */
+    Script::Unique_Regref m_lua_userdata;
 };
 
 /**
@@ -338,7 +344,12 @@ public:
     /**
      * @brief Drops the reference to the internal Lua table
      */
-    void free_lua_table();
+    void free_table();
+    
+    /**
+     * @brief Drops the reference to the internal Lua table
+     */
+    void free_weak_table();
 
     /**
      * @return m_strings, the array of strings for replacement instance data
