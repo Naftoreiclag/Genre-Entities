@@ -88,16 +88,36 @@ Cview* arg_require_cview(lua_State* l, int idx) {
 void initialize_userdata_metatables(lua_State* l) {
     assert_balance(0);
     
+    /* add
+     * call
+     * concat
+     * div
+     * eq
+     * gc
+     * index
+     * le
+     * len
+     * lt
+     * mod
+     * mode
+     * mul
+     * newindex
+     * pow
+     * sub
+     * tostring
+     * unm
+     */
+    
     lua_newtable(l);
     Script::Pop_Guard popg(1);
     lua_pushvalue(l, -1);
     n_comp_metatable = Script::grab_reference();
     {
         const luaL_Reg metatable[] = {
-            {"__tostring", li_comp_mt_tostring},
+            {"__call", li_comp_mt_call},
             // No __eq, since there should only be one global pointer
             // No __gc, since this userdata is POD pointer
-            {"__call", li_comp_mt_call},
+            {"__tostring", li_comp_mt_tostring},
             
             // End of the list
             {nullptr, nullptr}
@@ -112,10 +132,10 @@ void initialize_userdata_metatables(lua_State* l) {
     n_arche_metatable = Script::grab_reference();
     {
         const luaL_Reg metatable[] = {
-            {"__tostring", li_arche_mt_tostring},
+            {"__call", li_arche_mt_call},
             // No __eq, since there should only be one global pointer
             // No __gc, since this userdata is POD pointer
-            {"__call", li_arche_mt_call},
+            {"__tostring", li_arche_mt_tostring},
             
             // End of the list
             {nullptr, nullptr}
@@ -147,8 +167,8 @@ void initialize_userdata_metatables(lua_State* l) {
     n_cview_metatable = Script::grab_reference();
     {
         const luaL_Reg metatable[] = {
-            {"__gc", li_cview_mt_gc},
             {"__eq", li_cview_mt_eq},
+            {"__gc", li_cview_mt_gc},
             {"__index", li_cview_mt_index},
             {"__newindex", li_cview_mt_newindex},
             {"__tostring", li_cview_mt_tostring},
@@ -417,14 +437,6 @@ void check_write_compatible_prim_type(lua_State* l,
     }
 }
 
-int li_comp_mt_tostring(lua_State* l) {
-    const int ARG_COMP = 1;
-    // The first argument is guaranteed to be the right type
-    Runtime::Comp* comp = 
-            *(static_cast<Runtime::Comp**>(lua_touserdata(l, ARG_COMP)));
-    lua_pushstring(l, to_string_comp(comp).c_str());
-    return 1;
-}
 int li_comp_mt_call(lua_State* l) {
     const int ARG_COMP = 1;
     const int ARG_ENT = 2;
@@ -455,15 +467,15 @@ int li_comp_mt_call(lua_State* l) {
     
     return 1;
 }
-
-int li_arche_mt_tostring(lua_State* l) {
-    const int ARG_ARCHE = 1;
+int li_comp_mt_tostring(lua_State* l) {
+    const int ARG_COMP = 1;
     // The first argument is guaranteed to be the right type
-    Runtime::Arche* arche = 
-            *(static_cast<Runtime::Arche**>(lua_touserdata(l, ARG_ARCHE)));
-    lua_pushstring(l, to_string_arche(arche).c_str());
+    Runtime::Comp* comp = 
+            *(static_cast<Runtime::Comp**>(lua_touserdata(l, ARG_COMP)));
+    lua_pushstring(l, to_string_comp(comp).c_str());
     return 1;
 }
+
 int li_arche_mt_call(lua_State* l) {
     const int ARG_ARCHE = 1;
     const int ARG_ENT = 2;
@@ -476,6 +488,14 @@ int li_arche_mt_call(lua_State* l) {
         return 1;
     }
     return 0;
+}
+int li_arche_mt_tostring(lua_State* l) {
+    const int ARG_ARCHE = 1;
+    // The first argument is guaranteed to be the right type
+    Runtime::Arche* arche = 
+            *(static_cast<Runtime::Arche**>(lua_touserdata(l, ARG_ARCHE)));
+    lua_pushstring(l, to_string_arche(arche).c_str());
+    return 1;
 }
 
 int li_entity_mt_gc(lua_State* l) {
@@ -573,12 +593,6 @@ int li_entity_mt_tostring(lua_State* l) {
     return 1;
 }
 
-int li_cview_mt_gc(lua_State* l) {
-    // The first argument is guaranteed to be the right type
-    Cview& cview = *(static_cast<Cview*>(lua_touserdata(l, 1)));
-    cview.Cview::~Cview();
-    return 0;
-}
 int li_cview_mt_eq(lua_State* l) {
     const int ARG_LHS = 1;
     const int ARG_RHS = 2;
@@ -591,6 +605,12 @@ int li_cview_mt_eq(lua_State* l) {
     
     lua_pushboolean(l, lhs.m_comp == rhs.m_comp && lhs.m_ent == rhs.m_ent);
     return 1;
+}
+int li_cview_mt_gc(lua_State* l) {
+    // The first argument is guaranteed to be the right type
+    Cview& cview = *(static_cast<Cview*>(lua_touserdata(l, 1)));
+    cview.Cview::~Cview();
+    return 0;
 }
 int li_cview_mt_index(lua_State* l) {
     Cview& cview = *(static_cast<Cview*>(lua_touserdata(l, 1)));

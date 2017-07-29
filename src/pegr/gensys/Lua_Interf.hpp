@@ -131,12 +131,6 @@ std::string to_string_entity(Runtime::Entity_Handle ent);
 std::string to_string_cview(Cview cview);
 
 /**
- * @brief Basic tostring for Component
- * 1: Comp (guaranteed)
- */
-int li_comp_mt_tostring(lua_State* l);
-
-/**
  * @brief Attempts to get a component view for the provided entity. If this is
  * impossible, return nil.
  * 1: Comp (guaranteed)
@@ -145,10 +139,10 @@ int li_comp_mt_tostring(lua_State* l);
 int li_comp_mt_call(lua_State* l);
 
 /**
- * @brief Basic tostring for Archetype
- * 1: Arche (guaranteed)
+ * @brief Basic tostring for Component
+ * 1: Comp (guaranteed)
  */
-int li_arche_mt_tostring(lua_State* l);
+int li_comp_mt_tostring(lua_State* l);
 
 /**
  * @brief Attempts to get an archetype view for the provided entity. If this is
@@ -156,6 +150,12 @@ int li_arche_mt_tostring(lua_State* l);
  * 1: Arche (guaranteed)
  */
 int li_arche_mt_call(lua_State* l);
+
+/**
+ * @brief Basic tostring for Archetype
+ * 1: Arche (guaranteed)
+ */
+int li_arche_mt_tostring(lua_State* l);
 
 /**
  * @brief Calls the deconstructor on the Entity_Handle. Also frees the entity
@@ -179,18 +179,18 @@ int li_entity_mt_index(lua_State* l);
 int li_entity_mt_tostring(lua_State* l);
 
 /**
- * @brief Calls the deconstructor on the Cview.
- * 1: Cview (guaranteed)
- */
-int li_cview_mt_gc(lua_State* l);
-
-/**
  * @brief Equality between cviews implies both point to the same entity and both
  * are using the same component as a view
  * 1: Cview (guaranteed)
  * 2: Cview (guaranteed)
  */
 int li_cview_mt_eq(lua_State* l);
+
+/**
+ * @brief Calls the deconstructor on the Cview.
+ * 1: Cview (guaranteed)
+ */
+int li_cview_mt_gc(lua_State* l);
 
 /**
  * @brief Returns by value the member held by the underlying entity provided
