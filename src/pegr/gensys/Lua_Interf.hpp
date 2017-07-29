@@ -115,22 +115,30 @@ struct Cview {
     Runtime::Comp* m_comp;
 };
 
+struct Genview {
+    Runtime::Entity_Handle m_ent;
+    Runtime::Genre* m_genre;
+};
+
 Runtime::Comp** arg_require_comp(lua_State* l, int idx);
 Runtime::Arche** arg_require_arche(lua_State* l, int idx);
 Runtime::Entity_Handle* arg_require_entity(lua_State* l, int idx);
 Cview* arg_require_cview(lua_State* l, int idx);
+Genview* arg_require_genview(lua_State* l, int idx);
 
 void push_comp_pointer(lua_State* l, Runtime::Comp* ptr);
 void push_arche_pointer(lua_State* l, Runtime::Arche* ptr);
 void push_genre_pointer(lua_State* l, Runtime::Genre* ptr);
 void push_entity_handle(lua_State* l, Runtime::Entity_Handle ent);
 void push_cview(lua_State* l, Cview ent);
+void push_genview(lua_State* l, Genview ent);
 
 std::string to_string_comp(Runtime::Comp* comp);
 std::string to_string_arche(Runtime::Arche* arche);
 std::string to_string_genre(Runtime::Genre* genre);
 std::string to_string_entity(Runtime::Entity_Handle ent);
 std::string to_string_cview(Cview cview);
+std::string to_string_genview(Genview genview);
 
 /**
  * @brief Attempts to get a component view for the provided entity. If this is
@@ -229,6 +237,18 @@ int li_cview_mt_newindex(lua_State* l);
  * 1: Cview (guaranteed)
  */
 int li_cview_mt_tostring(lua_State* l);
+
+/**
+ * @brief Calls the deconstructor on the Genview.
+ * 1: Genview (guaranteed)
+ */
+int li_genview_mt_gc(lua_State* l);
+
+/**
+ * @brief Basic tostring for Genview
+ * 1: Genview (guaranteed)
+ */
+int li_genview_mt_tostring(lua_State* l);
 
 /**
  * @brief Find the component given by the resource ID.

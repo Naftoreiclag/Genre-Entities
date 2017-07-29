@@ -25,6 +25,7 @@ Script::Regref n_arche_metatable = LUA_REFNIL;
 Script::Regref n_genre_metatable = LUA_REFNIL;
 Script::Regref n_entity_metatable = LUA_REFNIL;
 Script::Regref n_cview_metatable = LUA_REFNIL;
+Script::Regref n_genview_metatable = LUA_REFNIL;
 
 /**
  * @param num A 64 bit unsigned value
@@ -83,6 +84,11 @@ Cview* arg_require_cview(lua_State* l, int idx) {
     void* lua_mem = arg_require_userdata(l, idx, 
             n_cview_metatable, "pegr.Comp_View");
     return static_cast<Cview*>(lua_mem);
+}
+Genview* arg_require_genview(lua_State* l, int idx) {
+    void* lua_mem = arg_require_userdata(l, idx, 
+            n_genview_metatable, "pegr.Genre_View");
+    return static_cast<Genview*>(lua_mem);
 }
 
 void initialize_any_udatamt(lua_State* l, Script::Regref& dest, 
@@ -155,6 +161,16 @@ void initialize_udatamt_cview(lua_State* l) {
     };
     initialize_any_udatamt(l, n_cview_metatable, metatable);
 }
+void initialize_udatamt_genview(lua_State* l) {
+    const luaL_Reg metatable[] = {
+        {"__gc", li_genview_mt_gc},
+        {"__tostring", li_genview_mt_tostring},
+        
+        // End of the list
+        {nullptr, nullptr}
+    };
+    initialize_any_udatamt(l, n_genview_metatable, metatable);
+}
 
 void initialize_userdata_metatables(lua_State* l) {
     assert_balance(0);
@@ -184,6 +200,7 @@ void initialize_userdata_metatables(lua_State* l) {
     initialize_udatamt_genre(l);
     initialize_udatamt_entity(l);
     initialize_udatamt_cview(l);
+    initialize_udatamt_genview(l);
 }
 
 void cleanup_userdata_metatables(lua_State* l) {
@@ -192,6 +209,7 @@ void cleanup_userdata_metatables(lua_State* l) {
     Script::drop_reference(n_genre_metatable);
     Script::drop_reference(n_entity_metatable);
     Script::drop_reference(n_cview_metatable);
+    Script::drop_reference(n_genview_metatable);
 }
 
 template <typename Pointer_T>
@@ -231,6 +249,9 @@ void push_entity_handle(lua_State* l, Runtime::Entity_Handle ent) {
 }
 void push_cview(lua_State* l, Cview cview) {
     push_any_value<Cview>(l, cview, n_cview_metatable);
+}
+void push_genview(lua_State* l, Genview genview) {
+    push_any_value<Genview>(l, genview, n_genview_metatable);
 }
 
 Cview make_cview(Runtime::Comp* comp, Runtime::Entity* ent_unsafe) {
@@ -379,7 +400,6 @@ std::string to_string_comp(Runtime::Comp* comp) {
         << ">";
     return sss.str();
 }
-
 std::string to_string_arche(Runtime::Arche* arche) {
     std::stringstream sss;
     sss << "<Archetype @"
@@ -387,7 +407,6 @@ std::string to_string_arche(Runtime::Arche* arche) {
         << ">";
     return sss.str();
 }
-
 std::string to_string_genre(Runtime::Genre* genre) {
     std::stringstream sss;
     sss << "<Genre @"
@@ -395,7 +414,6 @@ std::string to_string_genre(Runtime::Genre* genre) {
         << ">";
     return sss.str();
 }
-
 std::string to_string_entity(Runtime::Entity_Handle ent) {
     std::stringstream sss;
     sss << "<Entity #"
@@ -409,7 +427,6 @@ std::string to_string_entity(Runtime::Entity_Handle ent) {
     sss << ">";
     return sss.str();
 }
-
 std::string to_string_cview(Cview cview) {
     std::stringstream sss;
     sss << "<Entity #"
@@ -417,6 +434,19 @@ std::string to_string_cview(Cview cview) {
     if (cview.m_ent.does_exist()) {
         sss << " thru Comp @"
             << cview.m_comp;
+    } else {
+        sss << " (deleted)";
+    }
+    sss << ">";
+    return sss.str();
+}
+std::string to_string_genview(Genview genview) {
+    std::stringstream sss;
+    sss << "<Entity #"
+        << bottom_52(genview.m_ent.get_id());
+    if (genview.m_ent.does_exist()) {
+        sss << " thru Genre @"
+            << genview.m_genre;
     } else {
         sss << " (deleted)";
     }
@@ -824,6 +854,19 @@ int li_cview_mt_tostring(lua_State* l) {
     // The first argument is guaranteed to be the right type
     Cview& cview = *(static_cast<Cview*>(lua_touserdata(l, 1)));
     lua_pushstring(l, to_string_cview(cview).c_str());
+    return 1;
+}
+
+int li_genview_mt_gc(lua_State* l) {
+    // The first argument is guaranteed to be the right type
+    Genview& genview = *(static_cast<Genview*>(lua_touserdata(l, 1)));
+    genview.Genview::~Genview();
+    return 0;
+}
+int li_genview_mt_tostring(lua_State* l) {
+    // The first argument is guaranteed to be the right type
+    Genview& genview = *(static_cast<Genview*>(lua_touserdata(l, 1)));
+    lua_pushstring(l, to_string_genview(genview).c_str());
     return 1;
 }
 
