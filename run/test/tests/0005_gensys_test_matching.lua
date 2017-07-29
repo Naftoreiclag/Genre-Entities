@@ -38,7 +38,15 @@ local cview = comp(ent)
 assert(cview, "Failed to match component")
 
 print('cview (match)', cview)
-
 print('cview (named)', ent.taste)
 
 assert(ent.taste == cview, "Unequal cviews!")
+
+local aview = arche(ent)
+
+assert(aview, "Failed to match archetype")
+
+print('aview (match)', aview)
+print('aview (basic)', ent)
+
+assert(ent == aview, "Unequal aviews!")
