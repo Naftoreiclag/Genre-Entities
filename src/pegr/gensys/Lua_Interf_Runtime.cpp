@@ -418,15 +418,14 @@ void check_write_compatible_prim_type(lua_State* l,
 }
 
 int li_comp_mt_tostring(lua_State* l) {
+    const int ARG_COMP = 1;
     // The first argument is guaranteed to be the right type
     Runtime::Comp* comp = 
-            *(static_cast<Runtime::Comp**>(lua_touserdata(l, 1)));
+            *(static_cast<Runtime::Comp**>(lua_touserdata(l, ARG_COMP)));
     lua_pushstring(l, to_string_comp(comp).c_str());
     return 1;
 }
-
 int li_comp_mt_call(lua_State* l) {
-    
     const int ARG_COMP = 1;
     const int ARG_ENT = 2;
     
@@ -458,17 +457,25 @@ int li_comp_mt_call(lua_State* l) {
 }
 
 int li_arche_mt_tostring(lua_State* l) {
+    const int ARG_ARCHE = 1;
     // The first argument is guaranteed to be the right type
     Runtime::Arche* arche = 
-            *(static_cast<Runtime::Arche**>(lua_touserdata(l, 1)));
+            *(static_cast<Runtime::Arche**>(lua_touserdata(l, ARG_ARCHE)));
     lua_pushstring(l, to_string_arche(arche).c_str());
     return 1;
 }
 int li_arche_mt_call(lua_State* l) {
+    const int ARG_ARCHE = 1;
+    const int ARG_ENT = 2;
     // The first argument is guaranteed to be the right type
     Runtime::Arche* arche = 
-            *(static_cast<Runtime::Arche**>(lua_touserdata(l, 1)));
-    
+            *(static_cast<Runtime::Arche**>(lua_touserdata(l, ARG_ARCHE)));
+    Runtime::Entity_Handle ent_h = *arg_require_entity(l, ARG_ENT);
+    if (ent_h->get_arche() == arche) {
+        lua_pushvalue(l, ARG_ENT);
+        return 1;
+    }
+    return 0;
 }
 
 int li_entity_mt_gc(lua_State* l) {
