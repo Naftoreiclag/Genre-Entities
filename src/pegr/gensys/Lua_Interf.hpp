@@ -122,11 +122,13 @@ Cview* arg_require_cview(lua_State* l, int idx);
 
 void push_comp_pointer(lua_State* l, Runtime::Comp* ptr);
 void push_arche_pointer(lua_State* l, Runtime::Arche* ptr);
+void push_genre_pointer(lua_State* l, Runtime::Genre* ptr);
 void push_entity_handle(lua_State* l, Runtime::Entity_Handle ent);
 void push_cview(lua_State* l, Cview ent);
 
 std::string to_string_comp(Runtime::Comp* comp);
 std::string to_string_arche(Runtime::Arche* arche);
+std::string to_string_genre(Runtime::Genre* genre);
 std::string to_string_entity(Runtime::Entity_Handle ent);
 std::string to_string_cview(Cview cview);
 
@@ -177,6 +179,19 @@ int li_entity_mt_index(lua_State* l);
  * 1: Entity (guaranteed)
  */
 int li_entity_mt_tostring(lua_State* l);
+
+/**
+ * @brief Attempts to get a genre view for the provided entity. If this is
+ * impossible, return nil.
+ * 1: Genre (guaranteed)
+ */
+int li_genre_mt_call(lua_State* l);
+
+/**
+ * @brief Basic tostring for Genre
+ * 1: Genre (guaranteed)
+ */
+int li_genre_mt_tostring(lua_State* l);
 
 /**
  * @brief Equality between cviews implies both point to the same entity and both

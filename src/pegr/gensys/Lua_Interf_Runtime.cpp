@@ -85,6 +85,77 @@ Cview* arg_require_cview(lua_State* l, int idx) {
     return static_cast<Cview*>(lua_mem);
 }
 
+void initialize_any_udatamt(lua_State* l, Script::Regref& dest, 
+        const luaL_Reg* metatable) {
+    assert_balance(0);
+    lua_newtable(l);
+    luaL_register(l, nullptr, metatable);
+    lua_pushvalue(l, -1);
+    dest = Script::grab_reference();
+    lua_pop(l, 1);
+}
+
+void initialize_udatamt_comp(lua_State* l) {
+    const luaL_Reg metatable[] = {
+        {"__call", li_comp_mt_call},
+        // No __eq, since there should only be one global pointer
+        // No __gc, since this userdata is POD pointer
+        {"__tostring", li_comp_mt_tostring},
+        
+        // End of the list
+        {nullptr, nullptr}
+    };
+    initialize_any_udatamt(l, n_comp_metatable, metatable);
+}
+void initialize_udatamt_arche(lua_State* l) {
+    const luaL_Reg metatable[] = {
+        {"__call", li_arche_mt_call},
+        // No __eq, since there should only be one global pointer
+        // No __gc, since this userdata is POD pointer
+        {"__tostring", li_arche_mt_tostring},
+        
+        // End of the list
+        {nullptr, nullptr}
+    };
+    initialize_any_udatamt(l, n_arche_metatable, metatable);
+}
+void initialize_udatamt_genre(lua_State* l) {
+    const luaL_Reg metatable[] = {
+        {"__call", li_genre_mt_call},
+        // No __eq, since there should only be one global pointer
+        // No __gc, since this userdata is POD pointer
+        {"__tostring", li_genre_mt_tostring},
+        
+        // End of the list
+        {nullptr, nullptr}
+    };
+    initialize_any_udatamt(l, n_genre_metatable, metatable);
+}
+void initialize_udatamt_entity(lua_State* l) {
+    const luaL_Reg metatable[] = {
+        {"__gc", li_entity_mt_gc},
+        {"__index", li_entity_mt_index},
+        {"__tostring", li_entity_mt_tostring},
+        
+        // End of the list
+        {nullptr, nullptr}
+    };
+    initialize_any_udatamt(l, n_entity_metatable, metatable);
+}
+void initialize_udatamt_cview(lua_State* l) {
+    const luaL_Reg metatable[] = {
+        {"__eq", li_cview_mt_eq},
+        {"__gc", li_cview_mt_gc},
+        {"__index", li_cview_mt_index},
+        {"__newindex", li_cview_mt_newindex},
+        {"__tostring", li_cview_mt_tostring},
+        
+        // End of the list
+        {nullptr, nullptr}
+    };
+    initialize_any_udatamt(l, n_cview_metatable, metatable);
+}
+
 void initialize_userdata_metatables(lua_State* l) {
     assert_balance(0);
     
@@ -107,78 +178,12 @@ void initialize_userdata_metatables(lua_State* l) {
      * tostring
      * unm
      */
-    
-    lua_newtable(l);
-    Script::Pop_Guard popg(1);
-    lua_pushvalue(l, -1);
-    n_comp_metatable = Script::grab_reference();
-    {
-        const luaL_Reg metatable[] = {
-            {"__call", li_comp_mt_call},
-            // No __eq, since there should only be one global pointer
-            // No __gc, since this userdata is POD pointer
-            {"__tostring", li_comp_mt_tostring},
-            
-            // End of the list
-            {nullptr, nullptr}
-        };
-        luaL_register(l, nullptr, metatable);
-    }
-    popg.pop(1);
-    
-    lua_newtable(l);
-    popg.on_push(1);
-    lua_pushvalue(l, -1);
-    n_arche_metatable = Script::grab_reference();
-    {
-        const luaL_Reg metatable[] = {
-            {"__call", li_arche_mt_call},
-            // No __eq, since there should only be one global pointer
-            // No __gc, since this userdata is POD pointer
-            {"__tostring", li_arche_mt_tostring},
-            
-            // End of the list
-            {nullptr, nullptr}
-        };
-        luaL_register(l, nullptr, metatable);
-    }
-    popg.pop(1);
-
-    lua_newtable(l);
-    popg.on_push(1);
-    lua_pushvalue(l, -1);
-    n_entity_metatable = Script::grab_reference();
-    {
-        const luaL_Reg metatable[] = {
-            {"__gc", li_entity_mt_gc},
-            {"__index", li_entity_mt_index},
-            {"__tostring", li_entity_mt_tostring},
-            
-            // End of the list
-            {nullptr, nullptr}
-        };
-        luaL_register(l, nullptr, metatable);
-    }
-    popg.pop(1);
-    
-    lua_newtable(l);
-    popg.on_push(1);
-    lua_pushvalue(l, -1);
-    n_cview_metatable = Script::grab_reference();
-    {
-        const luaL_Reg metatable[] = {
-            {"__eq", li_cview_mt_eq},
-            {"__gc", li_cview_mt_gc},
-            {"__index", li_cview_mt_index},
-            {"__newindex", li_cview_mt_newindex},
-            {"__tostring", li_cview_mt_tostring},
-            
-            // End of the list
-            {nullptr, nullptr}
-        };
-        luaL_register(l, nullptr, metatable);
-    }
-    popg.pop(1);
+     
+    initialize_udatamt_comp(l);
+    initialize_udatamt_arche(l);
+    initialize_udatamt_genre(l);
+    initialize_udatamt_entity(l);
+    initialize_udatamt_cview(l);
 }
 
 void cleanup_userdata_metatables(lua_State* l) {
@@ -217,6 +222,9 @@ void push_comp_pointer(lua_State* l, Runtime::Comp* ptr) {
 }
 void push_arche_pointer(lua_State* l, Runtime::Arche* ptr) {
     push_any_pointer<Runtime::Arche*>(l, ptr, n_arche_metatable);
+}
+void push_genre_pointer(lua_State* l, Runtime::Genre* ptr) {
+    push_any_pointer<Runtime::Genre*>(l, ptr, n_genre_metatable);
 }
 void push_entity_handle(lua_State* l, Runtime::Entity_Handle ent) {
     push_any_value<Runtime::Entity_Handle>(l, ent, n_entity_metatable);
@@ -380,6 +388,14 @@ std::string to_string_arche(Runtime::Arche* arche) {
     return sss.str();
 }
 
+std::string to_string_genre(Runtime::Genre* genre) {
+    std::stringstream sss;
+    sss << "<Genre @"
+        << genre
+        << ">";
+    return sss.str();
+}
+
 std::string to_string_entity(Runtime::Entity_Handle ent) {
     std::stringstream sss;
     sss << "<Entity #"
@@ -495,6 +511,25 @@ int li_arche_mt_tostring(lua_State* l) {
     Runtime::Arche* arche = 
             *(static_cast<Runtime::Arche**>(lua_touserdata(l, ARG_ARCHE)));
     lua_pushstring(l, to_string_arche(arche).c_str());
+    return 1;
+}
+
+int li_genre_mt_call(lua_State* l) {
+    const int ARG_GENRE = 1;
+    const int ARG_ENT = 2;
+    // The first argument is guaranteed to be the right type
+    Runtime::Genre* genre = 
+            *(static_cast<Runtime::Genre**>(lua_touserdata(l, ARG_GENRE)));
+            
+    // TODO
+    return 0;
+}
+int li_genre_mt_tostring(lua_State* l) {
+    const int ARG_GENRE = 1;
+    // The first argument is guaranteed to be the right type
+    Runtime::Genre* genre = 
+            *(static_cast<Runtime::Genre**>(lua_touserdata(l, ARG_GENRE)));
+    lua_pushstring(l, to_string_genre(genre).c_str());
     return 1;
 }
 

@@ -147,6 +147,11 @@ struct Arche {
  */
 struct Genre {
     
+    /* Cached Lua value to provide when accessed in a Lua script. The compiler
+     * does not populate this field automatically. A Lua userdata value is
+     * created and handed to the Genre upon the first access.
+     */
+    Script::Unique_Regref m_lua_userdata;
 };
 
 class Entity;
