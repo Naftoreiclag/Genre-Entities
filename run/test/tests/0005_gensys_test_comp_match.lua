@@ -29,12 +29,16 @@ assert(arche)
 assert(comp)
 assert(ent)
 
-print(arche)
-print(comp)
-print(ent)
+print('arche', arche)
+print('comp', comp)
+print('ent', ent)
 
 local cview = comp(ent)
 
 assert(cview, "Failed to match component")
 
-print(cview)
+print('cview (match)', cview)
+
+print('cview (named)', ent.taste)
+
+assert(ent.taste == cview, "Unequal cviews!")

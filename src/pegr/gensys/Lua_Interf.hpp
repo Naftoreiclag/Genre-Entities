@@ -115,9 +115,10 @@ struct Cview {
     Runtime::Comp* m_comp;
 };
 
-Runtime::Comp** argcheck_comp(lua_State* l, int idx);
-Runtime::Arche** argcheck_archetype(lua_State* l, int idx);
-Runtime::Entity_Handle* argcheck_entity(lua_State* l, int idx);
+Runtime::Comp** arg_require_comp(lua_State* l, int idx);
+Runtime::Arche** arg_require_arche(lua_State* l, int idx);
+Runtime::Entity_Handle* arg_require_entity(lua_State* l, int idx);
+Cview* arg_require_cview(lua_State* l, int idx);
 
 void push_comp_pointer(lua_State* l, Runtime::Comp* ptr);
 void push_arche_pointer(lua_State* l, Runtime::Arche* ptr);
@@ -182,6 +183,14 @@ int li_entity_mt_tostring(lua_State* l);
  * 1: Cview (guaranteed)
  */
 int li_cview_mt_gc(lua_State* l);
+
+/**
+ * @brief Equality between cviews implies both point to the same entity and both
+ * are using the same component as a view
+ * 1: Cview (guaranteed)
+ * 2: Cview (guaranteed)
+ */
+int li_cview_mt_eq(lua_State* l);
 
 /**
  * @brief Returns by value the member held by the underlying entity provided

@@ -39,34 +39,50 @@ lua_Number entity_handle_to_lua_number(uint64_t data) {
     return static_cast<lua_Number>(bottom_52(data));
 }
 
-void* check_user_data(lua_State* l, int narg, Script::Regref metatable,
-            const char* tname) {
-    void* ptr = lua_touserdata(l, narg);
+void* to_mt_userdata(lua_State* l, int idx, Script::Regref metatable) {
+    assert_balance(0);
+    void* ptr = lua_touserdata(l, idx);
     if (ptr) {
-        if (lua_getmetatable(l, narg)) {
-            Script::Pop_Guard pg(1);
+        if (lua_getmetatable(l, idx)) {
             Script::push_reference(metatable);
-            pg.on_push(1);
             if (lua_rawequal(l, -1, -2)) {
+                lua_pop(l, 2);
                 return ptr;
             }
+            lua_pop(l, 2);
         }
     }
-    luaL_typerror(l, narg, tname);
     return nullptr;
 }
 
-Runtime::Comp** argcheck_comp(lua_State* l, int idx) {
-    void* lua_mem = check_user_data(l, idx, n_comp_metatable, "pegr.Component");
+void* arg_require_userdata(lua_State* l, int narg, Script::Regref metatable,
+            const char* tname) {
+    void* retval = to_mt_userdata(l, narg, metatable);
+    if (!retval) {
+        luaL_typerror(l, narg, tname);
+    }
+    return retval;
+}
+
+Runtime::Comp** arg_require_comp(lua_State* l, int idx) {
+    void* lua_mem = arg_require_userdata(l, idx, 
+            n_comp_metatable, "pegr.Component");
     return static_cast<Runtime::Comp**>(lua_mem);
 }
-Runtime::Arche** argcheck_archetype(lua_State* l, int idx) {
-    void* lua_mem = check_user_data(l, idx, n_arche_metatable, "pegr.Archetype");
+Runtime::Arche** arg_require_arche(lua_State* l, int idx) {
+    void* lua_mem = arg_require_userdata(l, idx, 
+            n_arche_metatable, "pegr.Archetype");
     return static_cast<Runtime::Arche**>(lua_mem);
 }
-Runtime::Entity_Handle* argcheck_entity(lua_State* l, int idx) {
-    void* lua_mem = check_user_data(l, idx, n_entity_metatable, "pegr.Entity");
+Runtime::Entity_Handle* arg_require_entity(lua_State* l, int idx) {
+    void* lua_mem = arg_require_userdata(l, idx, 
+            n_entity_metatable, "pegr.Entity");
     return static_cast<Runtime::Entity_Handle*>(lua_mem);
+}
+Cview* arg_require_cview(lua_State* l, int idx) {
+    void* lua_mem = arg_require_userdata(l, idx, 
+            n_cview_metatable, "pegr.Comp_View");
+    return static_cast<Cview*>(lua_mem);
 }
 
 void initialize_userdata_metatables(lua_State* l) {
@@ -79,7 +95,7 @@ void initialize_userdata_metatables(lua_State* l) {
     {
         const luaL_Reg metatable[] = {
             {"__tostring", li_comp_mt_tostring},
-            // No __equal, since there should only be one global pointer
+            // No __eq, since there should only be one global pointer
             // No __gc, since this userdata is POD pointer
             {"__call", li_comp_mt_call},
             
@@ -97,7 +113,7 @@ void initialize_userdata_metatables(lua_State* l) {
     {
         const luaL_Reg metatable[] = {
             {"__tostring", li_arche_mt_tostring},
-            // No __equal, since there should only be one global pointer
+            // No __eq, since there should only be one global pointer
             // No __gc, since this userdata is POD pointer
             {"__call", li_arche_mt_call},
             
@@ -132,6 +148,7 @@ void initialize_userdata_metatables(lua_State* l) {
     {
         const luaL_Reg metatable[] = {
             {"__gc", li_cview_mt_gc},
+            {"__eq", li_cview_mt_eq},
             {"__index", li_cview_mt_index},
             {"__newindex", li_cview_mt_newindex},
             {"__tostring", li_cview_mt_tostring},
@@ -417,7 +434,7 @@ int li_comp_mt_call(lua_State* l) {
     Runtime::Comp* comp = 
             *(static_cast<Runtime::Comp**>(lua_touserdata(l, ARG_COMP)));
     
-    Runtime::Entity_Handle ent_h = *argcheck_entity(l, ARG_ENT);
+    Runtime::Entity_Handle ent_h = *arg_require_entity(l, ARG_ENT);
     
     Runtime::Entity* ent_unsafe = ent_h.get_volatile_entity_ptr();
     Runtime::Arche* arche = ent_unsafe->get_arche();
@@ -554,6 +571,19 @@ int li_cview_mt_gc(lua_State* l) {
     Cview& cview = *(static_cast<Cview*>(lua_touserdata(l, 1)));
     cview.Cview::~Cview();
     return 0;
+}
+int li_cview_mt_eq(lua_State* l) {
+    const int ARG_LHS = 1;
+    const int ARG_RHS = 2;
+    
+    // Both guaranteed: metatables are equal and both are userdata
+    Cview& lhs = *(static_cast<Cview*>(lua_touserdata(l, ARG_LHS)));
+    Cview& rhs = *(static_cast<Cview*>(lua_touserdata(l, ARG_RHS)));
+    
+    Logger::log()->info("compare, %v %v", lhs.m_comp, rhs.m_comp);
+    
+    lua_pushboolean(l, lhs.m_comp == rhs.m_comp && lhs.m_ent == rhs.m_ent);
+    return 1;
 }
 int li_cview_mt_index(lua_State* l) {
     Cview& cview = *(static_cast<Cview*>(lua_touserdata(l, 1)));
@@ -774,7 +804,7 @@ int li_new_entity(lua_State* l) {
         luaL_error(l, "new_entity is only available during execution");
     }
     
-    Runtime::Arche* arche = *argcheck_archetype(l, 1);
+    Runtime::Arche* arche = *arg_require_arche(l, 1);
     
     Runtime::Entity_Handle ent = Runtime::Entity::new_entity(arche);
     ent->set_flag_lua_owned(true);
@@ -790,7 +820,7 @@ int li_delete_entity(lua_State* l) {
         luaL_error(l, "delete_entity is only available during execution");
     }
     
-    Runtime::Entity_Handle ent = *argcheck_entity(l, 1);
+    Runtime::Entity_Handle ent = *arg_require_entity(l, 1);
     
     if (!(ent.does_exist() && ent->is_lua_owned())) {
         lua_pushboolean(l , false);
