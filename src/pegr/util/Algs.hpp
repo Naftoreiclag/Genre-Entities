@@ -22,6 +22,11 @@ std::vector<T> sorted(const std::vector<T>& vec) {
     return retval;
 }
 
+/**
+ * @brief Returns a vector of all the keys in common between the two maps
+ * @param map_a
+ * @param map_b
+ */
 template<typename K, typename U, typename V>
 std::vector<K> map_key_intersect(
         const std::map<K, U>& map_a, 
