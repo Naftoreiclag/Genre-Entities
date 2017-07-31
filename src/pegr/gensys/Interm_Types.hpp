@@ -111,20 +111,15 @@ struct Genre {
     struct Pattern {
         // Used only in error messages
         double m_error_msg_idx;
-
-        enum struct Type {
-            FROM_COMP,
-            FROM_GENRE,
-            FUNC
+        
+        struct Alias {
+            Comp* m_comp;
+            Symbol m_member;
         };
-
-        // TODO: unionize?
-        Type m_type;
-
-        Script::Shared_Regref m_function;
-        Comp* m_from_component;
-        Genre* m_from_genre;
-        std::map<Symbol, Symbol> m_aliases;
+        
+        std::map<Symbol, Comp*> m_matching;
+        std::map<Symbol, Alias> m_aliases;
+        std::map<Symbol, Prim> m_static_redefine;
     };
 
     std::vector<Pattern> m_patterns;

@@ -13,6 +13,7 @@
 namespace pegr {
 namespace Test {
 
+void test_0000_algs();
 void test_0000_memory_test();
 void test_0000_ptr_cast();
 void test_0001_flags();
@@ -46,6 +47,7 @@ const NamedTest n_tests[] = {
     
     {"Testing Framework", [](){}},
 
+    {"Util algs test", test_0000_algs},
     {"Memory Test", test_0000_memory_test},
     {"Pointer cast", test_0000_ptr_cast},
     {"Flag test", test_0001_flags},

@@ -5,6 +5,14 @@ print('init')
 -------------------------------------------------------------------------------
 
 pegr.add_component('position.c', {
+  --[[ Type must be specified explicitly. Default values are optional. Omitting
+    a default value (second element is nil or only giving a raw type string
+    instead of a table) requires all archetypes using this component to specify 
+    their own default value for entity instantiation.
+    
+    As such, the parser will attempt to parse it as a type string before
+    parsing it as a {type, value} pair
+  ]] 
   x = {'f64', 0},
   y = {'f64', 0},
   
@@ -19,6 +27,7 @@ pegr.add_component('position.c', {
       functions are implicitly static.
   
     The "self" argument is a component-view on the entity.
+    Of course, the name of the argument doesn't matter, only its position.
   ]]
   is_at_origin = {'func', function(self)
     return self.x == 0 and self.y == 0
@@ -53,7 +62,14 @@ pegr.add_archetype('cookie.at', {
     -- (Resource ids should never be keys)
     __is = 'position.c',
     
-    -- Start at (10, 10) for no particular reason
+    --[[ For archetype primitives, only the value must be specified explicitly,
+      as the type is already specified in the component. Any component member
+      did not specify a default value must be given a value by every archetype
+      which uses it.
+    
+      As such, the parser will attempt to parse it as a value literal before
+      parsing it as a {type, value} pair
+    ]]
     x = {'f64', 10},
     y = {'f64', 10},
   },
@@ -91,7 +107,7 @@ pegr.add_archetype('pizza.at', {
     -- (Resource ids should never be keys)
     __is = 'position.c',
     
-    -- Start at (30, 10) for no particular reason
+    -- Start at 30, 10 for no particular reason
     x = {'f64', 30},
     y = {'f64', 10},
   },
@@ -133,6 +149,7 @@ pegr.add_archetype('bowling_ball.at', {
   },
   body = {
     __is = 'circle.c',
+    
     radius = {'f32', 1.0},
   }
 })
@@ -169,24 +186,19 @@ pegr.add_genre('food.g', {
     error.
   ]]
   interface = {
-    pos_x = 'f64',
-    pos_y = 'f64',
-    is_at_origin = 'func',
-    vel_x = 'f64',
-    vel_y = 'f64',
-    is_stationary = 'func',
-    food_value = 'f32',
-    on_eaten = 'func',
-  },
+    pos_x = {'f64', nil},
+    pos_y = {'f64', nil},
+    is_at_origin = {'func', nil},
+    vel_x = {'f64', nil},
+    vel_y = {'f64', nil},
+    is_stationary = {'func', nil},
+    food_value = {'f32', nil},
   
-  -- This allows certain members to be optional. If any of those
-  -- members are missing, then 
-  default = {
-    -- The "self" argument is a genre-view on the entity
-    on_eaten = function(self)
+    -- Specifying a value for static members allows for optional members
+    on_eaten = {'func', function(self)
       print(string.format(
           'I was eaten at x: %f y:%f', self.pos_x, self.pos_y))
-    end,
+    end},
   },
   
   -- Patterns are matched from the least index to the greatest.
@@ -208,16 +220,15 @@ pegr.add_genre('food.g', {
         -- Note that aliasing functions requires wrapping it in a
         -- c closure to replace the genre view with a cview
         is_stationary = 'velocity.is_stationary',
-        on_eaten = 'edible.on_eaten',
         food_value = 'edible.food_value',
       },
       
       -- Static members can also be redefined. Functions take a
       -- genre view of the entity.
       static = {
-        on_eaten = function(self)
+        on_eaten = {'func', function(self)
           print('on_eaten called through a genre!')
-        end,
+        end},
       },
     },
   },

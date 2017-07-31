@@ -37,6 +37,7 @@ foreach(fname
 "script/Lua_Interf_Util.cpp"
 "script/Script.cpp"
 "script/Script_Helper.cpp"
+"test/Algs_Test.cpp"
 "test/Debug_Test.cpp"
 "test/Flag_Test.cpp"
 "test/Gensys_Intermediate_Test.cpp"

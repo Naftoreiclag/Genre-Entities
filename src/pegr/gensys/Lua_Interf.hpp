@@ -39,7 +39,7 @@ void cleanup();
  * [BALANCED]
  * @param table_idx the index of the input Lua value on the main stack
  * @param required_t the returned primitive must be of this type, else error.
- * If this is Type::UNKNOWN, then the returned primitive can be of any type
+ * If this is Type::UNKNOWN, then the returned primitive can be of any type.
  * @return a primitive value produced from the Lua value
  */
 Interm::Prim parse_primitive(int table_idx, 
