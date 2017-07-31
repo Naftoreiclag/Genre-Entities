@@ -1,6 +1,7 @@
 #include "pegr/gensys/Compiler.hpp"
 
 #include <map>
+#include <algorithm>
 #include <cassert>
 #include <sstream>
 #include <vector>
@@ -403,6 +404,8 @@ void compile_archetype_make_redundant_copies(Work::Space& workspace,
     for (auto iter : arche->m_runtime->m_comp_offsets) {
         arche->m_runtime->m_sorted_component_array.push_back(iter.first);
     }
+    assert(std::is_sorted(arche->m_runtime->m_sorted_component_array.begin(),
+                        arche->m_runtime->m_sorted_component_array.end()));
 }
 
 std::unique_ptr<Work::Arche> compile_archetype(Work::Space& workspace, 
@@ -428,8 +431,53 @@ std::unique_ptr<Work::Genre> compile_genre(Work::Space& workspace,
     std::unique_ptr<Work::Genre> genre = 
             std::make_unique<Work::Genre>(std::move(interm));
     
+    for (const Interm::Genre::Pattern& interm_pattern : 
+            genre->m_interm->m_patterns) {
+        
+        // Note that we may require components that are not read from.
+        Runtime::Genre::Pattern runtime_pattern;
+        for (auto locally_named_comp_iter : interm_pattern.m_matching) {
+            Interm::Comp* interm_comp = locally_named_comp_iter.second;
+            const auto& comp_iter = 
+                    workspace.get_comps_by_interm().find(interm_comp);
+            assert(comp_iter != workspace.get_comps_by_interm().end());
+            const Work::Comp* comp = comp_iter->second;
+            runtime_pattern.m_sorted_required_comps_specific
+                    .push_back(comp->m_runtime.get());
+        }
+        std::sort(runtime_pattern.m_sorted_required_comps_specific.begin(),
+                runtime_pattern.m_sorted_required_comps_specific.end());
+        
+        // Convert all the aliases
+        for (auto interm_alias_iter : interm_pattern.m_aliases) {
+            const Interm::Symbol& alias_symbol = interm_alias_iter.first;
+            const Interm::Genre::Pattern::Alias& interm_alias = 
+                    interm_alias_iter.second;
+            
+            const auto& comp_iter = 
+                    workspace.get_comps_by_interm().find(interm_alias.m_comp);
+            assert(comp_iter != workspace.get_comps_by_interm().end());
+            const Work::Comp* comp = comp_iter->second;
+            
+            Runtime::Genre::Pattern::Alias runtime_alias;
+            runtime_alias.m_comp = comp->m_runtime.get();
+            
+            auto prim_iter =
+                    runtime_alias.m_comp->m_member_offsets.find(
+                            interm_alias.m_member);
+            assert(prim_iter != runtime_alias.m_comp->m_member_offsets.end());
+            
+            runtime_alias.m_prim_copy = prim_iter->second;
+            
+            assert(runtime_pattern.m_aliases.find(alias_symbol) == 
+                    runtime_pattern.m_aliases.end());
+            runtime_pattern.m_aliases[alias_symbol] = runtime_alias;
+        }
+        
+        genre->m_runtime->m_patterns.push_back(runtime_pattern);
+    }
     
-    
+    // TODO: remove the intersection of all patterns
     
     return genre;
 }

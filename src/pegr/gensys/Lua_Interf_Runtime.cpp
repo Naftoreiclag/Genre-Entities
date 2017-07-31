@@ -559,6 +559,7 @@ int li_genre_mt_call(lua_State* l) {
     if (!Util::is_subset_of_presorted(
             genre->m_sorted_required_intersection, 
             arche->m_sorted_component_array)) {
+        //Logger::log()->info("no match");
         // Cannot possibly match
         return 0;
     }
@@ -573,10 +574,20 @@ int li_genre_mt_call(lua_State* l) {
             genview.m_ent = ent_h;
             genview.m_pattern = &pattern;
             
+            //Logger::log()->info("found");
             push_genview(l, genview);
             return 1;
         }
+        /*
+        for (Runtime::Comp* c : pattern.m_sorted_required_comps_specific) {
+            Logger::log()->info("require: %v", c);
+        }
+        for (Runtime::Comp* c : arche->m_sorted_component_array) {
+            Logger::log()->info("have: %v", c);
+        }
+        */
     }
+    //Logger::log()->info("no pattern");
     
     // No matches found
     return 0;
@@ -928,6 +939,23 @@ int li_find_archetype(lua_State* l) {
     }
     
     push_arche_pointer(l, arche);
+    
+    return 1;
+}
+int li_find_genre(lua_State* l) {
+    if (Gensys::get_global_state() != GlobalState::EXECUTABLE) {
+        luaL_error(l, "find_genre is only available during execution");
+    }
+    std::size_t strlen;
+    const char* strdata = luaL_checklstring(l, 1, &strlen);
+    std::string key(strdata, strlen);
+    
+    Runtime::Genre* genre = Runtime::find_genre(key);
+    if (!genre) {
+        return 0;
+    }
+    
+    push_genre_pointer(l, genre);
     
     return 1;
 }

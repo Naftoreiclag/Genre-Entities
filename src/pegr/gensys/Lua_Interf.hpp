@@ -263,6 +263,12 @@ int li_find_comp(lua_State* l);
 int li_find_archetype(lua_State* l);
 
 /**
+ * @brief Find the genre given by the resource ID.
+ * 1: String, resource id
+ */
+int li_find_genre(lua_State* l);
+
+/**
  * @brief Creates a new entity, initially memory-managed by Lua. Note that
  * such entities (memory managed by Lua) can only have one entity handle
  * userdata.

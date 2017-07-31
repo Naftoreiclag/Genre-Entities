@@ -220,16 +220,19 @@ pegr.add_genre('food.g', {
         -- Note that aliasing functions requires wrapping it in a
         -- c closure to replace the genre view with a cview
         is_stationary = 'velocity.is_stationary',
+        on_eaten = 'edible.on_eaten',
         food_value = 'edible.food_value',
       },
       
       -- Static members can also be redefined. Functions take a
       -- genre view of the entity.
+      --[[
       static = {
         on_eaten = {'func', function(self)
           print('on_eaten called through a genre!')
         end},
       },
+      ]]
     },
   },
 })
