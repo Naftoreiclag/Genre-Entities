@@ -81,3 +81,19 @@ assert(gview.taste == 'tangy')
 assert(gview.power == 5.0)
 assert(gview.pos_x == 628)
 assert(gview.pos_y == 271)
+
+gview.taste = 'fruity'
+gview.power = 512.0
+gview.pos_x = 12345
+gview.pos_y = 67890
+
+print(gview.taste)
+print(gview.power)
+print(gview.pos_x)
+print(gview.pos_y)
+
+assert(cview.flavor == 'fruity')
+assert(cview.strength == 512.0)
+assert(aview.location.x == 12345)
+assert(aview.location.y == 67890)
+
