@@ -1,6 +1,7 @@
 #include "pegr/gensys/Compiler.hpp"
 
 #include <map>
+#include <algorithm>
 #include <cassert>
 #include <sstream>
 #include <vector>
@@ -13,6 +14,7 @@
 namespace pegr {
 namespace Gensys {
 
+// Forward delcarations that let us access the runtime maps
 namespace Runtime {
 extern std::map<std::string, std::unique_ptr<Runtime::Comp> > n_runtime_comps;
 extern std::map<std::string, std::unique_ptr<Runtime::Arche> > n_runtime_arches;
@@ -57,7 +59,9 @@ struct Genre {
 /**
  * @class Space
  * @brief Where all the unique objects are stored during the compilation
- * prcess. Exists only during a call to compile()
+ * process. Exists only during a call to compile()
+ * 
+ * Ah, get it? Work::Space??
  */
 class Space {
 private:
@@ -257,6 +261,10 @@ std::unique_ptr<Work::Comp> compile_component(Work::Space& workspace,
     return comp;
 }
 
+/**
+ * @brief Constructs a new pod chunk for the archetype, exactly sizing it to
+ * be able to fit all of its components' pod chunks.
+ */
 void compile_archetype_resize_pod(Work::Space& workspace,
         std::unique_ptr<Work::Arche>& arche) {
     // Find the total size, which is the sum of the component POD chunk
@@ -272,6 +280,9 @@ void compile_archetype_resize_pod(Work::Space& workspace,
     arche->m_runtime->m_default_chunk.reset(Pod::new_pod_chunk(total_size));
 }
 
+/**
+ * @brief Fill the pod chunk made earlier with the components' pod chunks.
+ */
 void compile_archetype_fill_pod(Work::Space& workspace,
         std::unique_ptr<Work::Arche>& arche) {
 
@@ -322,6 +333,10 @@ void compile_archetype_fill_pod(Work::Space& workspace,
     assert(accumulated == arche->m_runtime->m_default_chunk.get().get_size());
 }
 
+/**
+ * @brief Copy strings from the component primitives, overwrite with new 
+ * defaults.
+ */
 void compile_archetype_store_strings(Work::Space& workspace,
         std::unique_ptr<Work::Arche>& arche) {
 
@@ -374,8 +389,23 @@ void compile_archetype_store_strings(Work::Space& workspace,
         accumulated += comp->m_strings.size();
     }
 
-    // This should have exactly filled the string vector
+    // Every string should have been copied
     assert(accumulated == arche->m_runtime->m_default_strings.size());
+}
+
+/**
+ * @brief Make "redundant" copies of already-compiled data to speed up later
+ * runtime usage.
+ */
+void compile_archetype_make_redundant_copies(Work::Space& workspace,
+        std::unique_ptr<Work::Arche>& arche) {
+    arche->m_runtime->m_sorted_component_array.reserve(
+            arche->m_runtime->m_comp_offsets.size());
+    for (auto iter : arche->m_runtime->m_comp_offsets) {
+        arche->m_runtime->m_sorted_component_array.push_back(iter.first);
+    }
+    assert(std::is_sorted(arche->m_runtime->m_sorted_component_array.begin(),
+                        arche->m_runtime->m_sorted_component_array.end()));
 }
 
 std::unique_ptr<Work::Arche> compile_archetype(Work::Space& workspace, 
@@ -389,6 +419,7 @@ std::unique_ptr<Work::Arche> compile_archetype(Work::Space& workspace,
     compile_archetype_resize_pod(workspace, arche);
     compile_archetype_fill_pod(workspace, arche);
     compile_archetype_store_strings(workspace, arche);
+    compile_archetype_make_redundant_copies(workspace, arche);
     
     return arche;
 }
@@ -400,8 +431,53 @@ std::unique_ptr<Work::Genre> compile_genre(Work::Space& workspace,
     std::unique_ptr<Work::Genre> genre = 
             std::make_unique<Work::Genre>(std::move(interm));
     
+    for (const Interm::Genre::Pattern& interm_pattern : 
+            genre->m_interm->m_patterns) {
+        
+        // Note that we may require components that are not read from.
+        Runtime::Genre::Pattern runtime_pattern;
+        for (auto locally_named_comp_iter : interm_pattern.m_matching) {
+            Interm::Comp* interm_comp = locally_named_comp_iter.second;
+            const auto& comp_iter = 
+                    workspace.get_comps_by_interm().find(interm_comp);
+            assert(comp_iter != workspace.get_comps_by_interm().end());
+            const Work::Comp* comp = comp_iter->second;
+            runtime_pattern.m_sorted_required_comps_specific
+                    .push_back(comp->m_runtime.get());
+        }
+        std::sort(runtime_pattern.m_sorted_required_comps_specific.begin(),
+                runtime_pattern.m_sorted_required_comps_specific.end());
+        
+        // Convert all the aliases
+        for (auto interm_alias_iter : interm_pattern.m_aliases) {
+            const Interm::Symbol& alias_symbol = interm_alias_iter.first;
+            const Interm::Genre::Pattern::Alias& interm_alias = 
+                    interm_alias_iter.second;
+            
+            const auto& comp_iter = 
+                    workspace.get_comps_by_interm().find(interm_alias.m_comp);
+            assert(comp_iter != workspace.get_comps_by_interm().end());
+            const Work::Comp* comp = comp_iter->second;
+            
+            Runtime::Genre::Pattern::Alias runtime_alias;
+            runtime_alias.m_comp = comp->m_runtime.get();
+            
+            auto prim_iter =
+                    runtime_alias.m_comp->m_member_offsets.find(
+                            interm_alias.m_member);
+            assert(prim_iter != runtime_alias.m_comp->m_member_offsets.end());
+            
+            runtime_alias.m_prim_copy = prim_iter->second;
+            
+            assert(runtime_pattern.m_aliases.find(alias_symbol) == 
+                    runtime_pattern.m_aliases.end());
+            runtime_pattern.m_aliases[alias_symbol] = runtime_alias;
+        }
+        
+        genre->m_runtime->m_patterns.push_back(runtime_pattern);
+    }
     
-    
+    // TODO: remove the intersection of all patterns
     
     return genre;
 }

@@ -13,6 +13,7 @@
 namespace pegr {
 namespace Test {
 
+void test_0000_algs();
 void test_0000_memory_test();
 void test_0000_ptr_cast();
 void test_0001_flags();
@@ -46,6 +47,7 @@ const NamedTest n_tests[] = {
     
     {"Testing Framework", [](){}},
 
+    {"Util algs test", test_0000_algs},
     {"Memory Test", test_0000_memory_test},
     {"Pointer cast", test_0000_ptr_cast},
     {"Flag test", test_0001_flags},
@@ -85,6 +87,8 @@ const NamedLuaTest n_lua_tests[] = {
     {"Simple sandbox test", "0001_sandbox_test.lua"},
     {"Basic Gensys test", "0005_gensys_test.lua"},
     {"Gensys test Lua garbage collection", "0005_gensys_test_gc.lua"},
+    {"Gensys genre matching", "0005_gensys_test_genres.lua"},
+    {"Gensys component matching", "0005_gensys_test_matching.lua"},
     {"Gensys string test", "0005_gensys_test_strings.lua"},
     
     // Sentinel

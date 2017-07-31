@@ -103,6 +103,15 @@ extern const char* GENERIC_TO_STRING_DEFAULT;
  */
 bool to_number_safe(int idx, lua_Number& num);
 
+/**
+ * @brief Pushes a new weak table onto the stack, with the provided mode:
+ * If the mode has the character "k", the keys are weak.
+ * If the mode has the character "v", the values are weak.
+ * [Balance is +1]
+ * @param mode
+ */
+void push_new_weak_table(const char* mode);
+
 } // namespace Helper
 } // namespace Script
 } // namespace pegr

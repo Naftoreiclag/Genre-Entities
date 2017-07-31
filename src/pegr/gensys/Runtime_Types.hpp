@@ -83,6 +83,12 @@ struct Comp {
      * "component offset" as given by the entity's archetype.
      */
     std::map<Symbol, Prim> m_member_offsets;
+    
+    /* Cached Lua value to provide when accessed in a Lua script. The compiler
+     * does not populate this field automatically. A Lua userdata value is
+     * created and handed to the Comp upon the first access.
+     */
+    Script::Unique_Regref m_lua_userdata;
 };
 
 /**
@@ -106,6 +112,12 @@ struct Arche {
          */
         std::size_t m_string_idx;
     };
+    
+    /* Merely an array of all of the components that this Archetype uses. To
+     * quickly check if an Archetype has every component in some set. (Genre
+     * matching, namely.)
+     */
+    std::vector<Comp*> m_sorted_component_array;
     
     /* Archetypes are composed of components. This maps the internal name to
      * the actual component.
@@ -140,33 +152,40 @@ struct Arche {
  * @class Genre
  */
 struct Genre {
-    /* These two maps produce a matrix of indices and byte offsets used to
-     * locate data inside of an archetypical entity.
-     * 
-     * The analogy is that the symbol identifies the column, while the
-     * archetype identifies the row. Every matching archetype has a row, and
-     * every valid symbol has a column. The intersection of the row and column
-     * give:
-     * - The prim type (given by the column)
-     * - Where to find the data (given by the )
-     */
-    
-    struct Column {
-        Prim::Type m_type;
-        std::size_t m_index;
+    struct Pattern {
+        // Used when trying to see if an archetype matches the pattern
+        std::vector<Comp*> m_sorted_required_comps_specific;
+        
+        struct Alias {
+            // Used to find the position in the archetype
+            Comp* m_comp;
+            
+            // Rather than copy the symbol names and then constantly lookup
+            // in m_comp's member_offsets map, just cache the value here.
+            Prim m_prim_copy;
+        };
+        std::map<Symbol, Alias> m_aliases;
+        
+        // TODO: static values
     };
     
-    typedef std::vector<Prim::Refer> Row;
-     
-    /* First, look into this array to convert symbol into an index into the
-     * vector in the map m_archetype_lookup:
+    /* This is a sorted list of all of the components that is used in every
+     * pattern. Essentially, if a component is lacking at least one of these
+     * components, then it cannot match any of the patterns. This also means
+     * that, to save space and time, the patterns' list of required components
+     * contain only those components specific to them (i.e. not in this list)
      */
-    std::map<Symbol, Column> m_member_indices;
-
-    /* Then, lookup the archetype in this map, use the index provided by
-     * m_member_indices and then 
+    std::vector<Comp*> m_sorted_required_intersection;
+    
+    /* The first matching pattern is used.
      */
-    std::map<Arche*, Row> m_archetype_lookup;
+    std::vector<Pattern> m_patterns;
+    
+    /* Cached Lua value to provide when accessed in a Lua script. The compiler
+     * does not populate this field automatically. A Lua userdata value is
+     * created and handed to the Genre upon the first access.
+     */
+    Script::Unique_Regref m_lua_userdata;
 };
 
 class Entity;
@@ -270,8 +289,6 @@ extern const uint64_t ENT_FLAG_KILLED;
 extern const uint64_t ENT_FLAG_LUA_OWNED;
 extern const uint64_t ENT_FLAGS_DEFAULT;
 
-extern const Script::Arridx ENT_LTABLE_CVIEW_CACHE;
-
 /**
  * @class Entity
  * 
@@ -351,15 +368,27 @@ public:
     Entity_Handle get_handle() const;
     
     /**
-     * @return m_generic_lua_table The extra lua data associated with this
+     * @return m_generic_table The extra Lua data associated with this
      * entity. If no table exists, generate one.
      */
-    Script::Regref get_lua_table();
+    Script::Regref get_table();
+    
+    /**
+     * @return m_generic_weak_table The extra Lua data associated with this
+     * entity. The values are weak. If no table exists, generate one.
+     * Commonly used for caching.
+     */
+    Script::Regref get_weak_table();
     
     /**
      * @brief Drops the reference to the internal Lua table
      */
-    void free_lua_table();
+    void free_table();
+    
+    /**
+     * @brief Drops the reference to the internal Lua table
+     */
+    void free_weak_table();
 
     /**
      * @return m_strings, the array of strings for replacement instance data
@@ -453,7 +482,12 @@ private:
      * entity. This points to a Lua table with any such data, or nil if there
      * is no data.
      */
-    Script::Unique_Regref m_generic_lua_table;
+    Script::Unique_Regref m_generic_table;
+    
+    /**
+     * @brief Same as m_generic_table, except the values are weak.
+     */
+    Script::Unique_Regref m_generic_weak_table;
     
 };
 

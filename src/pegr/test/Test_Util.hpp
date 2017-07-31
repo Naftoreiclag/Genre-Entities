@@ -7,6 +7,18 @@
 namespace pegr {
 namespace Test {
 
+template<typename E>
+std::ostream& operator <<(std::ostream& sss, const std::vector<E>& vec) {
+    const char* delim = "{";
+    for (auto&& iter : vec) {
+        sss << delim
+            << iter;
+        delim = ", ";
+    }
+    sss << '}';
+    return sss;
+}
+
 template<typename E, typename G>
 void verify_equals(E&& expected, G&& got, const char* msg = nullptr) {
     if (expected != got) {

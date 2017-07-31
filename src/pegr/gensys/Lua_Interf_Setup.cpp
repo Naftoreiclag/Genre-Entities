@@ -1,5 +1,6 @@
 #include "pegr/gensys/Lua_Interf.hpp"
 
+#include <algorithm>
 #include <stdexcept>
 #include <sstream>
 #include <cassert>
@@ -15,6 +16,7 @@
 #include "pegr/script/Script_Helper.hpp"
 #include "pegr/gensys/Gensys.hpp"
 #include "pegr/script/Lua_Interf_Util.hpp"
+#include "pegr/util/Algs.hpp"
 
 namespace pegr {
 namespace Gensys {
@@ -53,7 +55,9 @@ const luaL_Reg n_setup_api_safe[] = {
     {"add_genre", li_add_genre},
     {"add_component", li_add_component},
     
+    {"find_component", li_find_comp},
     {"find_archetype", li_find_archetype},
+    {"find_genre", li_find_genre},
     {"new_entity", li_new_entity},
     {"delete_entity", li_delete_entity},
     
@@ -421,6 +425,7 @@ std::unique_ptr<Interm::Arche> parse_archetype(int table_idx) {
     return arche;
 }
 
+/*
 void assert_pattern_source_has_symbol(
         const Interm::Genre::Pattern& pattern, const Interm::Symbol& symbol) {
     switch (pattern.m_type) {
@@ -458,140 +463,404 @@ void assert_pattern_source_has_symbol(
         }
     }
 }
+*/
 
-Interm::Genre::Pattern parse_genre_pattern(int value_idx) {
+std::map<Interm::Symbol, Interm::Comp*> 
+        parse_genre_pattern_matching(int value_idx) {
+    assert_balance(0);
+    lua_State* l = Script::get_lua_state();
+    value_idx = Script::absolute_idx(value_idx);
+
+    std::map<Interm::Symbol, Interm::Comp*> retval;
+    if (lua_istable(l, value_idx)) {
+        Script::Helper::for_pairs(value_idx, [&]()->bool {
+            Interm::Symbol comp_symbol = 
+                    assert_table_key_to_string(-2, 
+                            "Invalid key: ");
+            std::string comp_id = 
+                    assert_table_key_to_string(-1, 
+                            "Invalid ID: ");
+            Interm::Comp* comp = Compiler::get_staged_component(comp_id);
+            
+            if (!comp) {
+                std::stringstream sss;
+                sss << "No component with id [" << comp_id << ']';
+                throw std::runtime_error(sss.str());
+            }
+            
+            // Check that no symbol is duplicated
+            if (retval.find(comp_symbol) != retval.end()) {
+                std::stringstream sss;
+                sss << "Symbol \"" << comp_symbol
+                    << "\" occurs multiple times";
+                throw std::runtime_error(sss.str());
+            }
+            
+            retval[comp_symbol] = comp;
+            return true;
+        }, false);
+    } else if (lua_isnil(l, value_idx)) {
+        // Leave matching map empty
+    } else {
+        std::stringstream sss;
+        sss << "Incorrect type, "
+            << lua_typename(l, lua_type(l, value_idx));
+        throw std::runtime_error(sss.str());
+    }
+    return retval;
+}
+
+std::map<Interm::Symbol, Interm::Genre::Pattern::Alias> 
+        parse_genre_pattern_aliases(int value_idx, 
+            const std::map<Interm::Symbol, Interm::Comp*>& local_name_to_comp,
+            const std::map<Interm::Symbol, Interm::Prim>& genre_interface) {
+    assert_balance(0);
+    lua_State* l = Script::get_lua_state();
+    value_idx = Script::absolute_idx(value_idx);
+
+
+    std::map<Interm::Symbol, Interm::Genre::Pattern::Alias> retval;
+    if (lua_istable(l, value_idx)) {
+        Script::Helper::for_pairs(value_idx, [&]()->bool {
+            // Get the member this alias is meant to fulfill
+            Interm::Symbol dest_member_symb = 
+                    assert_table_key_to_string(-2, 
+                            "Invalid key: ");
+            
+            // Verify that the destination symbol exists in the interface
+            auto dest_member_iter = genre_interface.find(dest_member_symb);
+            if (dest_member_iter == genre_interface.end()) {
+                std::stringstream sss;
+                sss << "Symbol \"" << dest_member_symb
+                    << "\" not in interface";
+                throw std::runtime_error(sss.str());
+            }
+            const Interm::Prim& dest_prim = dest_member_iter->second;
+            
+            // Get the reference to the data source used for that member
+            std::string alias_str = 
+                    assert_table_key_to_string(-1, 
+                            "Invalid alias: ");
+            
+            // The name used in the "matching" table
+            std::string local_comp_name;
+            
+            // The named member in the source component
+            std::string source_member_symb;
+            
+            // Attempt to separate the alias_str into the component and member
+            {
+                std::size_t dot_idx = alias_str.find('.');
+                if (dot_idx == std::string::npos) {
+                    std::stringstream sss;
+                    sss << "Could not separate component and member in alias "
+                            "(missing \".\"): "
+                        << alias_str;
+                    throw std::runtime_error(sss.str());
+                }
+                local_comp_name = alias_str.substr(0, dot_idx);
+                source_member_symb = alias_str.substr(dot_idx + 1);
+            }
+            
+            // Find the comp specified by the local name
+            auto local_names_iter = local_name_to_comp.find(local_comp_name);
+            if (local_names_iter == local_name_to_comp.end()) {
+                std::stringstream sss;
+                sss << "Component \"" << local_comp_name
+                    << "\" is unspecified (missing from \"matching\" table)";
+                throw std::runtime_error(sss.str());
+            }
+            
+            // The comp to pull the data from
+            Interm::Comp* source_comp = local_names_iter->second;
+            
+            assert(source_comp);
+            
+            // Verify that the source member exists in the source component
+            const auto source_member_iter = 
+                    source_comp->m_members.find(source_member_symb);
+            if (source_member_iter == source_comp->m_members.end()) {
+                std::stringstream sss;
+                sss << "Could not find member \""
+                    << source_member_symb
+                    << "\" in component \"" << source_comp->m_error_msg_name
+                    << '"';
+                throw std::runtime_error(sss.str());
+            }
+            
+            /* Verify that the source and destination member prims have the
+             * same type.
+             */
+            const Interm::Prim& source_prim = source_member_iter->second;
+            if (source_prim.get_type() != dest_prim.get_type()) {
+                std::stringstream sss;
+                sss << "Type mismatch, expected "
+                    << Interm::prim_type_to_debug_str(dest_prim.get_type())
+                    << ", got "
+                    << Interm::prim_type_to_debug_str(source_prim.get_type());
+                throw std::runtime_error(sss.str());
+            }
+            
+            // Construct the alias
+            Interm::Genre::Pattern::Alias alias;
+            alias.m_comp = source_comp;
+            alias.m_member = source_member_symb;
+            
+            // Check that no symbol is duplicated
+            if (retval.find(dest_member_symb) != retval.end()) {
+                std::stringstream sss;
+                sss << "Symbol \"" << dest_member_symb
+                    << "\" occurs multiple times";
+                throw std::runtime_error(sss.str());
+            }
+            
+            retval[dest_member_symb] = alias;
+            return true;
+        }, false);
+    } else if (lua_isnil(l, value_idx)) {
+        // Leave matching map empty
+    } else {
+        std::stringstream sss;
+        sss << "Incorrect type, "
+            << lua_typename(l, lua_type(l, value_idx));
+        throw std::runtime_error(sss.str());
+    }
+    return retval;
+}
+
+std::map<Interm::Symbol, Interm::Prim>
+        parse_genre_pattern_static(int value_idx,
+            const std::map<Interm::Symbol, Interm::Prim>& genre_interface) {
     assert_balance(0);
     lua_State* l = Script::get_lua_state();
     
-    int value_type = lua_type(l, value_idx);
-    switch (value_type) {
-        
-        // Pattern is a table
-        case LUA_TTABLE: {
-            Interm::Genre::Pattern pattern;
-            lua_getfield(l, value_idx, "__from");
-            Script::Pop_Guard pop_guard(1);
-            if (lua_isnil(l, -1)) {
-                throw std::runtime_error(
-                        "\"__from\" field missing from pattern table");
+    value_idx = Script::absolute_idx(value_idx);
+    std::map<Interm::Symbol, Interm::Prim> retval;
+    if (lua_istable(l, value_idx)) {
+        Script::Helper::for_pairs(value_idx, [&]()->bool {
+            // Get the member this alias is meant to fulfill
+            Interm::Symbol dest_member_symb = 
+                    assert_table_key_to_string(-2, 
+                            "Invalid key: ");
+            
+            // Verify that the destination symbol exists in the interface
+            auto dest_member_iter = genre_interface.find(dest_member_symb);
+            
+            if (dest_member_iter == genre_interface.end()) {
+                std::stringstream sss;
+                sss << "Symbol \"" << dest_member_symb
+                    << "\" not in interface";
+                throw std::runtime_error(sss.str());
+            }
+            const Interm::Prim& dest_prim = dest_member_iter->second;
+            
+            // Parse the source
+            Interm::Prim source_prim;
+            try {
+                source_prim = parse_primitive(-1);
+            }
+            catch (std::runtime_error e) {
+                std::stringstream sss;
+                sss << "Cannot parse primitive for static value \""
+                    << dest_member_symb << "\": " << e.what();
+                throw std::runtime_error(sss.str());
             }
             
-            std::string id;
+            /* Verify that the source and destination member prims have the
+             * same type.
+             */
+            if (source_prim.get_type() != dest_prim.get_type()) {
+                std::stringstream sss;
+                sss << "Type mismatch, expected "
+                    << Interm::prim_type_to_debug_str(dest_prim.get_type())
+                    << ", got "
+                    << Interm::prim_type_to_debug_str(source_prim.get_type());
+                throw std::runtime_error(sss.str());
+            }
+            
+            // Check that no symbol is duplicated
+            if (retval.find(dest_member_symb) != retval.end()) {
+                std::stringstream sss;
+                sss << "Symbol \"" << dest_member_symb
+                    << "\" occurs multiple times";
+                throw std::runtime_error(sss.str());
+            }
+            
+            retval[dest_member_symb] = source_prim;
+            return true;
+        }, false);
+    } else if (lua_isnil(l, value_idx)) {
+        // Leave matching map empty
+    } else {
+        std::stringstream sss;
+        sss << "Cannot be type, "
+            << lua_typename(l, lua_type(l, value_idx));
+        throw std::runtime_error(sss.str());
+    }
+    
+    return retval;
+}
+
+Interm::Genre::Pattern parse_genre_pattern(int value_idx,
+        const std::map<Interm::Symbol, Interm::Prim>& genre_interface) {
+    assert_balance(0);
+    lua_State* l = Script::get_lua_state();
+    
+    value_idx = Script::absolute_idx(value_idx);
+    
+    if (lua_istable(l, value_idx)) {
+        Interm::Genre::Pattern pattern;
+        
+        {
+            lua_getfield(l, value_idx, "matching");
+            Script::Pop_Guard pop_guard(1);
             try {
-                id = Script::Helper::to_string(-1);
+                pattern.m_matching = 
+                        std::move(parse_genre_pattern_matching(-1));
             } catch (std::runtime_error e) {
                 std::stringstream sss;
-                sss << "Could not retrieve string from \"__from\" field: "
+                sss << "Error in \"matching\" field: "
                     << e.what();
                 throw std::runtime_error(sss.str());
             }
-            pop_guard.pop(1); // Remove __from string
-            
-            // Determine what we are drawing data from
-            switch (Compiler::get_staged_type(id)) {
-                // Object does not exist
-                case Compiler::ObjectType::NOT_FOUND: {
-                    std::stringstream sss;
-                    sss << "No component or genre with id ["
-                        << id << ']';
-                    throw std::runtime_error(sss.str());
-                }
-                // Object is an archetype (not allowed)
-                case Compiler::ObjectType::ARCHETYPE: {
-                    std::stringstream sss;
-                    sss << "Genres cannot depend on the existence of "
-                            "particular archetypes, such as ["
-                        << id << ']';
-                    throw std::runtime_error(sss.str());
-                }
-                // Object is a component
-                case Compiler::ObjectType::COMP_DEF: {
-                    pattern.m_type = 
-                            Interm::Genre::Pattern::Type::FROM_COMP;
-                    pattern.m_from_component = 
-                            Compiler::get_staged_component(id);
-                    assert(pattern.m_from_component);
-                    break;
-                }
-                // Object is a genre
-                case Compiler::ObjectType::GENRE: {
-                    pattern.m_type = 
-                            Interm::Genre::Pattern::Type::FROM_GENRE;
-                    pattern.m_from_genre =
-                            Compiler::get_staged_genre(id);
-                    assert(pattern.m_from_genre);
-                    break;
-                }
-                // All cases should have been handled already
-                default: {
-                    assert(false);
-                    break;
-                }
+        }
+        
+        {
+            lua_getfield(l, value_idx, "aliases");
+            Script::Pop_Guard pop_guard(1);
+            try {
+                pattern.m_aliases = 
+                        std::move(parse_genre_pattern_aliases(-1,
+                                pattern.m_matching,
+                                genre_interface));
+            } catch (std::runtime_error e) {
+                std::stringstream sss;
+                sss << "Error in \"aliases\" field: "
+                    << e.what();
+                throw std::runtime_error(sss.str());
             }
-            
-            // Store and check all provided aliases
-            Script::Helper::for_pairs(value_idx, [&]()->bool {
-                Interm::Symbol alias_symbol = 
-                        assert_table_key_to_string(-2, 
-                                "Invalid key in pattern table: ");
-                
-                // Ignore the from key
-                if (alias_symbol == "__from") {
-                    return true;
-                }
-                
-                // Check that no symbol is duplicated
-                if (pattern.m_aliases.find(alias_symbol) 
-                        != pattern.m_aliases.end()) {
-                    std::stringstream sss;
-                    sss << "Symbol \"" << alias_symbol
-                        << "\" occurs multiple times in pattern table";
-                    throw std::runtime_error(sss.str());
-                }
-                
-                std::string source_symbol;
-                try {
-                    source_symbol = Script::Helper::to_string(-1);
-                } catch (std::runtime_error e) {
-                    std::stringstream sss;
-                    sss << "Could not retrieve string from alias \""
-                        << alias_symbol
-                        << "\": "
-                        << e.what();
-                    throw std::runtime_error(sss.str());
-                }
-                
-                // Ensure that the source is available in that resource
-                assert_pattern_source_has_symbol(pattern, source_symbol);
-                
-                pattern.m_aliases[alias_symbol] = std::move(source_symbol);
-                
-                return true;
-            }, false);
-            
-            
-            return pattern;
         }
         
-        // Pattern is a function
-        case LUA_TFUNCTION: {
-            Interm::Genre::Pattern pattern;
-            pattern.m_type = Interm::Genre::Pattern::Type::FUNC;
-            lua_pushvalue(l, value_idx);
-            
-            // No need to do a function type check, that was done already
-            
-            pattern.m_function = Script::make_shared(Script::grab_reference());
-            return pattern;
+        {
+            lua_getfield(l, value_idx, "static");
+            Script::Pop_Guard pop_guard(1);
+            try {
+                pattern.m_static_redefine = 
+                        std::move(parse_genre_pattern_static(-1,
+                                genre_interface));
+            } catch (std::runtime_error e) {
+                std::stringstream sss;
+                sss << "Error in \"static\" field: "
+                    << e.what();
+                throw std::runtime_error(sss.str());
+            }
         }
         
-        // Pattern is a ???
-        default: {
-            std::stringstream sss;
-            sss << "Pattern cannot be type " << lua_typename(l, value_type);
-            throw std::runtime_error(sss.str());
+        // More sanity checking:
+        
+        // Verify that there is no overlap between static and alias lists
+        {
+            std::vector<Interm::Symbol> intersect = Util::map_key_intersect(
+                    pattern.m_aliases, pattern.m_static_redefine);
+            if (intersect.size() > 0) {
+                std::stringstream sss;
+                sss << "There are "
+                    << intersect.size()
+                    << " interface members are present in both the "
+                        "\"aliases\" and \"static\" tables: ";
+                const char* delim = "(";
+                for (const Interm::Symbol& symb : intersect) {
+                    sss << delim << symb;
+                    delim = ", ";
+                }
+                sss << ')';
+                throw std::runtime_error(sss.str());
+            }
         }
+        
+        return pattern;
+    } else {
+        std::stringstream sss;
+        sss << "Cannot be type "
+            << lua_typename(l, lua_type(l, value_idx));
+        throw std::runtime_error(sss.str());
     }
+}
+
+std::map<Interm::Symbol, Interm::Prim> parse_genre_interface(int table_idx) {
+    assert_balance(0);
+    lua_State* l = Script::get_lua_state();
+    table_idx = Script::absolute_idx(table_idx);
+    std::map<Interm::Symbol, Interm::Prim> retval;
+    if (lua_istable(l, table_idx)) {
+        Script::Helper::for_pairs(-1, [&]()->bool {
+            Interm::Symbol symbol = 
+                    assert_table_key_to_string(-2, 
+                            "Invalid key: ");
+            Interm::Prim value;
+            try {
+                value = parse_primitive(-1);
+            }
+            catch (std::runtime_error e) {
+                std::stringstream sss;
+                sss << "Cannot parse primitive for member \""
+                    << symbol << "\": " << e.what();
+                throw std::runtime_error(sss.str());
+            }
+            // Check that no symbol is duplicated
+            if (retval.find(symbol) != retval.end()) {
+                std::stringstream sss;
+                sss << "Key \"" << symbol
+                    << "\" occurs multiple times";
+                throw std::runtime_error(sss.str());
+            }
+            retval[symbol] = std::move(value);
+            return true;
+        }, false);
+    } else if (lua_isnil(l, table_idx)) {
+        // Nothing
+    } else {
+        std::stringstream sss;
+        sss << "Cannot be type, "
+            << lua_typename(l, lua_type(l, table_idx));
+        throw std::runtime_error(sss.str());
+    }
+    return retval;
+}
+
+std::vector<Interm::Genre::Pattern> parse_genre_pattern_list(int list_idx,
+        const std::map<Interm::Symbol, Interm::Prim>& genre_interface) {
+    assert_balance(0);
+    lua_State* l = Script::get_lua_state();
+    list_idx = Script::absolute_idx(list_idx);
+    std::vector<Interm::Genre::Pattern> retval;
+    
+    if (lua_istable(l, list_idx)) {
+        Script::Helper::for_number_pairs_sorted(-1, [&]()->bool {
+            lua_Number idx = lua_tonumber(l, -2);
+            try {
+                Interm::Genre::Pattern pattern = 
+                        std::move(parse_genre_pattern(-1, genre_interface));
+                pattern.m_error_msg_idx = idx;
+                retval.emplace_back(std::move(pattern));
+            }
+            catch (std::runtime_error e) {
+                std::stringstream sss;
+                sss << "Cannot parse pattern #" << idx << ": " << e.what();
+                throw std::runtime_error(sss.str());
+            }
+            return true;
+        }, false);
+    } else if (lua_isnil(l, list_idx)) {
+        // Nothing
+    } else {
+        std::stringstream sss;
+        sss << "Cannot be type, "
+            << lua_typename(l, lua_type(l, list_idx));
+        throw std::runtime_error(sss.str());
+    }
+    
+    return retval;
 }
 
 std::unique_ptr<Interm::Genre> parse_genre(int table_idx) {
@@ -602,49 +871,27 @@ std::unique_ptr<Interm::Genre> parse_genre(int table_idx) {
     std::unique_ptr<Interm::Genre> genre = std::make_unique<Interm::Genre>();
     lua_getfield(l, table_idx, "interface"); // Field guaranteed to exist
     Script::Pop_Guard pop_guard(1);
-    Script::Helper::for_pairs(-1, [&]()->bool {
-        Interm::Symbol symbol = 
-                assert_table_key_to_string(-2, 
-                        "Invalid key in interface table: ");
-        Interm::Prim value;
-        try {
-            value = parse_primitive(-1);
-        }
-        catch (std::runtime_error e) {
-            std::stringstream sss;
-            sss << "Cannot parse interface's default primitive for member \""
-                << symbol << "\": " << e.what();
-            throw std::runtime_error(sss.str());
-        }
-        // Check that no symbol is duplicated (possible through integer keys)
-        if (genre->m_interface.find(symbol) != genre->m_interface.end()) {
-            std::stringstream sss;
-            sss << "Symbol \"" << symbol
-                << "\" occurs multiple times in interface table";
-            throw std::runtime_error(sss.str());
-        }
-        genre->m_interface[symbol] = std::move(value);
-        return true;
-    }, false);
+    try {
+        genre->m_interface = std::move(parse_genre_interface(-1));
+    } catch (std::runtime_error e) {
+        std::stringstream sss;
+        sss << "Cannot parse interface: "
+            << e.what();
+        throw std::runtime_error(e);
+    }
     pop_guard.pop(1);
     
-    lua_getfield(l, table_idx, "patterns"); // Field guaranteed to exist
+    lua_getfield(l, table_idx, "patterns");
     pop_guard.on_push(1);
-    
-    Script::Helper::for_number_pairs_sorted(-1, [&]()->bool {
-        lua_Number idx = lua_tonumber(l, -2);
-        try {
-            Interm::Genre::Pattern pattern = parse_genre_pattern(-1);
-            pattern.m_error_msg_idx = idx;
-            genre->m_patterns.push_back(pattern);
-        }
-        catch (std::runtime_error e) {
-            std::stringstream sss;
-            sss << "Cannot parse pattern #" << idx << ": " << e.what();
-            throw std::runtime_error(sss.str());
-        }
-        return true;
-    }, false);
+    try {
+        genre->m_patterns = 
+                std::move(parse_genre_pattern_list(-1, genre->m_interface));
+    } catch (std::runtime_error e) {
+        std::stringstream sss;
+        sss << "Cannot parse pattern list: "
+            << e.what();
+        throw std::runtime_error(e);
+    }
     pop_guard.pop(1);
     
     return genre;
@@ -772,30 +1019,11 @@ int li_edit_archetype(lua_State* l) {
     return 1;
 }
 
-/**
- * @brief Ensures that all invariants are satisfied for a genre table
- * The table is at position -1 on the stack
- * @param l
- */
-void fix_genre_table(lua_State* l) {
-    assert_balance(0);
-    for (const char* key : {"interface", "patterns"}) {
-        lua_getfield(l, -1, key);
-        if (!lua_istable(l, -1)) {
-            lua_pop(l, 1);
-            lua_newtable(l);
-            lua_setfield(l, -2, key);
-        }
-        lua_pop(l, 1);
-    }
-}
-
 int li_add_genre(lua_State* l) {
     if (Gensys::get_global_state() != GlobalState::MUTABLE) {
         luaL_error(l, "add_genre is only available during setup.");
     }
-    Script::Util::generic_li_add_to_res_table(l, n_working_genres, 
-                                            fix_genre_table);
+    Script::Util::generic_li_add_to_res_table(l, n_working_genres);
     return 0;
 }
 

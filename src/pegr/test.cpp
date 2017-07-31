@@ -114,72 +114,94 @@ void log_header(const char* name, char divider = '.') {
     }
 }
 
-void run_tests(int& num_passes, int& num_fails) {
+bool run_test(const Test::NamedTest& test) {
     lua_State* l = Script::get_lua_state();
+    int original_stack_size = lua_gettop(l);
+    log_header(test.m_name);
+    try {
+        test.m_test();
+        
+        if (lua_gettop(l) != original_stack_size) {
+            std::stringstream ss;
+            ss << "Mandatory: Unbalanced test! (";
+            int diff = lua_gettop(l) - original_stack_size;
+            if (diff < 0) {
+                ss << diff;
+            } else {
+                ss << '+' << diff;
+                lua_pop(l, diff);
+            }
+            ss << ") Later tests may fail inexplicably!";
+            throw std::runtime_error(ss.str());
+        }
+        
+        Logger::log()->info("%v\t...PASSED!%v", COLOR_GREEN, COLOR_RESET);
+        return true;
+    }
+    catch (std::runtime_error e) {
+        Logger::log()->warn("%v\t...FAILED! %v%v", 
+                COLOR_RED, e.what(), COLOR_RESET);
+        return false;
+    }
+}
+
+bool run_lua_test(const Test::NamedLuaTest& test) {
+    log_header(test.m_name);
+    bool success;
+    try {
+        Script::Unique_Regref sandbox(Script::new_sandbox());
+        std::stringstream sss;
+        sss << "test/tests/" << test.m_lua_file;
+        Script::Unique_Regref func(
+                Script::load_lua_function(
+                        sss.str().c_str(), sandbox, test.m_name));
+        Script::Helper::run_simple_function(func, 0);
+        Logger::log()->info("%v\t...PASSED!%v", COLOR_GREEN, COLOR_RESET);
+        success = true;
+    }
+    catch (std::runtime_error e) {
+        Logger::log()->warn("%v\t...FAILED! %v%v", 
+                COLOR_RED, e.what(), COLOR_RESET);
+        success = false;
+    }
+    Gensys::cleanup();
+    Gensys::initialize();
+    Gensys::LI::clear();
+    lua_gc(Script::get_lua_state(), LUA_GCCOLLECT, 0);
+    return success;
+}
+
+std::vector<Test::NamedTest> n_failed_tests;
+void run_tests(int& num_passes, int& num_fails) {
     for (std::size_t idx = 0; /*Until sentiel reached*/; ++idx) {
-        int original_stack_size = lua_gettop(l);
-        const Test::NamedTest& test = Test::n_tests[idx];
+        Test::NamedTest test = Test::n_tests[idx];
         if (!test.m_name) {
             break;
         }
-        log_header(test.m_name);
-        try {
-            test.m_test();
-            
-            if (lua_gettop(l) != original_stack_size) {
-                std::stringstream ss;
-                ss << "Mandatory: Unbalanced test! (";
-                int diff = lua_gettop(l) - original_stack_size;
-                if (diff < 0) {
-                    ss << diff;
-                } else {
-                    ss << '+' << diff;
-                    lua_pop(l, diff);
-                }
-                ss << ") Later tests may fail inexplicably!";
-                throw std::runtime_error(ss.str());
-            }
-            
-            Logger::log()->info("%v\t...PASSED!%v", COLOR_GREEN, COLOR_RESET);
+        bool success = run_test(test);
+        if (success) {
             ++num_passes;
-        }
-        catch (std::runtime_error e) {
-            Logger::log()->warn("%v\t...FAILED! %v%v", 
-                    COLOR_RED, e.what(), COLOR_RESET);
+        } else {
+            n_failed_tests.push_back(test);
             ++num_fails;
-            continue;
         }
     }
 }
 
+std::vector<Test::NamedLuaTest> n_failed_lua_tests;
 void run_lua_tests(int& num_passes, int& num_fails) {
     for (std::size_t idx = 0; /*Until sentiel reached*/; ++idx) {
-        const Test::NamedLuaTest& test = Test::n_lua_tests[idx];
+        Test::NamedLuaTest test = Test::n_lua_tests[idx];
         if (!test.m_name) {
             break;
         }
-        log_header(test.m_name);
-        try {
-            Script::Unique_Regref sandbox(Script::new_sandbox());
-            std::stringstream sss;
-            sss << "test/tests/" << test.m_lua_file;
-            Script::Unique_Regref func(
-                    Script::load_lua_function(
-                            sss.str().c_str(), sandbox, test.m_name));
-            Script::Helper::run_simple_function(func, 0);
-            Logger::log()->info("%v\t...PASSED!%v", COLOR_GREEN, COLOR_RESET);
+        bool success = run_lua_test(test);
+        if (success) {
             ++num_passes;
-        }
-        catch (std::runtime_error e) {
-            Logger::log()->warn("%v\t...FAILED! %v%v", 
-                    COLOR_RED, e.what(), COLOR_RESET);
+        } else {
+            n_failed_lua_tests.push_back(test);
             ++num_fails;
-            continue;
         }
-        Gensys::cleanup();
-        Gensys::initialize();
-        Gensys::LI::clear();
-        lua_gc(Script::get_lua_state(), LUA_GCCOLLECT, 0);
     }
 }
 
@@ -236,6 +258,18 @@ void run() {
     run_tests(num_passes, num_fails);
     log_header("=== Lua TESTS", '=');
     run_lua_tests(num_passes, num_fails);
+    if (n_failed_tests.size() > 0) {
+        log_header("=== FAILED C++ TESTS", '=');
+        for (Test::NamedTest test : n_failed_tests) {
+            run_test(test);
+        }
+    }
+    if (n_failed_lua_tests.size() > 0) {
+        log_header("=== FAILED Lua TESTS", '=');
+        for (Test::NamedLuaTest test : n_failed_lua_tests) {
+            run_lua_test(test);
+        }
+    }
     log_header("===== RESULTS", '=');
     if (num_passes > 0) {
         Logger::log()->info("%v%v PASSED%v", 
@@ -244,6 +278,22 @@ void run() {
     if (num_fails > 0) {
         Logger::log()->info("%v%v FAILED%v", 
                 COLOR_RED, num_fails, COLOR_RESET);
+        if (n_failed_tests.size() > 0) {
+            Logger::log()->info("%vFAILED C++ TESTS:%v", 
+                    COLOR_RED, COLOR_RESET);
+            for (Test::NamedTest test : n_failed_tests) {
+                Logger::log()->info("%v\t%v%v", 
+                        COLOR_RED, test.m_name, COLOR_RESET);
+            }
+        }
+        if (n_failed_lua_tests.size() > 0) {
+            Logger::log()->info("%vFAILED Lua TESTS:%v", 
+                    COLOR_RED, COLOR_RESET);
+            for (Test::NamedLuaTest test : n_failed_lua_tests) {
+                Logger::log()->info("%v\t%v%v", 
+                        COLOR_RED, test.m_name, COLOR_RESET);
+            }
+        }
     } else {
         Logger::log()->info("%vNO FAILURES%v", 
                 COLOR_GREEN, COLOR_RESET);
