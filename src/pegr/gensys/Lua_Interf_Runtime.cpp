@@ -164,7 +164,9 @@ void initialize_udatamt_cview(lua_State* l) {
 }
 void initialize_udatamt_genview(lua_State* l) {
     const luaL_Reg metatable[] = {
+        {"__eq", li_genview_mt_eq},
         {"__gc", li_genview_mt_gc},
+        {"__index", li_genview_mt_index},
         {"__tostring", li_genview_mt_tostring},
         
         // End of the list
@@ -704,9 +706,8 @@ int li_cview_mt_eq(lua_State* l) {
     Cview& lhs = *(static_cast<Cview*>(lua_touserdata(l, ARG_LHS)));
     Cview& rhs = *(static_cast<Cview*>(lua_touserdata(l, ARG_RHS)));
     
-    Logger::log()->info("compare, %v %v", lhs.m_comp, rhs.m_comp);
-    
-    lua_pushboolean(l, lhs.m_comp == rhs.m_comp && lhs.m_ent == rhs.m_ent);
+    lua_pushboolean(l, 
+            lhs.m_comp == rhs.m_comp && lhs.m_ent == rhs.m_ent);
     return 1;
 }
 int li_cview_mt_gc(lua_State* l) {
@@ -716,7 +717,10 @@ int li_cview_mt_gc(lua_State* l) {
     return 0;
 }
 int li_cview_mt_index(lua_State* l) {
-    Cview& cview = *(static_cast<Cview*>(lua_touserdata(l, 1)));
+    const int ARG_CVIEW = 1;
+    const int ARG_MEMBER = 2;
+    
+    Cview& cview = *(static_cast<Cview*>(lua_touserdata(l, ARG_CVIEW)));
     
     Runtime::Entity* ent_unsafe = cview.m_ent.get_volatile_entity_ptr();
     if (!ent_unsafe) {
@@ -724,7 +728,7 @@ int li_cview_mt_index(lua_State* l) {
     }
     
     std::size_t keystrlen;
-    const char* keystr = luaL_checklstring(l, 2, &keystrlen);
+    const char* keystr = luaL_checklstring(l, ARG_MEMBER, &keystrlen);
     
     if (!keystr) {
         return 0;
@@ -895,12 +899,117 @@ int li_cview_mt_tostring(lua_State* l) {
     return 1;
 }
 
+int li_genview_mt_eq(lua_State* l) {
+    const int ARG_LHS = 1;
+    const int ARG_RHS = 2;
+    
+    // Both guaranteed: metatables are equal and both are userdata
+    Genview& lhs = *(static_cast<Genview*>(lua_touserdata(l, ARG_LHS)));
+    Genview& rhs = *(static_cast<Genview*>(lua_touserdata(l, ARG_RHS)));
+    
+    lua_pushboolean(l, 
+            lhs.m_pattern == rhs.m_pattern && lhs.m_ent == rhs.m_ent);
+    return 1;
+}
 int li_genview_mt_gc(lua_State* l) {
     // The first argument is guaranteed to be the right type
     Genview& genview = *(static_cast<Genview*>(lua_touserdata(l, 1)));
     genview.Genview::~Genview();
     return 0;
 }
+int li_genview_mt_index(lua_State* l) {
+    const int ARG_GENVIEW = 1;
+    const int ARG_MEMBER = 2;
+    
+    Genview& genview = *(static_cast<Genview*>(lua_touserdata(l, ARG_GENVIEW)));
+    
+    Runtime::Entity* ent_unsafe = genview.m_ent.get_volatile_entity_ptr();
+    if (!ent_unsafe) {
+        return 0;
+    }
+    
+    std::size_t keystrlen;
+    const char* keystr = luaL_checklstring(l, ARG_MEMBER, &keystrlen);
+    
+    if (!keystr) {
+        return 0;
+    }
+    
+    // Member symbol argument
+    Runtime::Symbol member_symb(keystr, keystrlen);
+    
+    // Find where the member is stored within the component
+    auto alias_entry = genview.m_pattern->m_aliases.find(member_symb);
+    if (alias_entry == genview.m_pattern->m_aliases.end()) {
+        return 0;
+    }
+    
+    Runtime::Genre::Pattern::Alias member_alias = alias_entry->second;
+    
+    Runtime::Arche* arche = ent_unsafe->get_arche();
+    assert(arche->m_comp_offsets.find(member_alias.m_comp) !=
+            arche->m_comp_offsets.end());
+    Runtime::Arche::Aggindex aggidx = 
+            arche->m_comp_offsets.at(member_alias.m_comp);
+    
+    Runtime::Prim member_signature = member_alias.m_prim_copy;
+    
+    /* Depending on the member's type, where we read the data and how we
+     * intepret it changes. For POD types, the data comes from the chunk. Other
+     * types are stored in other arrays. Note that the member signature uses
+     * a union to store the different offsets, and so there is only one defined
+     * way to read the data.
+     */
+    switch(member_signature.m_type) {
+        case Runtime::Prim::Type::I32:
+        case Runtime::Prim::Type::I64:
+        case Runtime::Prim::Type::F32:
+        case Runtime::Prim::Type::F64: {
+            std::size_t pod_offset = Runtime::ENT_HEADER_SIZE
+                                    + aggidx.m_pod_idx 
+                                    + member_signature.m_refer.m_byte_offset;
+            switch(member_signature.m_type) {
+                case Runtime::Prim::Type::I32: {
+                    int32_t val = ent_unsafe->get_chunk()
+                            .get_value<int32_t>(pod_offset);
+                    lua_pushnumber(l, val);
+                    return 1;
+                }
+                case Runtime::Prim::Type::I64: {
+                    int64_t val = ent_unsafe->get_chunk()
+                            .get_value<int64_t>(pod_offset);
+                    lua_pushnumber(l, val);
+                    return 1;
+                }
+                case Runtime::Prim::Type::F32: {
+                    float val = ent_unsafe->get_chunk()
+                            .get_value<float>(pod_offset);
+                    lua_pushnumber(l, val);
+                    return 1;
+                }
+                case Runtime::Prim::Type::F64: {
+                    double val = ent_unsafe->get_chunk()
+                            .get_value<double>(pod_offset);
+                    lua_pushnumber(l, val);
+                    return 1;
+                }
+                default: {
+                    assert(0);
+                }
+            }
+        }
+        case Runtime::Prim::Type::STR: {
+            std::size_t string_idx = aggidx.m_string_idx
+                                    + member_signature.m_refer.m_index;
+            lua_pushstring(l, ent_unsafe->get_string(string_idx).c_str());
+            return 1;
+        }
+        default: {
+            assert(false && "TODO");
+        }
+    }
+}
+
 int li_genview_mt_tostring(lua_State* l) {
     // The first argument is guaranteed to be the right type
     Genview& genview = *(static_cast<Genview*>(lua_touserdata(l, 1)));

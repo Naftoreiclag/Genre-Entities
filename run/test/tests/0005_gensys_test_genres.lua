@@ -69,9 +69,13 @@ print(gview)
 
 cview.flavor = 'tangy'
 cview.strength = 5.0
-
 aview.location.x = 628
 aview.location.y = 271
+
+print(cview.flavor)
+print(cview.strength)
+print(aview.location.x)
+print(aview.location.y)
 
 assert(gview.taste == 'tangy')
 assert(gview.power == 5.0)

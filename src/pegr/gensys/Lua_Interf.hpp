@@ -239,10 +239,26 @@ int li_cview_mt_newindex(lua_State* l);
 int li_cview_mt_tostring(lua_State* l);
 
 /**
+ * @brief Equality between genviews implies both point to the same entity and 
+ * both are using the same genre pattern as a view
+ * 1: Genview (guaranteed)
+ * 2: Genview (guaranteed)
+ */
+int li_genview_mt_eq(lua_State* l);
+
+/**
  * @brief Calls the deconstructor on the Genview.
  * 1: Genview (guaranteed)
  */
 int li_genview_mt_gc(lua_State* l);
+
+/**
+ * @brief Returns by value the member held by the underlying entity provided
+ * the symbol.
+ * 1: Genview (guaranteed)
+ * 2: String, symbol
+ */
+int li_genview_mt_index(lua_State* l);
 
 /**
  * @brief Basic tostring for Genview
