@@ -167,6 +167,7 @@ void initialize_udatamt_genview(lua_State* l) {
         {"__eq", li_genview_mt_eq},
         {"__gc", li_genview_mt_gc},
         {"__index", li_genview_mt_index},
+        {"__newindex", li_genview_mt_newindex},
         {"__tostring", li_genview_mt_tostring},
         
         // End of the list
@@ -457,8 +458,9 @@ std::string to_string_genview(Genview genview) {
     return sss.str();
 }
 
-void check_write_compatible_prim_type(lua_State* l, 
+void arg_require_write_compatible_prim_type(lua_State* l, 
         Runtime::Prim::Type t, int idx) {
+    assert(idx > 0);
     // Check that the correct type was given
     bool correct = false;
     switch (t) {
@@ -481,9 +483,213 @@ void check_write_compatible_prim_type(lua_State* l,
         }
     }
     if (!correct) {
-        luaL_error(l, "Expected %s, got %s", 
-                Runtime::prim_typename(t), lua_typename(l, 3));
+        std::stringstream sss;
+        sss << lua_typename(l, idx)
+            << " cannot be assigned to "
+            << Runtime::prim_typename(t);
+        luaL_argerror(l, idx, sss.str().c_str());
     }
+}
+
+int push_member_of_entity(lua_State* l, 
+        Runtime::Entity* ent_ptr, 
+        Runtime::Arche::Aggindex aggidx, 
+        Runtime::Prim prim) {
+    /* Depending on the member's type, where we read the data and how we
+     * intepret it changes. For POD types, the data comes from the chunk. Other
+     * types are stored in other arrays. Note that the member signature uses
+     * a union to store the different offsets, and so there is only one defined
+     * way to read the data.
+     */
+    switch(prim.m_type) {
+        case Runtime::Prim::Type::I32:
+        case Runtime::Prim::Type::I64:
+        case Runtime::Prim::Type::F32:
+        case Runtime::Prim::Type::F64: {
+            std::size_t pod_offset = Runtime::ENT_HEADER_SIZE
+                                    + aggidx.m_pod_idx 
+                                    + prim.m_refer.m_byte_offset;
+            switch(prim.m_type) {
+                case Runtime::Prim::Type::I32: {
+                    int32_t val = ent_ptr->get_chunk()
+                            .get_value<int32_t>(pod_offset);
+                    lua_pushnumber(l, val);
+                    return 1;
+                }
+                case Runtime::Prim::Type::I64: {
+                    int64_t val = ent_ptr->get_chunk()
+                            .get_value<int64_t>(pod_offset);
+                    lua_pushnumber(l, val);
+                    return 1;
+                }
+                case Runtime::Prim::Type::F32: {
+                    float val = ent_ptr->get_chunk()
+                            .get_value<float>(pod_offset);
+                    lua_pushnumber(l, val);
+                    return 1;
+                }
+                case Runtime::Prim::Type::F64: {
+                    double val = ent_ptr->get_chunk()
+                            .get_value<double>(pod_offset);
+                    lua_pushnumber(l, val);
+                    return 1;
+                }
+                default: {
+                    assert(0);
+                }
+            }
+        }
+        case Runtime::Prim::Type::STR: {
+            std::size_t string_idx = aggidx.m_string_idx
+                                    + prim.m_refer.m_index;
+            lua_pushstring(l, ent_ptr->get_string(string_idx).c_str());
+            return 1;
+        }
+        default: {
+            assert(false && "TODO");
+        }
+    }
+}
+
+int write_to_member_of_enttiy(lua_State* l, 
+        Runtime::Entity* ent_ptr, 
+        Runtime::Arche::Aggindex aggidx, 
+        Runtime::Prim prim,
+        int value_idx) {
+    value_idx = Script::absolute_idx(value_idx);
+    /* Depending on the member's type, where we write the data and how we
+     * intepret it changes. For POD types, the data comes from the chunk. Other
+     * types are stored in other arrays. Note that the member signature uses
+     * a union to store the different offsets, and so there is only one defined
+     * way to read the data.
+     */
+    switch(prim.m_type) {
+        case Runtime::Prim::Type::I32:
+        case Runtime::Prim::Type::I64:
+        case Runtime::Prim::Type::F32:
+        case Runtime::Prim::Type::F64: {
+            
+            std::size_t pod_offset = Runtime::ENT_HEADER_SIZE
+                                    + aggidx.m_pod_idx 
+                                    + prim.m_refer.m_byte_offset;
+            switch(prim.m_type) {
+                case Runtime::Prim::Type::I32: {
+                    assert(lua_isnumber(l, value_idx));
+                    int32_t val = lua_tonumber(l, value_idx);
+                    ent_ptr->get_chunk()
+                            .set_value<int32_t>(pod_offset, val);
+                    return 1;
+                }
+                case Runtime::Prim::Type::I64: {
+                    assert(lua_isnumber(l, value_idx));
+                    int64_t val = lua_tonumber(l, value_idx);
+                    ent_ptr->get_chunk()
+                            .set_value<int64_t>(pod_offset, val);
+                    return 1;
+                }
+                case Runtime::Prim::Type::F32: {
+                    assert(lua_isnumber(l, value_idx));
+                    float val = lua_tonumber(l, value_idx);
+                    ent_ptr->get_chunk()
+                            .set_value<float>(pod_offset, val);
+                    return 1;
+                }
+                case Runtime::Prim::Type::F64: {
+                    assert(lua_isnumber(l, value_idx));
+                    double val = lua_tonumber(l, value_idx);
+                    ent_ptr->get_chunk()
+                            .set_value<double>(pod_offset, val);
+                    return 1;
+                }
+                default: {
+                    assert(0);
+                    return 0;
+                }
+            }
+        }
+        case Runtime::Prim::Type::STR: {
+            std::size_t string_idx = aggidx.m_string_idx
+                                    + prim.m_refer.m_index;
+            assert(lua_isstring(l, value_idx));
+            std::size_t string_len;
+            const char* string_data = lua_tolstring(l, value_idx, &string_len);
+            ent_ptr->set_string(string_idx, 
+                    std::string(string_data, string_len));
+            return 1;
+        }
+        default: {
+            assert(false && "TODO");
+            return 0;
+        }
+    }
+}
+
+bool get_aggidx_and_prim_from_cview(lua_State* l, 
+        int cview_idx, int member_idx,
+        Runtime::Arche::Aggindex& aggidx, Runtime::Prim& prim,
+        Runtime::Entity*& ent_ptr) {
+    Cview& cview = *(static_cast<Cview*>(lua_touserdata(l, cview_idx)));
+    
+    ent_ptr = cview.m_ent.get_volatile_entity_ptr();
+    if (!ent_ptr) {
+        return false;
+    }
+    
+    std::size_t keystrlen;
+    const char* keystr = luaL_checklstring(l, member_idx, &keystrlen);
+    if (!keystr) {
+        return false;
+    }
+    
+    // Member symbol argument
+    Runtime::Symbol member_symb(keystr, keystrlen);
+    
+    // Find where the member is stored within the component
+    auto prim_entry = cview.m_comp->m_member_offsets.find(member_symb);
+    if (prim_entry == cview.m_comp->m_member_offsets.end()) {
+        return false;
+    }
+    aggidx = cview.m_cached_aggidx;
+    prim = prim_entry->second;
+    
+    return true;
+}
+
+bool get_aggidx_and_prim_from_genview(lua_State* l, 
+        int genview_idx, int member_idx,
+        Runtime::Arche::Aggindex& aggidx, Runtime::Prim& prim,
+        Runtime::Entity*& ent_ptr) {
+    // Genview, guaranteed
+    Genview& genview = *(static_cast<Genview*>(lua_touserdata(l, genview_idx)));
+    
+    // Get pointer to the entity
+    ent_ptr = genview.m_ent.get_volatile_entity_ptr();
+    if (!ent_ptr) {
+        return false;
+    }
+    
+    // Get the member the user is asking for
+    std::size_t keystrlen;
+    const char* keystr = luaL_checklstring(l, member_idx, &keystrlen);
+    if (!keystr) {
+        return false;
+    }
+    
+    // Member symbol argument
+    Runtime::Symbol member_symb(keystr, keystrlen);
+    
+    // Extract the aggidx and primitive
+    auto alias_entry = genview.m_pattern->m_aliases.find(member_symb);
+    if (alias_entry == genview.m_pattern->m_aliases.end()) {
+        return false;
+    }
+    Runtime::Genre::Pattern::Alias member_alias = alias_entry->second;
+    Runtime::Arche* arche = ent_ptr->get_arche();
+    assert(arche->m_comp_offsets.find(member_alias.m_comp) !=
+            arche->m_comp_offsets.end());
+    aggidx = arche->m_comp_offsets.at(member_alias.m_comp);
+    prim = member_alias.m_prim_copy;
+    return true;
 }
 
 int li_comp_mt_call(lua_State* l) {
@@ -719,178 +925,26 @@ int li_cview_mt_gc(lua_State* l) {
 int li_cview_mt_index(lua_State* l) {
     const int ARG_CVIEW = 1;
     const int ARG_MEMBER = 2;
-    
-    Cview& cview = *(static_cast<Cview*>(lua_touserdata(l, ARG_CVIEW)));
-    
-    Runtime::Entity* ent_unsafe = cview.m_ent.get_volatile_entity_ptr();
-    if (!ent_unsafe) {
-        return 0;
-    }
-    
-    std::size_t keystrlen;
-    const char* keystr = luaL_checklstring(l, ARG_MEMBER, &keystrlen);
-    
-    if (!keystr) {
-        return 0;
-    }
-    
-    // Member symbol argument
-    Runtime::Symbol member_symb(keystr, keystrlen);
-    
-    // Find where the member is stored within the component
-    auto offset_entry = cview.m_comp->m_member_offsets.find(member_symb);
-    if (offset_entry == cview.m_comp->m_member_offsets.end()) {
-        return 0;
-    }
-    Runtime::Prim member_signature = offset_entry->second;
-    
-    /* Depending on the member's type, where we read the data and how we
-     * intepret it changes. For POD types, the data comes from the chunk. Other
-     * types are stored in other arrays. Note that the member signature uses
-     * a union to store the different offsets, and so there is only one defined
-     * way to read the data.
-     */
-    switch(member_signature.m_type) {
-        case Runtime::Prim::Type::I32:
-        case Runtime::Prim::Type::I64:
-        case Runtime::Prim::Type::F32:
-        case Runtime::Prim::Type::F64: {
-            std::size_t pod_offset = Runtime::ENT_HEADER_SIZE
-                                    + cview.m_cached_aggidx.m_pod_idx 
-                                    + member_signature.m_refer.m_byte_offset;
-            switch(member_signature.m_type) {
-                case Runtime::Prim::Type::I32: {
-                    int32_t val = ent_unsafe->get_chunk()
-                            .get_value<int32_t>(pod_offset);
-                    lua_pushnumber(l, val);
-                    return 1;
-                }
-                case Runtime::Prim::Type::I64: {
-                    int64_t val = ent_unsafe->get_chunk()
-                            .get_value<int64_t>(pod_offset);
-                    lua_pushnumber(l, val);
-                    return 1;
-                }
-                case Runtime::Prim::Type::F32: {
-                    float val = ent_unsafe->get_chunk()
-                            .get_value<float>(pod_offset);
-                    lua_pushnumber(l, val);
-                    return 1;
-                }
-                case Runtime::Prim::Type::F64: {
-                    double val = ent_unsafe->get_chunk()
-                            .get_value<double>(pod_offset);
-                    lua_pushnumber(l, val);
-                    return 1;
-                }
-                default: {
-                    assert(0);
-                }
-            }
-        }
-        case Runtime::Prim::Type::STR: {
-            std::size_t string_idx = cview.m_cached_aggidx.m_string_idx
-                                    + member_signature.m_refer.m_index;
-            lua_pushstring(l, ent_unsafe->get_string(string_idx).c_str());
-            return 1;
-        }
-        default: {
-            assert(false && "TODO");
-        }
-    }
+    Runtime::Arche::Aggindex aggidx;
+    Runtime::Prim prim;
+    Runtime::Entity* ent_ptr;
+    bool success = get_aggidx_and_prim_from_cview(l, 
+            ARG_CVIEW, ARG_MEMBER, aggidx, prim, ent_ptr);
+    if (!success) return 0;
+    return push_member_of_entity(l, ent_ptr, aggidx, prim);
 }
 int li_cview_mt_newindex(lua_State* l) {
-    Cview& cview = *(static_cast<Cview*>(lua_touserdata(l, 1)));
-    
-    Runtime::Entity* ent_unsafe = cview.m_ent.get_volatile_entity_ptr();
-    if (!ent_unsafe) {
-        return 0;
-    }
-    
-    std::size_t keystrlen;
-    const char* keystr = luaL_checklstring(l, 2, &keystrlen);
-    
-    if (!keystr) {
-        return 0;
-    }
-    
-    // Member symbol argument
-    Runtime::Symbol member_symb(keystr, keystrlen);
-    
-    // Find where the member is stored within the component
-    auto offset_entry = cview.m_comp->m_member_offsets.find(member_symb);
-    if (offset_entry == cview.m_comp->m_member_offsets.end()) {
-        return 0;
-    }
-    Runtime::Prim member_signature = offset_entry->second;
-    
-    // Check that the given Lua value is assignable to the primitive
-    check_write_compatible_prim_type(l, member_signature.m_type, 3);
-    
-    /* Depending on the member's type, where we write the data and how we
-     * intepret it changes. For POD types, the data comes from the chunk. Other
-     * types are stored in other arrays. Note that the member signature uses
-     * a union to store the different offsets, and so there is only one defined
-     * way to read the data.
-     */
-    switch(member_signature.m_type) {
-        case Runtime::Prim::Type::I32:
-        case Runtime::Prim::Type::I64:
-        case Runtime::Prim::Type::F32:
-        case Runtime::Prim::Type::F64: {
-            
-            std::size_t pod_offset = Runtime::ENT_HEADER_SIZE
-                                    + cview.m_cached_aggidx.m_pod_idx 
-                                    + member_signature.m_refer.m_byte_offset;
-            switch(member_signature.m_type) {
-                case Runtime::Prim::Type::I32: {
-                    assert(lua_isnumber(l, 3));
-                    int32_t val = lua_tonumber(l, 3);
-                    ent_unsafe->get_chunk()
-                            .set_value<int32_t>(pod_offset, val);
-                    return 1;
-                }
-                case Runtime::Prim::Type::I64: {
-                    assert(lua_isnumber(l, 3));
-                    int64_t val = lua_tonumber(l, 3);
-                    ent_unsafe->get_chunk()
-                            .set_value<int64_t>(pod_offset, val);
-                    return 1;
-                }
-                case Runtime::Prim::Type::F32: {
-                    assert(lua_isnumber(l, 3));
-                    float val = lua_tonumber(l, 3);
-                    ent_unsafe->get_chunk()
-                            .set_value<float>(pod_offset, val);
-                    return 1;
-                }
-                case Runtime::Prim::Type::F64: {
-                    assert(lua_isnumber(l, 3));
-                    double val = lua_tonumber(l, 3);
-                    ent_unsafe->get_chunk()
-                            .set_value<double>(pod_offset, val);
-                    return 1;
-                }
-                default: {
-                    assert(0);
-                    return 0;
-                }
-            }
-        }
-        case Runtime::Prim::Type::STR: {
-            std::size_t string_idx = cview.m_cached_aggidx.m_string_idx
-                                    + member_signature.m_refer.m_index;
-            std::size_t string_len;
-            const char* string_data = lua_tolstring(l, 3, &string_len);
-            ent_unsafe->set_string(string_idx, 
-                    std::string(string_data, string_len));
-            return 1;
-        }
-        default: {
-            assert(false && "TODO");
-            return 0;
-        }
-    }
+    const int ARG_CVIEW = 1;
+    const int ARG_MEMBER = 2;
+    const int ARG_ASSIGN = 3;
+    Runtime::Arche::Aggindex aggidx;
+    Runtime::Prim prim;
+    Runtime::Entity* ent_ptr;
+    bool success = get_aggidx_and_prim_from_cview(l, 
+            ARG_CVIEW, ARG_MEMBER, aggidx, prim, ent_ptr);
+    if (!success) return 0;
+    arg_require_write_compatible_prim_type(l, prim.m_type, ARG_ASSIGN);
+    return write_to_member_of_enttiy(l, ent_ptr, aggidx, prim, ARG_ASSIGN);
 }
 int li_cview_mt_tostring(lua_State* l) {
     // The first argument is guaranteed to be the right type
@@ -920,94 +974,26 @@ int li_genview_mt_gc(lua_State* l) {
 int li_genview_mt_index(lua_State* l) {
     const int ARG_GENVIEW = 1;
     const int ARG_MEMBER = 2;
-    
-    Genview& genview = *(static_cast<Genview*>(lua_touserdata(l, ARG_GENVIEW)));
-    
-    Runtime::Entity* ent_unsafe = genview.m_ent.get_volatile_entity_ptr();
-    if (!ent_unsafe) {
-        return 0;
-    }
-    
-    std::size_t keystrlen;
-    const char* keystr = luaL_checklstring(l, ARG_MEMBER, &keystrlen);
-    
-    if (!keystr) {
-        return 0;
-    }
-    
-    // Member symbol argument
-    Runtime::Symbol member_symb(keystr, keystrlen);
-    
-    // Find where the member is stored within the component
-    auto alias_entry = genview.m_pattern->m_aliases.find(member_symb);
-    if (alias_entry == genview.m_pattern->m_aliases.end()) {
-        return 0;
-    }
-    
-    Runtime::Genre::Pattern::Alias member_alias = alias_entry->second;
-    
-    Runtime::Arche* arche = ent_unsafe->get_arche();
-    assert(arche->m_comp_offsets.find(member_alias.m_comp) !=
-            arche->m_comp_offsets.end());
-    Runtime::Arche::Aggindex aggidx = 
-            arche->m_comp_offsets.at(member_alias.m_comp);
-    
-    Runtime::Prim member_signature = member_alias.m_prim_copy;
-    
-    /* Depending on the member's type, where we read the data and how we
-     * intepret it changes. For POD types, the data comes from the chunk. Other
-     * types are stored in other arrays. Note that the member signature uses
-     * a union to store the different offsets, and so there is only one defined
-     * way to read the data.
-     */
-    switch(member_signature.m_type) {
-        case Runtime::Prim::Type::I32:
-        case Runtime::Prim::Type::I64:
-        case Runtime::Prim::Type::F32:
-        case Runtime::Prim::Type::F64: {
-            std::size_t pod_offset = Runtime::ENT_HEADER_SIZE
-                                    + aggidx.m_pod_idx 
-                                    + member_signature.m_refer.m_byte_offset;
-            switch(member_signature.m_type) {
-                case Runtime::Prim::Type::I32: {
-                    int32_t val = ent_unsafe->get_chunk()
-                            .get_value<int32_t>(pod_offset);
-                    lua_pushnumber(l, val);
-                    return 1;
-                }
-                case Runtime::Prim::Type::I64: {
-                    int64_t val = ent_unsafe->get_chunk()
-                            .get_value<int64_t>(pod_offset);
-                    lua_pushnumber(l, val);
-                    return 1;
-                }
-                case Runtime::Prim::Type::F32: {
-                    float val = ent_unsafe->get_chunk()
-                            .get_value<float>(pod_offset);
-                    lua_pushnumber(l, val);
-                    return 1;
-                }
-                case Runtime::Prim::Type::F64: {
-                    double val = ent_unsafe->get_chunk()
-                            .get_value<double>(pod_offset);
-                    lua_pushnumber(l, val);
-                    return 1;
-                }
-                default: {
-                    assert(0);
-                }
-            }
-        }
-        case Runtime::Prim::Type::STR: {
-            std::size_t string_idx = aggidx.m_string_idx
-                                    + member_signature.m_refer.m_index;
-            lua_pushstring(l, ent_unsafe->get_string(string_idx).c_str());
-            return 1;
-        }
-        default: {
-            assert(false && "TODO");
-        }
-    }
+    Runtime::Arche::Aggindex aggidx;
+    Runtime::Prim prim;
+    Runtime::Entity* ent_ptr;
+    bool success = get_aggidx_and_prim_from_genview(l, 
+            ARG_GENVIEW, ARG_MEMBER, aggidx, prim, ent_ptr);
+    if (!success) return 0;
+    return push_member_of_entity(l, ent_ptr, aggidx, prim);
+}
+int li_genview_mt_newindex(lua_State* l) {
+    const int ARG_GENVIEW = 1;
+    const int ARG_MEMBER = 2;
+    const int ARG_ASSIGN = 3;
+    Runtime::Arche::Aggindex aggidx;
+    Runtime::Prim prim;
+    Runtime::Entity* ent_ptr;
+    bool success = get_aggidx_and_prim_from_genview(l, 
+            ARG_GENVIEW, ARG_MEMBER, aggidx, prim, ent_ptr);
+    if (!success) return 0;
+    arg_require_write_compatible_prim_type(l, prim.m_type, ARG_ASSIGN);
+    return write_to_member_of_enttiy(l, ent_ptr, aggidx, prim, ARG_ASSIGN);
 }
 
 int li_genview_mt_tostring(lua_State* l) {

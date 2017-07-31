@@ -261,6 +261,15 @@ int li_genview_mt_gc(lua_State* l);
 int li_genview_mt_index(lua_State* l);
 
 /**
+ * @brief Assigns to the member held by the underlying entity provided by the
+ * symbol.
+ * 1: Genview (guaranteed)
+ * 2: String, symbol
+ * 3: Value
+ */
+int li_genview_mt_newindex(lua_State* l);
+
+/**
  * @brief Basic tostring for Genview
  * 1: Genview (guaranteed)
  */
