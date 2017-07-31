@@ -15,6 +15,7 @@
 #include "pegr/script/Script_Helper.hpp"
 #include "pegr/gensys/Runtime.hpp"
 #include "pegr/gensys/Gensys.hpp"
+#include "pegr/util/Algs.hpp"
 
 namespace pegr {
 namespace Gensys {
@@ -445,8 +446,8 @@ std::string to_string_genview(Genview genview) {
     sss << "<Entity #"
         << bottom_52(genview.m_ent.get_id());
     if (genview.m_ent.does_exist()) {
-        sss << " thru Genre @"
-            << genview.m_genre;
+        sss << " thru G-Pattern @"
+            << genview.m_pattern;
     } else {
         sss << " (deleted)";
     }
@@ -545,13 +546,39 @@ int li_arche_mt_tostring(lua_State* l) {
 }
 
 int li_genre_mt_call(lua_State* l) {
+    assert_balance(0, 1);
     const int ARG_GENRE = 1;
     const int ARG_ENT = 2;
     // The first argument is guaranteed to be the right type
     Runtime::Genre* genre = 
             *(static_cast<Runtime::Genre**>(lua_touserdata(l, ARG_GENRE)));
+    Runtime::Entity_Handle ent_h = *arg_require_entity(l, ARG_ENT);
+    
+    Runtime::Arche* arche = ent_h->get_arche();
+    // Maybe cache whether or not this archetype matches?
+    if (!Util::is_subset_of_presorted(
+            genre->m_sorted_required_intersection, 
+            arche->m_sorted_component_array)) {
+        // Cannot possibly match
+        return 0;
+    }
+    
+    // Important: iterate using references not copies
+    for (Runtime::Genre::Pattern& pattern : genre->m_patterns) {
+        if (Util::is_subset_of_presorted(
+                pattern.m_sorted_required_comps_specific, 
+                arche->m_sorted_component_array)) {
+            // TODO: caching?
+            Genview genview;
+            genview.m_ent = ent_h;
+            genview.m_pattern = &pattern;
             
-    // TODO
+            push_genview(l, genview);
+            return 1;
+        }
+    }
+    
+    // No matches found
     return 0;
 }
 int li_genre_mt_tostring(lua_State* l) {

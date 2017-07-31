@@ -117,7 +117,7 @@ struct Cview {
 
 struct Genview {
     Runtime::Entity_Handle m_ent;
-    Runtime::Genre* m_genre;
+    Runtime::Genre::Pattern* m_pattern;
 };
 
 Runtime::Comp** arg_require_comp(lua_State* l, int idx);

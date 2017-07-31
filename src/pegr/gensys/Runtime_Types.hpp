@@ -113,6 +113,12 @@ struct Arche {
         std::size_t m_string_idx;
     };
     
+    /* Merely an array of all of the components that this Archetype uses. To
+     * quickly check if an Archetype has every component in some set. (Genre
+     * matching, namely.)
+     */
+    std::vector<Comp*> m_sorted_component_array;
+    
     /* Archetypes are composed of components. This maps the internal name to
      * the actual component.
      */
@@ -146,6 +152,34 @@ struct Arche {
  * @class Genre
  */
 struct Genre {
+    struct Pattern {
+        // Used when trying to see if an archetype matches the pattern
+        std::vector<Comp*> m_sorted_required_comps_specific;
+        
+        struct Alias {
+            // Used to find the position in the archetype
+            Comp* m_comp;
+            
+            // Rather than copy the symbol names and then constantly lookup
+            // in m_comp's member_offsets map, just cache the value here.
+            Prim m_prim_copy;
+        };
+        std::map<Symbol, Alias> m_aliases;
+        
+        // TODO: static values
+    };
+    
+    /* This is a sorted list of all of the components that is used in every
+     * pattern. Essentially, if a component is lacking at least one of these
+     * components, then it cannot match any of the patterns. This also means
+     * that, to save space and time, the patterns' list of required components
+     * contain only those components specific to them (i.e. not in this list)
+     */
+    std::vector<Comp*> m_sorted_required_intersection;
+    
+    /* The first matching pattern is used.
+     */
+    std::vector<Pattern> m_patterns;
     
     /* Cached Lua value to provide when accessed in a Lua script. The compiler
      * does not populate this field automatically. A Lua userdata value is
