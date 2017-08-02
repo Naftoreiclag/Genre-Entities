@@ -205,6 +205,10 @@ std::string Entity::get_string(std::size_t idx) const {
     assert(idx >= 0 && idx < m_strings.size());
     return m_strings[idx];
 }
+Script::Regref Entity::get_func(std::size_t idx) const {
+    assert(idx >= 0 && idx < m_arche->m_static_funcs.size());
+    return m_arche->m_static_funcs[idx];
+}
 uint64_t Entity::get_flags() const {
     return m_chunk.get().get_value<uint64_t>(ENT_HEADER_FLAGS);
 }

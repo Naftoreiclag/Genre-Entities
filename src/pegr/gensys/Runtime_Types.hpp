@@ -396,6 +396,11 @@ public:
      * @return m_strings, the array of strings for replacement instance data
      */
     std::string get_string(std::size_t idx) const;
+    
+    /**
+     * @return static function in archetype
+     */
+    Script::Regref get_func(std::size_t idx) const;
 
     /**
      * @return The set of flags that all entity instances must have, particular

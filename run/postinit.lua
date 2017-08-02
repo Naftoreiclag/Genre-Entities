@@ -57,6 +57,11 @@ print('cookie1 pos y ', cookie1.position.y)
 print('cookie1 vel x ', cookie1.velocity.x)
 print('cookie1 vel y ', cookie1.velocity.y)
 
+print(cookie1.position.is_at_origin)
+
+-- Can't do this
+--cookie1.position.is_at_origin = function() end
+
 --[[
 "entity" is not yet a "real" entity until it has been spawned into the
 active entity ecosystem. Until it is spawned in, it is an ordinary archetypical
