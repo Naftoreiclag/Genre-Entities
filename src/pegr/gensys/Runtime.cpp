@@ -19,6 +19,7 @@ namespace Runtime {
 std::map<std::string, std::unique_ptr<Runtime::Comp> > n_runtime_comps;
 std::map<std::string, std::unique_ptr<Runtime::Arche> > n_runtime_arches;
 std::map<std::string, std::unique_ptr<Runtime::Genre> > n_runtime_genres;
+std::vector<Script::Unique_Regref> n_held_lua_values;
 
 const uint64_t ENT_HEADER_FLAGS = 0;
 const uint64_t ENT_HEADER_SIZE = ENT_HEADER_FLAGS + 8;
@@ -266,6 +267,7 @@ void cleanup() {
     n_runtime_comps.clear();
     n_runtime_arches.clear();
     n_runtime_genres.clear();
+    n_held_lua_values.clear();
 }
 
 Entity_Handle reserve_new_handle() {

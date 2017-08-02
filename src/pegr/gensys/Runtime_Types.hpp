@@ -46,24 +46,16 @@ struct Prim {
     // member of an archetype or a member of a genre
     union Refer {
         /**
-         * @brief This is an index into the global gensys Lua table that holds
-         * Lua-exclusve data.
-         * This member is a part of a union with other members prefixed by "u".
-         * Used for [FUNC]
-         */
-        Script::Arridx m_table_idx;
-        
-        /**
          * @brief This is a location within the entity chunk. Measured in bytes.
-         * This member is a part of a union with other members prefixed by "u".
+         * This member is a part of a union.
          * Used for pod data types, [F32, F64, I32, I64]
          */
         std::size_t m_byte_offset;
         
         /**
          * @brief This is an index into various arrays that store C++ types.
-         * This member is a part of a union with other members prefixed by "u".
-         * Used for everything else [STR]
+         * This member is a part of a union.
+         * Used for everything else [STR, FUNC]
          */
         std::size_t m_index;
     };
@@ -111,6 +103,12 @@ struct Arche {
          * array.
          */
         std::size_t m_string_idx;
+        
+        /**
+         * @brief Index for the first string in the archetype aggregate func
+         * array.
+         */
+        std::size_t m_func_idx;
     };
     
     /* Merely an array of all of the components that this Archetype uses. To
@@ -140,6 +138,10 @@ struct Arche {
     /* Default collection of default strings
      */
     std::vector<std::string> m_default_strings;
+    
+    /* Vector of static lua references
+     */
+    std::vector<Script::Regref> m_static_funcs;
     
     /* Cached Lua value to provide when accessed in a Lua script. The compiler
      * does not populate this field automatically. A Lua userdata value is
