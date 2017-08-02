@@ -458,6 +458,10 @@ void compile_archetype_store_static_lua_values(Work::Space& workspace,
                     = prim.get_function()->get();
         }
 
+        // Remember how to find this data later
+        arche->m_runtime->m_comp_offsets[comp->m_runtime.get()].m_func_idx 
+                = accumulated;
+
         // Keep track of how much space has been used
         accumulated += comp->m_funcs.size();
     }
