@@ -59,6 +59,16 @@ print('cookie1 vel y ', cookie1.velocity.y)
 
 print(cookie1.position.is_at_origin)
 
+cookie1.position.x = 5
+cookie1.position.y = 4
+print(cookie1.position:is_at_origin())
+assert(not cookie1.position:is_at_origin())
+
+cookie1.position.x = 0
+cookie1.position.y = 0
+print(cookie1.position:is_at_origin())
+assert(cookie1.position:is_at_origin())
+
 -- Can't do this
 --cookie1.position.is_at_origin = function() end
 
