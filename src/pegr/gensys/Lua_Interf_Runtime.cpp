@@ -995,7 +995,6 @@ int li_genview_mt_newindex(lua_State* l) {
     arg_require_write_compatible_prim_type(l, prim.m_type, ARG_ASSIGN);
     return write_to_member_of_enttiy(l, ent_ptr, aggidx, prim, ARG_ASSIGN);
 }
-
 int li_genview_mt_tostring(lua_State* l) {
     // The first argument is guaranteed to be the right type
     Genview& genview = *(static_cast<Genview*>(lua_touserdata(l, 1)));

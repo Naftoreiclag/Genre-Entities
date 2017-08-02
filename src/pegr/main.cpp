@@ -20,7 +20,6 @@ void setup() {
     Gensys::LI::initialize();
     Sched::LI::initialize();
     
-    
     Gensys::initialize();
 }
 
