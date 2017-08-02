@@ -112,6 +112,31 @@ bool to_number_safe(int idx, lua_Number& num);
  */
 void push_new_weak_table(const char* mode);
 
+/**
+ * @class Unique_Regref_Manager
+ * @brief A collection of Lua values, using as few unique registry references
+ * as possible. Internally, uses a Lua table with the added values as keys and
+ * the registry references as values. When adding a Lua value to this
+ * collection, the value is compared with the keys in the table.
+ */
+class Unique_Regref_Manager {
+public:
+    Unique_Regref_Manager();
+    
+    Script::Regref add_lua_value(Script::Regref val_ref);
+    
+    const std::vector<Script::Unique_Regref>& get_lua_uniques() const;
+    
+    std::vector<Script::Unique_Regref> release();
+    
+    void clear();
+    
+private:
+    
+    Script::Unique_Regref m_lua_uniques_lookup;
+    std::vector<Script::Unique_Regref> m_lua_uniques;
+};
+
 } // namespace Helper
 } // namespace Script
 } // namespace pegr

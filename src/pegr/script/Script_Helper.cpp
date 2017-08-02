@@ -242,6 +242,72 @@ void push_new_weak_table(const char* mode) {
     lua_setmetatable(l, -2); // -1
 }
 
+
+    
+Unique_Regref_Manager::Unique_Regref_Manager() {
+    lua_State* l = Script::get_lua_state();
+    assert(l);
+    assert_balance(0);
+    lua_newtable(l);
+    m_lua_uniques_lookup.reset(Script::grab_reference());
+}
+
+Script::Regref Unique_Regref_Manager::add_lua_value(Script::Regref val_ref) {
+    lua_State* l = Script::get_lua_state();
+    assert(l);
+    assert_balance(0);
+    
+    Script::push_reference(m_lua_uniques_lookup.get());
+    Script::push_reference(val_ref);
+    lua_pushvalue(l, -1);
+    lua_rawget(l, -3);
+    
+    // No unique regref assigned
+    if (lua_isnil(l, -1)) {
+        lua_pop(l, 1);
+        
+        /* At this point:
+         * 
+         * -1 val to add
+         * -2 "uniques" table
+         */
+        
+        lua_pushvalue(l, -1);
+        Script::Unique_Regref unique_ref = Script::grab_reference();
+        Script::Regref weak_ref = unique_ref.get();
+        
+        lua_pushinteger(l, weak_ref);
+        lua_rawset(l, -3);
+        
+        lua_pop(l, 1);
+        
+        m_lua_uniques.emplace_back(std::move(unique_ref));
+        
+        return weak_ref;
+    } else {
+        assert(lua_isnumber(l, -1));
+        Script::Regref weak_ref = lua_tointeger(l, -1);
+        lua_pop(l, 3);
+        return weak_ref;
+    }
+}
+
+const std::vector<Script::Unique_Regref>& 
+        Unique_Regref_Manager::get_lua_uniques() const {
+    return m_lua_uniques;
+}
+
+std::vector<Script::Unique_Regref> Unique_Regref_Manager::release() {
+    m_lua_uniques_lookup.reset();
+    return std::move(m_lua_uniques);
+}
+
+void Unique_Regref_Manager::clear() {
+    m_lua_uniques_lookup.reset();
+    m_lua_uniques.clear();
+}
+    
+
 } // namespace Helper
 } // namespace Script
 } // namespace pegr
