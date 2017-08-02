@@ -45,6 +45,33 @@ void verify_equals(E&& expected, G&& got, const char* msg = nullptr) {
         throw std::runtime_error(sss.str());
     }
 }
+
+template<typename E, typename G>
+void verify_not_equals(E&& unexpected, G&& got, const char* msg = nullptr) {
+    if (unexpected == got) {
+        std::stringstream sss;
+        if (msg) {
+            sss << msg << ' ';
+        }
+        sss << "Unexpected: "
+            << unexpected
+            << " Got: "
+            << got;
+        throw std::runtime_error(sss.str());
+    }
+    if (got == unexpected) {
+        std::stringstream sss;
+        if (msg) {
+            sss << msg << ' ';
+        }
+        sss << "Unexpected: "
+            << unexpected
+            << " Got: "
+            << got
+            << " (got == unexpected, but unexpected ! got)";
+        throw std::runtime_error(sss.str());
+    }
+}
     
 } // namespace Test
 } // namespace pegr

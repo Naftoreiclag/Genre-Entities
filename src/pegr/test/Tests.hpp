@@ -32,6 +32,7 @@ void test_0028_simple_deep_copy();
 void test_0028_simple_deep_copy_recursive();
 void test_0028_to_number_safe();
 void test_0028_to_string();
+void test_0028_unique_regref_manager();
 void test_0030_gensys_primitive();
 void test_0030_gensys_primitive_multiple();
 void test_0080_00_gensys_primitive();
@@ -66,6 +67,7 @@ const NamedTest n_tests[] = {
     {"Script simple_deep_copy_recursive", test_0028_simple_deep_copy_recursive},
     {"Script to_number_safe", test_0028_to_number_safe},
     {"Script Helper to_string", test_0028_to_string},
+    {"Script Helper unique regref manager", test_0028_unique_regref_manager},
     {"Single gensys primitive", test_0030_gensys_primitive},
     {"Reassignment of gensys primitives", test_0030_gensys_primitive_multiple},
     {"Gensys primitive from Lua values", test_0080_00_gensys_primitive},
