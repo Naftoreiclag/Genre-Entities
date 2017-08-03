@@ -92,6 +92,21 @@ else()
     set(PGLOCAL_ALL_REQUIRED_READY FALSE)
 endif()
 
+# bgfx #
+message(STATUS "bgfx =================")
+find_package(bgfx)
+if(BGFX_FOUND)
+    message(STATUS "\tInclude Dirs: " ${BGFX_INCLUDE_DIR})
+    message(STATUS "\tLibraries: " ${BGFX_LIBRARIES})
+    list(APPEND PGLOCAL_INCLUDE_DIRS ${BGFX_INCLUDE_DIR})
+    target_link_libraries(${PGLOCAL_MAIN_TARGET} ${BGFX_LIBRARIES})
+    target_link_libraries(${PGLOCAL_TEST_TARGET} ${BGFX_LIBRARIES})
+else()
+    message("\tNOT FOUND")
+    set(PGLOCAL_ALL_REQUIRED_READY FALSE)
+endif()
+
+
 # Helpful information
 if(PGLOCAL_ALL_REQUIRED_READY)
     message(STATUS "All packages found and are compatible")
