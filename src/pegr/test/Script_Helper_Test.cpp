@@ -6,6 +6,7 @@
 #include "pegr/script/Script_Helper.hpp"
 #include "pegr/script/Script.hpp"
 #include "pegr/logger/Logger.hpp"
+#include "pegr/test/Test_Util.hpp"
 
 namespace pegr {
 namespace Test {
@@ -310,6 +311,24 @@ void test_0028_for_pairs_number_sorted() {
             << '"';
         throw std::runtime_error(sss.str());
     }
+}
+
+//@Test Script Helper unique regref manager
+void test_0028_unique_regref_manager() {
+    lua_State* l = Script::get_lua_state();
+    
+    lua_newtable(l);
+    Script::Unique_Regref ref(Script::grab_reference());
+    
+    Script::Helper::Unique_Regref_Manager urm;
+    
+    Script::Regref wref1 = urm.add_lua_value(ref.get());
+    
+    verify_not_equals(ref.get(), wref1);
+    
+    Script::Regref wref2 = urm.add_lua_value(ref.get());
+    
+    verify_equals(wref1, wref2);
 }
 
 } // namespace Test

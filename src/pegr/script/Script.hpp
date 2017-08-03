@@ -17,7 +17,7 @@ typedef int Regref;
  * @brief An integer index into a Lua array (a table with consecutive integer 
  * keys starting at 1)
  */
-typedef int Arridx;
+typedef lua_Number Arridx;
 
 /**
  * @class Unique_Regref

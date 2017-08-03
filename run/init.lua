@@ -30,6 +30,7 @@ pegr.add_component('position.c', {
     Of course, the name of the argument doesn't matter, only its position.
   ]]
   is_at_origin = {'func', function(self)
+    --print("Hello from is_at_origin!")
     return self.x == 0 and self.y == 0
   end},
 })

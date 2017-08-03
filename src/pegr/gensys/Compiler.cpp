@@ -7,6 +7,7 @@
 #include <vector>
 #include <memory>
 
+#include "pegr/Script/Script_Helper.hpp"
 #include "pegr/logger/Logger.hpp"
 #include "pegr/gensys/Gensys.hpp"
 #include "pegr/gensys/Util.hpp"
@@ -19,6 +20,7 @@ namespace Runtime {
 extern std::map<std::string, std::unique_ptr<Runtime::Comp> > n_runtime_comps;
 extern std::map<std::string, std::unique_ptr<Runtime::Arche> > n_runtime_arches;
 extern std::map<std::string, std::unique_ptr<Runtime::Genre> > n_runtime_genres;
+extern std::vector<Script::Unique_Regref> n_held_lua_values;
 } // namespace Runtime
     
 namespace Compiler {
@@ -36,6 +38,7 @@ struct Comp {
     std::map<Interm::Symbol, std::size_t> m_symbol_to_offset;
     Pod::Unique_Chunk_Ptr m_compiled_chunk;
     std::vector<std::string> m_strings;
+    std::vector<Script::Regref> m_funcs;
 };
 struct Arche {
     Arche(std::unique_ptr<Interm::Arche>&& interm)
@@ -77,7 +80,21 @@ private:
     std::map<std::string, Arche*> m_arches_by_id;
     std::map<std::string, Genre*> m_genres_by_id;
     
+    Script::Helper::Unique_Regref_Manager m_unique_regrefs;
+    
 public:
+    Script::Regref add_lua_value(Script::Regref val_ref) {
+        m_unique_regrefs.add_lua_value(val_ref);
+    }
+    
+    const std::vector<Script::Unique_Regref>& get_lua_uniques() const {
+        return m_unique_regrefs.get_lua_uniques();
+    }
+    
+    std::vector<Script::Unique_Regref> release_lua_uniques() {
+        return m_unique_regrefs.release();
+    }
+    
     const std::vector<std::unique_ptr<Comp> >& get_comps() const {
         return m_comps;
     }
@@ -182,7 +199,6 @@ void compile_component_store_pod(Work::Space& workspace,
 void compile_component_store_non_pod(Work::Space& workspace, 
         std::unique_ptr<Work::Comp>& comp) {
     comp->m_strings.clear();
-    std::size_t string_run_idx = 0;
     for (const auto& member : comp->m_interm->m_members) {
         //
         const Interm::Symbol& symbol = member.first;
@@ -190,9 +206,13 @@ void compile_component_store_non_pod(Work::Space& workspace,
         
         switch (prim.get_type()) {
             case Interm::Prim::Type::STR: {
+                comp->m_symbol_to_offset[symbol] = comp->m_strings.size();
                 comp->m_strings.push_back(prim.get_string());
-                comp->m_symbol_to_offset[symbol] = string_run_idx;
-                ++string_run_idx;
+                break;
+            }
+            case Interm::Prim::Type::FUNC: {
+                comp->m_symbol_to_offset[symbol] = comp->m_funcs.size();
+                comp->m_funcs.push_back(prim.get_function()->get());
                 break;
             }
             default: {
@@ -226,12 +246,9 @@ void compile_component_record_offsets(Work::Space& workspace,
                 runtime_prim.m_refer.m_byte_offset = offset;
                 break;
             }
-            case Runtime::Prim::Type::STR: {
-                runtime_prim.m_refer.m_index = offset;
-                break;
-            }
+            case Runtime::Prim::Type::STR:
             case Runtime::Prim::Type::FUNC: {
-                // TODO
+                runtime_prim.m_refer.m_index = offset;
                 break;
             }
             default: {
@@ -394,6 +411,73 @@ void compile_archetype_store_strings(Work::Space& workspace,
 }
 
 /**
+ * @brief Store any static lua values into the global Gensys Lua value table
+ * @param workspace
+ * @param arche
+ */
+void compile_archetype_store_static_lua_values(Work::Space& workspace,
+        std::unique_ptr<Work::Arche>& arche) {
+    
+    std::size_t accumulated = 0;
+            
+    // For every implementation
+    for (const auto& implem_pair : arche->m_interm->m_implements) {
+        
+        // Get the implementation
+        const Interm::Arche::Implement& implem = implem_pair.second;
+
+        const auto& comp_iter = 
+                workspace.get_comps_by_interm().find(implem.m_component);
+        
+        assert(comp_iter != workspace.get_comps_by_interm().end());
+        
+        // This should be const, since we shouldn't modify anything else
+        const Work::Comp* comp = comp_iter->second;
+        
+        // Copy the defaults
+        std::copy(comp->m_funcs.begin(), comp->m_funcs.end(), 
+                std::back_inserter(arche->m_runtime->m_static_funcs));
+        
+        // Set new defaults by overwriting existing funcs
+        for (const auto& member : implem.m_values) {
+            //
+            const Interm::Symbol& symbol = member.first;
+            const Interm::Prim& prim = member.second;
+            
+            if (prim.get_type() != Interm::Prim::Type::FUNC) {
+                continue;
+            }
+            
+            const auto& iter = comp->m_symbol_to_offset.find(symbol);
+            
+            assert(iter != comp->m_symbol_to_offset.end());
+            
+            std::size_t offset = iter->second;
+            
+            arche->m_runtime->m_static_funcs[accumulated + offset]
+                    = prim.get_function()->get();
+        }
+
+        // Remember how to find this data later
+        arche->m_runtime->m_comp_offsets[comp->m_runtime.get()].m_func_idx 
+                = accumulated;
+
+        // Keep track of how much space has been used
+        accumulated += comp->m_funcs.size();
+    }
+
+    // Every function should have been collected
+    assert(accumulated == arche->m_runtime->m_static_funcs.size());
+    
+    // Upload every saved function
+    for (std::size_t idx = 0; 
+            idx < arche->m_runtime->m_static_funcs.size(); ++idx) {
+        arche->m_runtime->m_static_funcs[idx] = 
+                workspace.add_lua_value(arche->m_runtime->m_static_funcs[idx]);
+    }
+}
+
+/**
  * @brief Make "redundant" copies of already-compiled data to speed up later
  * runtime usage.
  */
@@ -419,6 +503,7 @@ std::unique_ptr<Work::Arche> compile_archetype(Work::Space& workspace,
     compile_archetype_resize_pod(workspace, arche);
     compile_archetype_fill_pod(workspace, arche);
     compile_archetype_store_strings(workspace, arche);
+    compile_archetype_store_static_lua_values(workspace, arche);
     compile_archetype_make_redundant_copies(workspace, arche);
     
     return arche;
@@ -461,6 +546,12 @@ std::unique_ptr<Work::Genre> compile_genre(Work::Space& workspace,
             
             Runtime::Genre::Pattern::Alias runtime_alias;
             runtime_alias.m_comp = comp->m_runtime.get();
+            
+            /*
+            Logger::log()->info("asdf: %v", interm_alias.m_member);
+            for (auto asdf : runtime_alias.m_comp->m_member_offsets) {
+                Logger::log()->info(asdf.first);
+            }*/
             
             auto prim_iter =
                     runtime_alias.m_comp->m_member_offsets.find(
@@ -509,9 +600,7 @@ void compile() {
         workspace.add_genre(std::move(genre), entry.first);
     }
     
-    Runtime::n_runtime_comps.clear();
-    Runtime::n_runtime_arches.clear();
-    Runtime::n_runtime_genres.clear();
+    Runtime::cleanup();
     
     Logger::log()->info("Moving components...");
     for (const auto& entry : workspace.get_comps_by_id()) {
@@ -530,6 +619,9 @@ void compile() {
         Runtime::n_runtime_genres[entry.first] 
                 = std::move(entry.second->m_runtime);
     }
+    
+    Logger::log()->info("Moving Lua registry references...");
+    Runtime::n_held_lua_values = std::move(workspace.release_lua_uniques());
     
     Logger::log()->info("Compilation complete");
 }

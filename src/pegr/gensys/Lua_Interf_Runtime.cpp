@@ -545,6 +545,12 @@ int push_member_of_entity(lua_State* l,
             lua_pushstring(l, ent_ptr->get_string(string_idx).c_str());
             return 1;
         }
+        case Runtime::Prim::Type::FUNC: {
+            std::size_t func_idx = aggidx.m_func_idx
+                                    + prim.m_refer.m_index;
+            Script::push_reference(ent_ptr->get_func(func_idx));
+            return 1;
+        }
         default: {
             assert(false && "TODO");
         }
@@ -616,6 +622,10 @@ int write_to_member_of_enttiy(lua_State* l,
             ent_ptr->set_string(string_idx, 
                     std::string(string_data, string_len));
             return 1;
+        }
+        case Runtime::Prim::Type::FUNC: {
+            luaL_error(l, "Cannot assign to func (is static type)");
+            return 0;
         }
         default: {
             assert(false && "TODO");
@@ -995,7 +1005,6 @@ int li_genview_mt_newindex(lua_State* l) {
     arg_require_write_compatible_prim_type(l, prim.m_type, ARG_ASSIGN);
     return write_to_member_of_enttiy(l, ent_ptr, aggidx, prim, ARG_ASSIGN);
 }
-
 int li_genview_mt_tostring(lua_State* l) {
     // The first argument is guaranteed to be the right type
     Genview& genview = *(static_cast<Genview*>(lua_touserdata(l, 1)));
