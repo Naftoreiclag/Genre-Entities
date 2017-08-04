@@ -24,6 +24,8 @@ foreach(fname
 
 "Test.cpp"
 "debug/Debug_Assert_Lua_Balance.cpp"
+"engine/Applayer.cpp"
+"engine/Engine.cpp"
 "gensys/Compiler.cpp"
 "gensys/Gensys.cpp"
 "gensys/Interm_Types.cpp"
@@ -49,6 +51,7 @@ foreach(fname
 "test/Script_Helper_Test.cpp"
 "test/Script_Test.cpp"
 "test/Unique_Ptr_Test.cpp"
+"winput/Winput.cpp"
 
 )
 list(APPEND PGLOCAL_SOURCES_LIST "${PGLOCAL_SOURCE_DIR}/pegr/${fname}")
