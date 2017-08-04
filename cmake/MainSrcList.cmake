@@ -24,7 +24,7 @@ foreach(fname
 
 "Main.cpp"
 "debug/Debug_Assert_Lua_Balance.cpp"
-"engine/Applayer.cpp"
+"engine/App_State.cpp"
 "engine/Engine.cpp"
 "gensys/Compiler.cpp"
 "gensys/Gensys.cpp"
