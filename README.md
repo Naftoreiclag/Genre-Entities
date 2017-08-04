@@ -32,6 +32,8 @@ Genre Entity System requires the following libraries to be built correctly.
   for logging
 - [bgfx](https://github.com/bkaradzic/bgfx/)
   for rendering
+- [SDL2](https://www.libsdl.org/)
+  for windowing, input
 
 *Each library listed above is the copyright of its respective author(s). Please
 see individual library homepages for more accurate licensing information.*

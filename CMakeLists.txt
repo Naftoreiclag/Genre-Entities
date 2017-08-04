@@ -92,6 +92,20 @@ else()
     set(PGLOCAL_ALL_REQUIRED_READY FALSE)
 endif()
 
+# SDL2 #
+message(STATUS "SDL2 =================")
+find_package(SDL2)
+if(SDL2_FOUND)
+    message(STATUS "\tInclude Dirs: " ${SDL2_INCLUDE_DIR})
+    message(STATUS "\tLibraries: " ${SDL2_LIBRARIES})
+    list(APPEND PGLOCAL_INCLUDE_DIRS ${SDL2_INCLUDE_DIR})
+    target_link_libraries(${PGLOCAL_MAIN_TARGET} ${SDL2_LIBRARIES})
+    target_link_libraries(${PGLOCAL_TEST_TARGET} ${SDL2_LIBRARIES})
+else()
+    message("\tNOT FOUND")
+    set(PGLOCAL_ALL_REQUIRED_READY FALSE)
+endif()
+
 # bgfx #
 message(STATUS "bgfx =================")
 find_package(bgfx)
