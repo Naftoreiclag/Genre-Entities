@@ -94,13 +94,29 @@ std::unique_ptr<App_State> pop_state() {
     std::unique_ptr<App_State>& unique_back_state = n_state_pushdown.back();
     App_State* affected_state = unique_back_state.get();
     affected_state->cleanup();
-    std::unique_ptr<App_State> retval;
-    std::swap(unique_back_state, retval);
+    std::unique_ptr<App_State> retval(std::move(unique_back_state));
     n_state_pushdown.pop_back();
     if (n_state_pushdown.size() > 0) {
         App_State* new_back_state = n_state_pushdown.back().get();
         new_back_state->unpause(affected_state);
     }
+    return retval;
+}
+
+std::unique_ptr<App_State> swap_state(std::unique_ptr<App_State>&& u_state) {
+    if (n_state_pushdown.size() == 0) {
+        push_state(std::move(u_state));
+        std::unique_ptr<App_State> none;
+        return none;
+    }
+    
+    App_State* state = u_state.get();
+    std::unique_ptr<App_State>& u_top_state = n_state_pushdown.back();
+    App_State* top_state = u_top_state.get();
+    top_state->cleanup();
+    std::unique_ptr<App_State> retval(std::move(u_top_state));
+    u_top_state = std::move(u_state);
+    state->initialize();
     return retval;
 }
 

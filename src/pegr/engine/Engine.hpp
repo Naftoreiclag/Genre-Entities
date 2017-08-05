@@ -26,6 +26,7 @@ bool winput_used();
 void initialize(uint16_t flags = INIT_FLAG_ALL);
 void push_state(std::unique_ptr<App_State>&& state);
 std::unique_ptr<App_State> pop_state();
+std::unique_ptr<App_State> swap_state(std::unique_ptr<App_State>&& state);
 void run();
 void cleanup();
 
