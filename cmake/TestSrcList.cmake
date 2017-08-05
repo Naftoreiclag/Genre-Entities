@@ -53,6 +53,7 @@ foreach(fname
 "test/Script_Helper_Test.cpp"
 "test/Script_Test.cpp"
 "test/Unique_Ptr_Test.cpp"
+"winput/Enum_Utils.cpp"
 "winput/Winput.cpp"
 
 )

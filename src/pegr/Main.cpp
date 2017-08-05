@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <vector>
 
+#include <bgfx/bgfx.h>
+
 #include "pegr/engine/Engine.hpp"
 #include "pegr/engine/App_State.hpp"
 #include "pegr/script/Script.hpp"
@@ -42,8 +44,14 @@ public:
         } catch (std::runtime_error e) {
             Logger::log()->warn(e.what());
         }
-        
-        Engine::pop_state();
+    }
+    
+    virtual void on_frame() override {
+        bgfx::setViewRect(0, 0, 0, (std::uint16_t) 640, (std::uint16_t) 480);
+        bgfx::touch(0);
+        bgfx::dbgTextClear();
+        bgfx::dbgTextPrintf(0, 0, 0x0f, "Hello world");
+        bgfx::frame();
     }
 };
 
