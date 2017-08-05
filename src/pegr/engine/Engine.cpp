@@ -11,6 +11,7 @@
 #include "pegr/script/Script.hpp"
 #include "pegr/logger/Logger.hpp"
 #include "pegr/winput/Winput.hpp"
+#include "pegr/engine/App_State_Machine.hpp"
 
 namespace pegr {
 namespace Engine {
@@ -43,8 +44,7 @@ bool winput_used() {
 
 bool n_main_loop_running = false;
 
-typedef std::vector<std::unique_ptr<App_State> > App_State_Vector;
-App_State_Vector n_state_pushdown;
+App_State_Machine n_app_state_machine;
 
 void initialize(uint16_t flags) {
     n_flags = flags;
@@ -77,62 +77,30 @@ void initialize(uint16_t flags) {
 }
 
 void push_state(std::unique_ptr<App_State>&& unique_state) {
-    App_State* state = unique_state.get();
-    if (n_state_pushdown.size() > 0) {
-        App_State* back_state = n_state_pushdown.back().get();
-        back_state->pause(state);
-    }
-    n_state_pushdown.emplace_back(std::move(unique_state));
-    state->initialize();
+    n_app_state_machine.push_state(std::move(unique_state));
 }
 
 std::unique_ptr<App_State> pop_state() {
-    if (n_state_pushdown.size() == 0) {
-        std::unique_ptr<App_State> none;
-        return none;
-    }
-    std::unique_ptr<App_State>& unique_back_state = n_state_pushdown.back();
-    App_State* affected_state = unique_back_state.get();
-    affected_state->cleanup();
-    std::unique_ptr<App_State> retval(std::move(unique_back_state));
-    n_state_pushdown.pop_back();
-    if (n_state_pushdown.size() > 0) {
-        App_State* new_back_state = n_state_pushdown.back().get();
-        new_back_state->unpause(affected_state);
-    }
-    return retval;
+    return n_app_state_machine.pop_state();
 }
 
 std::unique_ptr<App_State> swap_state(std::unique_ptr<App_State>&& u_state) {
-    if (n_state_pushdown.size() == 0) {
-        push_state(std::move(u_state));
-        std::unique_ptr<App_State> none;
-        return none;
-    }
-    
-    App_State* state = u_state.get();
-    std::unique_ptr<App_State>& u_top_state = n_state_pushdown.back();
-    App_State* top_state = u_top_state.get();
-    top_state->cleanup();
-    std::unique_ptr<App_State> retval(std::move(u_top_state));
-    u_top_state = std::move(u_state);
-    state->initialize();
-    return retval;
+    return n_app_state_machine.swap_state(std::move(u_state));
 }
 
 void run() {
     n_main_loop_running = true;
     while (n_main_loop_running) {
-        if (n_state_pushdown.size() == 0) {
+        App_State* app_state = n_app_state_machine.get_active();
+        if (!app_state) {
             quit();
             break;
         }
         if (winput_used()) {
             Winput::pollEvents();
         }
-        App_State* back_state = n_state_pushdown.back().get();
-        back_state->on_frame();
-        if (n_state_pushdown.size() == 0) {
+        app_state->on_frame();
+        if (!app_state) {
             quit();
             break;
         }
@@ -140,9 +108,7 @@ void run() {
 }
 
 void cleanup() {
-    while (n_state_pushdown.size() > 0) {
-        pop_state();
-    }
+    n_app_state_machine.clear_all();
     
     if (winput_used()) {
         Winput::cleanup();

@@ -18,6 +18,7 @@ void test_0000_memory_test();
 void test_0000_ptr_cast();
 void test_0001_flags();
 void test_0001_init_sanity();
+void test_0002_app_state_machine_test();
 void test_0002_unique_ptr_test();
 void test_0005_assertion_test();
 void test_0010_check_guard_memory_leaks();
@@ -53,6 +54,7 @@ const NamedTest n_tests[] = {
     {"Pointer cast", test_0000_ptr_cast},
     {"Flag test", test_0001_flags},
     {"Initialization Sanity Test", test_0001_init_sanity},
+    {"App State Machine Test", test_0002_app_state_machine_test},
     {"Unique Ptr Test", test_0002_unique_ptr_test},
     {"Assertion test", test_0005_assertion_test},
     {"Script Unique_Regref memory leaks", test_0010_check_guard_memory_leaks},
