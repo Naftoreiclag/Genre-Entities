@@ -4,6 +4,7 @@
 #include <chrono>
 #include <ratio>
 
+#include "pegr/engine/Engine.hpp"
 #include "pegr/gensys/Gensys.hpp"
 #include "pegr/gensys/Lua_Interf.hpp"
 #include "pegr/scheduler/Lua_Interf.hpp"
@@ -78,13 +79,6 @@ int li_debug_timer_end(lua_State* l) {
 }
 
 void setup() {
-    Logger::initialize();
-    
-    Script::initialize();
-    
-    Gensys::LI::initialize();
-    Sched::LI::initialize();
-    
     const luaL_Reg test_api[] = {
         {"debug_stage_compile", li_debug_stage_compile},
         {"debug_collect_garbage", li_debug_collect_garbage},
@@ -94,10 +88,7 @@ void setup() {
         // Sentinel
         {nullptr, nullptr}
     };
-    
     Script::multi_expose_c_functions(test_api);
-    
-    Gensys::initialize();
 }
 
 void log_header(const char* name, char divider = '.') {
@@ -301,20 +292,26 @@ void run() {
     run_extras();
 }
 
-void cleanup() {
-    Gensys::cleanup();
+class Test_State : public Engine::App_State {
+public:
+    Test_State()
+    : Engine::App_State("Test") {}
+    virtual ~Test_State() {}
     
-    Sched::LI::cleanup();
-    Gensys::LI::cleanup();
-    
-    Script::cleanup();
-    
-    Logger::cleanup();
-}
+    virtual void initialize() override {
+        setup();
+        run();
+        Engine::pop_state();
+    }
+};
 
 int main() {
-    setup();
-    run();
-    cleanup();
+    Engine::initialize(Engine::INIT_FLAG_LOGGER 
+            | Engine::INIT_FLAG_GENSYS 
+            | Engine::INIT_FLAG_SCRIPT 
+            | Engine::INIT_FLAG_SCHED);
+    Engine::push_state(std::make_unique<Test_State>());
+    Engine::run();
+    Engine::cleanup();
     return 0;
 }

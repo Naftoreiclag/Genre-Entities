@@ -1,31 +1,25 @@
-#include "pegr/engine/Engine.hpp"
-
 #include <cassert>
 #include <stdexcept>
 #include <algorithm>
 #include <vector>
 
+#include "pegr/engine/Engine.hpp"
 #include "pegr/engine/App_State.hpp"
+#include "pegr/script/Script.hpp"
+#include "pegr/script/Script_Helper.hpp"
 #include "pegr/gensys/Lua_Interf.hpp"
 #include "pegr/gensys/Gensys.hpp"
-#include "pegr/scheduler/Lua_Interf.hpp"
-#include "pegr/script/Script.hpp"
-#include "pegr/logger/Logger.hpp"
-#include "pegr/winput/Winput.hpp"
-
-#include "pegr/script/Script_Helper.hpp"
 #include "pegr/logger/Logger.hpp"
 
 using namespace pegr;
 
 class Main_State : public Engine::App_State {
 public:
-    
     Main_State()
     : Engine::App_State("Main") {}
     virtual ~Main_State() {}
     
-    virtual void on_frame() override {
+    virtual void initialize() override {
         Script::Unique_Regref sandbox(Script::new_sandbox());
         Script::Unique_Regref init_fun;
         Script::Unique_Regref postinit_fun;
@@ -54,7 +48,7 @@ public:
 };
 
 int main() {
-    Engine::initialize();
+    Engine::initialize(Engine::INIT_FLAG_ALL);
     Engine::push_state(std::make_unique<Main_State>());
     Engine::run();
     Engine::cleanup();
