@@ -117,7 +117,7 @@ void push_new_weak_table(const char* mode);
  * @brief A collection of Lua values, using as few unique registry references
  * as possible. Internally, uses a Lua table with the added values as keys and
  * the registry references as values. When adding a Lua value to this
- * collection, the value is compared with the keys in the table.
+ * collection, the value is compared with the keys in that table.
  */
 class Unique_Regref_Manager {
 public:

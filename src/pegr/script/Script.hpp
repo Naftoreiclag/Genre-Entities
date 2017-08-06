@@ -65,7 +65,7 @@ public:
     /**
      * @brief Move assignment
      */
-    Unique_Regref& operator=(Unique_Regref&& rhs);
+    Unique_Regref& operator =(Unique_Regref&& rhs);
     
     /**
      * @brief Deconstructor. Drops whatever reference it is guarding.
