@@ -3,6 +3,7 @@
 
 #include <stdexcept>
 #include <sstream>
+#include <vector>
 
 namespace pegr {
 namespace Test {
