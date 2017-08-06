@@ -134,6 +134,7 @@ void on_sdl_window_resize(const SDL_WindowEvent& window) {
     Logger::log()->info("Window resized to %vx%v", 
             n_window_width, n_window_height);
     bgfx::reset(n_window_width, n_window_height, BGFX_RESET_VSYNC);
+    Engine::on_window_resize(n_window_width, n_window_height);
 }
 
 void on_sdl_quit(const SDL_QuitEvent& quit) {

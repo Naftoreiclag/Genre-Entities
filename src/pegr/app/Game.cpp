@@ -51,16 +51,21 @@ void Game_State::initialize() {
             0x009e79ff, 1.f, 0);
     bgfx::setDebug(BGFX_DEBUG_TEXT);
     bgfx::frame();
-}
-
-void Game_State::on_frame() {
     bgfx::setViewRect(0, 0, 0, 
             Winput::get_window_width(), 
             Winput::get_window_height());
+}
+
+void Game_State::on_frame() {
     bgfx::touch(0);
     bgfx::dbgTextClear();
     bgfx::dbgTextPrintf(0, 0, 0x0f, "Hello world");
     bgfx::frame();
+}
+
+void Game_State::on_window_resize(int32_t width, int32_t height) {
+    bgfx::setViewRect(0, 0, 0, width, height);
+    
 }
 
 } // namespace App

@@ -30,6 +30,7 @@ std::unique_ptr<App_State> swap_state(std::unique_ptr<App_State>&& state);
 void run();
 void cleanup();
 
+void on_window_resize(int32_t width, int32_t height);
 void quit();
 
 } // namespace Engine

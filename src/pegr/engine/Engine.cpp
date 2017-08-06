@@ -88,6 +88,12 @@ std::unique_ptr<App_State> swap_state(std::unique_ptr<App_State>&& u_state) {
     return n_app_state_machine.swap_state(std::move(u_state));
 }
 
+void on_window_resize(int32_t width, int32_t height) {
+    App_State* app_state = n_app_state_machine.get_active();
+    if (!app_state) return;
+    app_state->on_window_resize(width, height);
+}
+
 void run() {
     n_main_loop_running = true;
     while (n_main_loop_running) {

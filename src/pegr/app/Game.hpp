@@ -1,6 +1,8 @@
 #ifndef PEGR_APP_GAME_HPP
 #define PEGR_APP_GAME_HPP
 
+#include <bgfx/bgfx.h>
+
 #include "pegr/engine/App_State.hpp"
 
 namespace pegr {
@@ -11,7 +13,13 @@ public:
     Game_State();
     virtual ~Game_State();
     virtual void initialize() override;
+    
     virtual void on_frame() override;
+    virtual void on_window_resize(int32_t width, int32_t height) override;
+    
+private:
+    
+    bgfx::ProgramHandle m_shader_prog;
 };
 
 } // namespace App
