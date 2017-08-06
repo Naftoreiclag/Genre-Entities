@@ -23,6 +23,7 @@ set(PGLOCAL_SOURCES_LIST "")
 foreach(fname 
 
 "Main.cpp"
+"app/Game.cpp"
 "debug/Debug_Assert_Lua_Balance.cpp"
 "engine/App_State.cpp"
 "engine/App_State_Machine.cpp"
