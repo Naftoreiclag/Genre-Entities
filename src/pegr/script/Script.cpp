@@ -38,12 +38,6 @@ Unique_Regref& Unique_Regref::operator =(Unique_Regref&& rhs) {
     return *this;
 }
 
-// Assignment of value
-Unique_Regref& Unique_Regref::operator =(const Regref& value) {
-    reset(value);
-    return *this;
-}
-
 void Unique_Regref::reset(Regref value) {
     drop_reference(m_reference);
     m_reference = value;

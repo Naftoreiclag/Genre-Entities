@@ -51,13 +51,6 @@ public:
     Unique_Regref& operator =(const Unique_Regref& rhs) = delete;
     
     /**
-     * @brief Allow assignment of references directly to the guard. The
-     * currently guarded object will be released.
-     * @param ref The reference to guard
-     */
-    Unique_Regref& operator =(const Regref& value);
-    
-    /**
      * @brief Move construction
      */
     Unique_Regref(Unique_Regref&& rhs);
