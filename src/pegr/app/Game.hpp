@@ -4,6 +4,7 @@
 #include <bgfx/bgfx.h>
 
 #include "pegr/engine/App_State.hpp"
+#include "pegr/render/Handle_Util.hpp"
 
 namespace pegr {
 namespace App {
@@ -18,8 +19,7 @@ public:
     virtual void on_window_resize(int32_t width, int32_t height) override;
     
 private:
-    
-    bgfx::ProgramHandle m_shader_prog;
+    Render::Unique_Program m_shader_prog;
 };
 
 } // namespace App

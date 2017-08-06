@@ -39,6 +39,7 @@ void test_0030_gensys_primitive_multiple();
 void test_0080_00_gensys_primitive();
 void test_0085_00_podchunk_test();
 void test_0099_gensys_runtime();
+void test_0100_unique_render_handles();
 
 struct NamedTest {
     const char* m_name;
@@ -75,6 +76,7 @@ const NamedTest n_tests[] = {
     {"Gensys primitive from Lua values", test_0080_00_gensys_primitive},
     {"PodChunk test", test_0085_00_podchunk_test},
     {"Gensys Runtime Test", test_0099_gensys_runtime},
+    {"Unique render handles templates", test_0100_unique_render_handles},
     
     // Sentinel
     {nullptr, std::function<void()>()}
