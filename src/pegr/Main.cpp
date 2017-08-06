@@ -12,6 +12,7 @@
 #include "pegr/gensys/Lua_Interf.hpp"
 #include "pegr/gensys/Gensys.hpp"
 #include "pegr/logger/Logger.hpp"
+#include "pegr/winput/Winput.hpp"
 
 using namespace pegr;
 
@@ -44,10 +45,17 @@ public:
         } catch (std::runtime_error e) {
             Logger::log()->warn(e.what());
         }
+        
+        bgfx::setViewClear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH,
+                0x009e79ff, 1.f, 0);
+        bgfx::setDebug(BGFX_DEBUG_TEXT);
+        bgfx::frame();
     }
     
     virtual void on_frame() override {
-        bgfx::setViewRect(0, 0, 0, (std::uint16_t) 640, (std::uint16_t) 480);
+        bgfx::setViewRect(0, 0, 0, 
+                Winput::get_window_width(), 
+                Winput::get_window_width());
         bgfx::touch(0);
         bgfx::dbgTextClear();
         bgfx::dbgTextPrintf(0, 0, 0x0f, "Hello world");

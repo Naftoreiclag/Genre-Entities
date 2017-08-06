@@ -16,8 +16,17 @@
 namespace pegr {
 namespace Winput {
 
+const int32_t WINDOW_DEFAULT_WIDTH = 640;
+const int32_t WINDOW_DEFAULT_HEIGHT = 480;
+
 SDL_Window* n_window;
 SDL_SysWMinfo n_syswm_info;
+
+int32_t n_window_width = WINDOW_DEFAULT_WIDTH;
+int32_t n_window_height = WINDOW_DEFAULT_HEIGHT;
+
+int32_t get_window_width() { return n_window_width; }
+int32_t get_window_height() { return n_window_height; }
 
 bgfx::PlatformData extract_plat_specific(const SDL_SysWMinfo& syswm_info) {
     bgfx::PlatformData plat_specific;
@@ -61,6 +70,7 @@ bgfx::PlatformData extract_plat_specific(const SDL_SysWMinfo& syswm_info) {
     return plat_specific;
 }
 
+
 void initialize() {
     Logger::log()->info("Initializing window and input");
     
@@ -82,8 +92,14 @@ void initialize() {
     n_window = SDL_CreateWindow("hello world", 
         SDL_WINDOWPOS_CENTERED, 
         SDL_WINDOWPOS_CENTERED, 
-        640, 480, 
+        n_window_width, n_window_height, 
         SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_HIDDEN);
+    {
+        int width, height;
+        SDL_GetWindowSize(n_window, &width, &height);
+        n_window_width = width;
+        n_window_height = height;
+    }
     if(!n_window) {
         throw std::runtime_error("Could not create SDL window");
     }
@@ -116,16 +132,30 @@ void initialize() {
     if (!bgfx::init(bgfx::RendererType::Count, BGFX_PCI_ID_NONE)) {
         throw std::runtime_error("Failed to init bgfx");
     }
-    bgfx::reset(640, 480, BGFX_RESET_VSYNC);
-    bgfx::setViewClear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH,
-            0x009e79ff, 1.f, 0);
-    bgfx::setDebug(BGFX_DEBUG_TEXT);
-    bgfx::frame();
+    bgfx::reset(n_window_width, n_window_height, BGFX_RESET_VSYNC);
 }
+
+void on_window_resize(const SDL_WindowEvent& window) {
+    n_window_width = window.data1;
+    n_window_height = window.data2;
+    Logger::log()->info("Window resized to %vx%v", 
+            n_window_width, n_window_height);
+    bgfx::reset(n_window_width, n_window_height, BGFX_RESET_VSYNC);
+}
+
 void pollEvents() {
     SDL_Event event;
-    while(SDL_PollEvent(&event)) {
-        switch(event.type) {
+    while (SDL_PollEvent(&event)) {
+        switch (event.type) {
+            case SDL_WINDOWEVENT: {
+                switch (event.window.event) {
+                    case SDL_WINDOWEVENT_RESIZED: {
+                        on_window_resize(event.window);
+                        break;
+                    }
+                }
+                break;
+            }
             case SDL_QUIT: {
                 Engine::quit();
                 break;
@@ -137,6 +167,9 @@ void pollEvents() {
 void cleanup() {
     Logger::log()->info("Cleaning window and input");
     bgfx::shutdown();
+    
+    n_window_width = WINDOW_DEFAULT_WIDTH;
+    n_window_height = WINDOW_DEFAULT_HEIGHT;
     
     SDL_DestroyWindow(n_window);
     SDL_Quit();
