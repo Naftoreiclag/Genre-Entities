@@ -6,6 +6,7 @@
 namespace pegr {
 namespace Winput {
 
+extern const char* const WINDOW_DEFAULT_TITLE;
 extern const int32_t WINDOW_DEFAULT_WIDTH;
 extern const int32_t WINDOW_DEFAULT_HEIGHT;
 

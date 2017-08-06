@@ -16,6 +16,7 @@
 namespace pegr {
 namespace Winput {
 
+const char* const WINDOW_DEFAULT_TITLE = "Engine";
 const int32_t WINDOW_DEFAULT_WIDTH = 640;
 const int32_t WINDOW_DEFAULT_HEIGHT = 480;
 
@@ -70,7 +71,6 @@ bgfx::PlatformData extract_plat_specific(const SDL_SysWMinfo& syswm_info) {
     return plat_specific;
 }
 
-
 void initialize() {
     Logger::log()->info("Initializing window and input");
     
@@ -81,15 +81,8 @@ void initialize() {
         throw std::runtime_error(sss.str());
     }
     
-    if(SDL_InitSubSystem(SDL_INIT_VIDEO) < 0) {
-        std::stringstream sss;
-        sss << "Could not initalize SDL video: "
-            << SDL_GetError();
-        throw std::runtime_error(sss.str());
-    }
-    
     // Create the window
-    n_window = SDL_CreateWindow("hello world", 
+    n_window = SDL_CreateWindow(WINDOW_DEFAULT_TITLE, 
         SDL_WINDOWPOS_CENTERED, 
         SDL_WINDOWPOS_CENTERED, 
         n_window_width, n_window_height, 
@@ -103,7 +96,6 @@ void initialize() {
     if(!n_window) {
         throw std::runtime_error("Could not create SDL window");
     }
-    SDL_ShowWindow(n_window);
     
     SDL_version version;
     SDL_VERSION(&version);
@@ -133,14 +125,19 @@ void initialize() {
         throw std::runtime_error("Failed to init bgfx");
     }
     bgfx::reset(n_window_width, n_window_height, BGFX_RESET_VSYNC);
+    SDL_ShowWindow(n_window);
 }
 
-void on_window_resize(const SDL_WindowEvent& window) {
+void on_sdl_window_resize(const SDL_WindowEvent& window) {
     n_window_width = window.data1;
     n_window_height = window.data2;
     Logger::log()->info("Window resized to %vx%v", 
             n_window_width, n_window_height);
     bgfx::reset(n_window_width, n_window_height, BGFX_RESET_VSYNC);
+}
+
+void on_sdl_quit(const SDL_QuitEvent& quit) {
+    Engine::quit();
 }
 
 void pollEvents() {
@@ -150,14 +147,14 @@ void pollEvents() {
             case SDL_WINDOWEVENT: {
                 switch (event.window.event) {
                     case SDL_WINDOWEVENT_RESIZED: {
-                        on_window_resize(event.window);
+                        on_sdl_window_resize(event.window);
                         break;
                     }
                 }
                 break;
             }
             case SDL_QUIT: {
-                Engine::quit();
+                on_sdl_quit(event.quit);
                 break;
             }
             default: break;
