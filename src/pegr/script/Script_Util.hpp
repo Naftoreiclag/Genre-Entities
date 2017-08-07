@@ -1,5 +1,5 @@
-#ifndef PEGR_SCRIPT_SCRIPTHELPER_HPP
-#define PEGR_SCRIPT_SCRIPTHELPER_HPP
+#ifndef PEGR_SCRIPT_SCRIPTUTIL_HPP
+#define PEGR_SCRIPT_SCRIPTUTIL_HPP
 
 #include <functional>
 #include <string>
@@ -141,4 +141,4 @@ private:
 } // namespace Script
 } // namespace pegr
 
-#endif // PEGR_SCRIPT_SCRIPTHELPER_HPP
+#endif // PEGR_SCRIPT_SCRIPTUTIL_HPP

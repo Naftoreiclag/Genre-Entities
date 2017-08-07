@@ -1,5 +1,5 @@
-#ifndef PEGR_RENDER_HANDLEUTIL_HPP
-#define PEGR_RENDER_HANDLEUTIL_HPP
+#ifndef PEGR_RENDER_HANDLES_HPP
+#define PEGR_RENDER_HANDLES_HPP
 
 #include <cassert>
 
@@ -149,4 +149,4 @@ typedef Unique_Handle<bgfx::VertexBufferHandle> Unique_Vertex_Buffer;
 } // namespace Render
 } // namespace pegr
 
-#endif // PEGR_RENDER_HANDLEUTIL_HPP
+#endif // PEGR_RENDER_HANDLES_HPP
