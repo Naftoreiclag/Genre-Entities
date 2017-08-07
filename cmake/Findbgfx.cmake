@@ -14,17 +14,17 @@
 
 # Populates:
 # - BGFX_FOUND
-# - BGFX_INCLUDE_DIR
+# - BGFX_INCLUDE_DIRS
 # - BGFX_LIBRARIES
 
 set(BGFX_FOUND FALSE)
-find_path(BGFX_INCLUDE_DIR NAMES "bgfx/bgfx.h")
+find_path(BGFX_INCLUDE_DIRS NAMES "bgfx/bgfx.h")
 find_library(BGFX_LIBRARY_BGFX NAMES "bgfx")
 find_library(BGFX_LIBRARY_BIMG NAMES "bimg")
 find_library(BGFX_LIBRARY_BX NAMES "bx")
 
 
-if(BGFX_INCLUDE_DIR 
+if(BGFX_INCLUDE_DIRS 
         AND BGFX_LIBRARY_BX 
         AND BGFX_LIBRARY_BIMG 
         AND BGFX_LIBRARY_BGFX)
@@ -39,7 +39,7 @@ if(BGFX_INCLUDE_DIR
 endif()
 
 mark_as_advanced(
-    BGFX_INCLUDE_DIR
+    BGFX_INCLUDE_DIRS
     BGFX_LIBRARY_BGFX
     BGFX_LIBRARY_BIMG
     BGFX_LIBRARY_BX
