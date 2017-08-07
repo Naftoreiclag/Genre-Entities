@@ -10,7 +10,7 @@
 
 #include "pegr/debug/Debug_Macros.hpp"
 #include "pegr/logger/Logger.hpp"
-#include "pegr/script/Script_Helper.hpp"
+#include "pegr/script/Script_Util.hpp"
 
 namespace pegr {
 namespace Script {
@@ -448,7 +448,7 @@ Regref new_sandbox() {
     assert(is_initialized());
     // Make a deep copy of the pristine sandbox
     push_reference(m_pristine_sandbox);
-    Helper::simple_deep_copy(-1);
+    Util::simple_deep_copy(-1);
     // Set the "_G" member to itself
     lua_pushvalue(m_l, -1);
     lua_setfield(m_l, -2, "_G");

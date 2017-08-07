@@ -9,7 +9,7 @@
 
 namespace pegr {
 namespace Script {
-namespace Helper {
+namespace Util {
 
 /**
  * @brief Calls the provided function for every key,value pair in the lua table

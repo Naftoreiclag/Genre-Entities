@@ -10,7 +10,7 @@
 #include "pegr/scheduler/Lua_Interf.hpp"
 #include "pegr/debug/Debug_Macros.hpp"
 #include "pegr/script/Script.hpp"
-#include "pegr/script/Script_Helper.hpp"
+#include "pegr/script/Script_Util.hpp"
 #include "pegr/logger/Logger.hpp"
 #include "pegr/test/Tests.hpp"
 
@@ -146,7 +146,7 @@ bool run_lua_test(const Test::NamedLuaTest& test) {
         Script::Unique_Regref func(
                 Script::load_lua_function(
                         sss.str().c_str(), sandbox, test.m_name));
-        Script::Helper::run_simple_function(func, 0);
+        Script::Util::run_simple_function(func, 0);
         Logger::log()->info("%v\t...PASSED!%v", COLOR_GREEN, COLOR_RESET);
         success = true;
     }
@@ -215,7 +215,7 @@ void run_extras() {
             Script::Unique_Regref func(
                     Script::load_lua_function(
                             sss.str().c_str(), sandbox, sss.str().c_str()));
-            Script::Helper::run_simple_function(func, 1);
+            Script::Util::run_simple_function(func, 1);
             Script::Pop_Guard pg(1);
             
             if (lua_isfunction(l, -1)) {

@@ -40,7 +40,7 @@ foreach(fname
 "scheduler/Lua_Interf.cpp"
 "script/Lua_Interf_Util.cpp"
 "script/Script.cpp"
-"script/Script_Helper.cpp"
+"script/Script_Util.cpp"
 "test/Algs_Test.cpp"
 "test/App_State_Machine_Test.cpp"
 "test/Debug_Test.cpp"

@@ -1,4 +1,4 @@
-#include "pegr/script/Script_Helper.hpp"
+#include "pegr/script/Script_Util.hpp"
 
 #include <algorithm>
 #include <stdexcept>
@@ -10,7 +10,7 @@
 
 namespace pegr {
 namespace Script {
-namespace Helper {
+namespace Util {
 
 void for_pairs(int table_idx, std::function<bool()> func, bool pops_value) {
     assert_balance(0);

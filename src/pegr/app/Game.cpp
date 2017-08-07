@@ -10,7 +10,7 @@
 #include "pegr/engine/Engine.hpp"
 #include "pegr/engine/App_State.hpp"
 #include "pegr/script/Script.hpp"
-#include "pegr/script/Script_Helper.hpp"
+#include "pegr/script/Script_Util.hpp"
 #include "pegr/gensys/Lua_Interf.hpp"
 #include "pegr/gensys/Gensys.hpp"
 #include "pegr/logger/Logger.hpp"
@@ -35,14 +35,14 @@ void Game_State::initialize() {
     }
     
     try {
-        Script::Helper::run_simple_function(init_fun, 0);
+        Script::Util::run_simple_function(init_fun, 0);
     } catch (std::runtime_error e) {
         Logger::log()->warn(e.what());
     }
     Gensys::LI::stage_all();
     Gensys::compile();
     try {
-        Script::Helper::run_simple_function(postinit_fun, 0);
+        Script::Util::run_simple_function(postinit_fun, 0);
     } catch (std::runtime_error e) {
         Logger::log()->warn(e.what());
     }
@@ -54,6 +54,7 @@ void Game_State::initialize() {
     bgfx::setViewRect(0, 0, 0, 
             Winput::get_window_width(), 
             Winput::get_window_height());
+    
 }
 
 void Game_State::on_frame() {

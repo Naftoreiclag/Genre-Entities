@@ -9,7 +9,7 @@
 
 #include "pegr/debug/Debug_Macros.hpp"
 #include "pegr/logger/Logger.hpp"
-#include "pegr/script/Script_Helper.hpp"
+#include "pegr/script/Script_Util.hpp"
 #include "pegr/gensys/Util.hpp"
 
 namespace pegr {
@@ -187,7 +187,7 @@ Script::Regref Entity::get_table() {
 Script::Regref Entity::get_weak_table() {
     if (m_generic_weak_table.is_nil()) {
         assert_balance(0);
-        Script::Helper::push_new_weak_table("v"); // +1
+        Script::Util::push_new_weak_table("v"); // +1
         m_generic_weak_table.reset(Script::grab_reference()); // -1
     }
     return m_generic_weak_table.get();

@@ -7,7 +7,7 @@
 #include <vector>
 #include <memory>
 
-#include "pegr/Script/Script_Helper.hpp"
+#include "pegr/Script/Script_Util.hpp"
 #include "pegr/logger/Logger.hpp"
 #include "pegr/gensys/Gensys.hpp"
 #include "pegr/gensys/Util.hpp"
@@ -80,7 +80,7 @@ private:
     std::map<std::string, Arche*> m_arches_by_id;
     std::map<std::string, Genre*> m_genres_by_id;
     
-    Script::Helper::Unique_Regref_Manager m_unique_regrefs;
+    Script::Util::Unique_Regref_Manager m_unique_regrefs;
     
 public:
     Script::Regref add_lua_value(Script::Regref val_ref) {

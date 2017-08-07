@@ -6,7 +6,7 @@
 
 #include "pegr/debug/Debug_Macros.hpp"
 #include "pegr/script/Script.hpp"
-#include "pegr/script/Script_Helper.hpp"
+#include "pegr/script/Script_Util.hpp"
 #include "pegr/logger/Logger.hpp"
 
 namespace pegr {
@@ -30,7 +30,7 @@ void generic_li_add_to_res_table(lua_State* l, Regref registry,
     // Push the key
     lua_pushstring(l, key.c_str());
     // Push the value (a simple copy of the table argument)
-    Script::Helper::simple_deep_copy(2);
+    Script::Util::simple_deep_copy(2);
     Script::Pop_Guard pg(3);
     
     // Can throw exception...

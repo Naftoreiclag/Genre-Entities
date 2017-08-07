@@ -1,6 +1,6 @@
 #include <stdexcept>
 
-#include "pegr/script/Script_Helper.hpp"
+#include "pegr/script/Script_Util.hpp"
 #include "pegr/script/Script.hpp"
 #include "pegr/logger/Logger.hpp"
 #include "pegr/gensys/Compiler.hpp"
@@ -20,7 +20,7 @@ void test_0080_00_gensys_primitive() {
     Script::Unique_Regref func(
         Script::load_lua_function("test/common/prim_cstr_table.lua", sandbox));
         
-    Script::Helper::run_simple_function(func, 1);
+    Script::Util::run_simple_function(func, 1);
     
     prim = Gensys::LI::parse_primitive(-1);
     lua_pop(l, 1);
