@@ -1,3 +1,19 @@
+/*
+ *  Copyright 2017 James Fong
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 #include "pegr/gensys/Lua_Interf.hpp"
 
 #include <algorithm>
@@ -13,7 +29,7 @@
 #include "pegr/debug/Debug_Macros.hpp"
 #include "pegr/logger/Logger.hpp"
 #include "pegr/gensys/Compiler.hpp"
-#include "pegr/script/Script_Helper.hpp"
+#include "pegr/script/Script_Util.hpp"
 #include "pegr/gensys/Gensys.hpp"
 #include "pegr/script/Lua_Interf_Util.hpp"
 #include "pegr/util/Algs.hpp"
@@ -109,8 +125,8 @@ std::string assert_table_key_to_string(int idx, const char* err_msg) {
     const char* strdata = lua_tolstring(l, -1, &strlen);
     if (!strdata) {
         std::string str_debug = 
-                Script::Helper::to_string(-1, 
-                        Script::Helper::GENERIC_TO_STRING_DEFAULT);
+                Script::Util::to_string(-1, 
+                        Script::Util::GENERIC_TO_STRING_DEFAULT);
         std::stringstream sss;
         sss << err_msg << str_debug;
         throw std::runtime_error(sss.str());
@@ -126,8 +142,8 @@ Interm::Prim parse_primitive(int idx, Interm::Prim::Type required_t) {
     if (lua_type(l, idx) != LUA_TTABLE) {
         std::stringstream sss;
         sss << "Invalid primitive constructor: "
-            << Script::Helper::to_string(idx, 
-                    Script::Helper::GENERIC_TO_STRING_DEFAULT);
+            << Script::Util::to_string(idx, 
+                    Script::Util::GENERIC_TO_STRING_DEFAULT);
         throw std::runtime_error(sss.str());
     }
     
@@ -140,8 +156,8 @@ Interm::Prim parse_primitive(int idx, Interm::Prim::Type required_t) {
     if (!strdata) {
         std::stringstream sss;
         sss << "Invalid type: "
-            << Script::Helper::to_string(-1, 
-                    Script::Helper::GENERIC_TO_STRING_DEFAULT);
+            << Script::Util::to_string(-1, 
+                    Script::Util::GENERIC_TO_STRING_DEFAULT);
         throw std::runtime_error(sss.str());
     }
     // TODO: light userdata instead of strings
@@ -193,20 +209,20 @@ Interm::Prim parse_primitive(int idx, Interm::Prim::Type required_t) {
                     sss << "Numeric primitive value cannot be type "
                         << lua_typename(l, val_type)
                         << ", (\""
-                        << Script::Helper::to_string(-1, 
-                                    Script::Helper::GENERIC_TO_STRING_DEFAULT)
+                        << Script::Util::to_string(-1, 
+                                    Script::Util::GENERIC_TO_STRING_DEFAULT)
                         << "\")";
                     throw std::runtime_error(sss.str());
                 }
                 
                 // Try convert the value into a number
                 lua_Number val;
-                if (!Script::Helper::to_number_safe(-1, val)) {
+                if (!Script::Util::to_number_safe(-1, val)) {
                     std::stringstream sss;
                     sss << "Cannot convert value to number "
                         << " (\""
-                        << Script::Helper::to_string(-1, 
-                                    Script::Helper::GENERIC_TO_STRING_DEFAULT)
+                        << Script::Util::to_string(-1, 
+                                    Script::Util::GENERIC_TO_STRING_DEFAULT)
                         << "\")";
                     throw std::runtime_error(sss.str());
                 }
@@ -239,7 +255,7 @@ Interm::Prim parse_primitive(int idx, Interm::Prim::Type required_t) {
             }
             case Interm::Prim::Type::STR: {
                 try {
-                    ret_val.set_string(Script::Helper::to_string(-1));
+                    ret_val.set_string(Script::Util::to_string(-1));
                 }
                 catch (std::runtime_error e) {
                     std::stringstream sss;
@@ -256,8 +272,8 @@ Interm::Prim parse_primitive(int idx, Interm::Prim::Type required_t) {
                     sss << "Function primitive value cannot be type "
                         << lua_typename(l, val_type)
                         << ", (\""
-                        << Script::Helper::to_string(-1, 
-                                    Script::Helper::GENERIC_TO_STRING_DEFAULT)
+                        << Script::Util::to_string(-1, 
+                                    Script::Util::GENERIC_TO_STRING_DEFAULT)
                         << "\")";
                     throw std::runtime_error(sss.str());
                 }
@@ -283,7 +299,7 @@ std::unique_ptr<Interm::Comp> parse_component_definition(int table_idx) {
     std::unique_ptr<Interm::Comp> comp_def = 
             std::make_unique<Interm::Comp>();
     
-    Script::Helper::for_pairs(table_idx, [&]()->bool {
+    Script::Util::for_pairs(table_idx, [&]()->bool {
         Interm::Symbol symbol = 
                 assert_table_key_to_string(-2, 
                         "Invalid key in component table");
@@ -327,7 +343,7 @@ Interm::Arche::Implement parse_archetype_implementation(int table_idx) {
     
     std::string comp_id;
     try {
-        comp_id = Script::Helper::to_string(-1);
+        comp_id = Script::Util::to_string(-1);
     } catch (std::runtime_error e) {
         std::stringstream sss;
         sss << "Cannot convert __is value to string: " << e.what();
@@ -344,7 +360,7 @@ Interm::Arche::Implement parse_archetype_implementation(int table_idx) {
         throw std::runtime_error(sss.str());
     }
     
-    Script::Helper::for_pairs(table_idx, [&]()->bool {
+    Script::Util::for_pairs(table_idx, [&]()->bool {
         Interm::Symbol symbol = 
                 assert_table_key_to_string(-2, 
                         "Invalid key in archetype table: ");
@@ -395,7 +411,7 @@ std::unique_ptr<Interm::Arche> parse_archetype(int table_idx) {
     std::unique_ptr<Interm::Arche> arche
             = std::make_unique<Interm::Arche>();
     
-    Script::Helper::for_pairs(table_idx, [&]()->bool {
+    Script::Util::for_pairs(table_idx, [&]()->bool {
         Interm::Symbol symbol = 
                 assert_table_key_to_string(-2, 
                         "Invalid key in archetype table: ");
@@ -473,7 +489,7 @@ std::map<Interm::Symbol, Interm::Comp*>
 
     std::map<Interm::Symbol, Interm::Comp*> retval;
     if (lua_istable(l, value_idx)) {
-        Script::Helper::for_pairs(value_idx, [&]()->bool {
+        Script::Util::for_pairs(value_idx, [&]()->bool {
             Interm::Symbol comp_symbol = 
                     assert_table_key_to_string(-2, 
                             "Invalid key: ");
@@ -521,7 +537,7 @@ std::map<Interm::Symbol, Interm::Genre::Pattern::Alias>
 
     std::map<Interm::Symbol, Interm::Genre::Pattern::Alias> retval;
     if (lua_istable(l, value_idx)) {
-        Script::Helper::for_pairs(value_idx, [&]()->bool {
+        Script::Util::for_pairs(value_idx, [&]()->bool {
             // Get the member this alias is meant to fulfill
             Interm::Symbol dest_member_symb = 
                     assert_table_key_to_string(-2, 
@@ -637,7 +653,7 @@ std::map<Interm::Symbol, Interm::Prim>
     value_idx = Script::absolute_idx(value_idx);
     std::map<Interm::Symbol, Interm::Prim> retval;
     if (lua_istable(l, value_idx)) {
-        Script::Helper::for_pairs(value_idx, [&]()->bool {
+        Script::Util::for_pairs(value_idx, [&]()->bool {
             // Get the member this alias is meant to fulfill
             Interm::Symbol dest_member_symb = 
                     assert_table_key_to_string(-2, 
@@ -793,7 +809,7 @@ std::map<Interm::Symbol, Interm::Prim> parse_genre_interface(int table_idx) {
     table_idx = Script::absolute_idx(table_idx);
     std::map<Interm::Symbol, Interm::Prim> retval;
     if (lua_istable(l, table_idx)) {
-        Script::Helper::for_pairs(-1, [&]()->bool {
+        Script::Util::for_pairs(-1, [&]()->bool {
             Interm::Symbol symbol = 
                     assert_table_key_to_string(-2, 
                             "Invalid key: ");
@@ -836,7 +852,7 @@ std::vector<Interm::Genre::Pattern> parse_genre_pattern_list(int list_idx,
     std::vector<Interm::Genre::Pattern> retval;
     
     if (lua_istable(l, list_idx)) {
-        Script::Helper::for_number_pairs_sorted(-1, [&]()->bool {
+        Script::Util::for_number_pairs_sorted(-1, [&]()->bool {
             lua_Number idx = lua_tonumber(l, -2);
             try {
                 Interm::Genre::Pattern pattern = 
@@ -907,7 +923,7 @@ void stage_all() {
     
     Script::push_reference(n_working_components);
     Script::Pop_Guard pop_guard(1);
-    Script::Helper::for_pairs(-1, [&]()->bool {
+    Script::Util::for_pairs(-1, [&]()->bool {
         lua_pushvalue(l, -2); // Make a copy of the key
         Script::Pop_Guard pop_guard2(1);
         strdata = lua_tolstring(l, -1, &strlen);
@@ -934,7 +950,7 @@ void stage_all() {
     
     Script::push_reference(n_working_archetypes);
     pop_guard.on_push(1);
-    Script::Helper::for_pairs(-1, [&]()->bool {
+    Script::Util::for_pairs(-1, [&]()->bool {
         lua_pushvalue(l, -2); // Make a copy of the key
         Script::Pop_Guard pop_guard2(1);
         strdata = lua_tolstring(l, -1, &strlen);
@@ -960,7 +976,7 @@ void stage_all() {
     
     Script::push_reference(n_working_genres);
     pop_guard.on_push(1);
-    Script::Helper::for_pairs(-1, [&]()->bool {
+    Script::Util::for_pairs(-1, [&]()->bool {
         lua_pushvalue(l, -2); // Make a copy of the key
         Script::Pop_Guard pop_guard2(1);
         strdata = lua_tolstring(l, -1, &strlen);

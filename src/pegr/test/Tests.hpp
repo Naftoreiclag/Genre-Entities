@@ -1,3 +1,19 @@
+/*
+ *  Copyright 2017 James Fong
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 #ifndef PEGR_TEST_TESTS_HPP
 #define PEGR_TEST_TESTS_HPP
 
@@ -18,6 +34,7 @@ void test_0000_memory_test();
 void test_0000_ptr_cast();
 void test_0001_flags();
 void test_0001_init_sanity();
+void test_0002_app_state_machine_test();
 void test_0002_unique_ptr_test();
 void test_0005_assertion_test();
 void test_0010_check_guard_memory_leaks();
@@ -38,6 +55,8 @@ void test_0030_gensys_primitive_multiple();
 void test_0080_00_gensys_primitive();
 void test_0085_00_podchunk_test();
 void test_0099_gensys_runtime();
+void test_0100_unique_handle_validity();
+void test_0100_unique_render_handles();
 
 struct NamedTest {
     const char* m_name;
@@ -53,6 +72,7 @@ const NamedTest n_tests[] = {
     {"Pointer cast", test_0000_ptr_cast},
     {"Flag test", test_0001_flags},
     {"Initialization Sanity Test", test_0001_init_sanity},
+    {"App State Machine Test", test_0002_app_state_machine_test},
     {"Unique Ptr Test", test_0002_unique_ptr_test},
     {"Assertion test", test_0005_assertion_test},
     {"Script Unique_Regref memory leaks", test_0010_check_guard_memory_leaks},
@@ -73,6 +93,8 @@ const NamedTest n_tests[] = {
     {"Gensys primitive from Lua values", test_0080_00_gensys_primitive},
     {"PodChunk test", test_0085_00_podchunk_test},
     {"Gensys Runtime Test", test_0099_gensys_runtime},
+    {"Unique handle validity", test_0100_unique_handle_validity},
+    {"Unique render handles templates", test_0100_unique_render_handles},
     
     // Sentinel
     {nullptr, std::function<void()>()}
@@ -97,7 +119,7 @@ const NamedLuaTest n_lua_tests[] = {
     {nullptr, nullptr}
 };
 
-}
-}
+} // namespace pegr
+} // namespace Test
 
 #endif // PEGR_TEST_TESTS_HPP

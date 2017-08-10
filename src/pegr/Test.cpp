@@ -1,15 +1,32 @@
+/*
+ *  Copyright 2017 James Fong
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 #include <stdexcept>
 #include <iostream>
 #include <sstream>
 #include <chrono>
 #include <ratio>
 
+#include "pegr/engine/Engine.hpp"
 #include "pegr/gensys/Gensys.hpp"
 #include "pegr/gensys/Lua_Interf.hpp"
 #include "pegr/scheduler/Lua_Interf.hpp"
 #include "pegr/debug/Debug_Macros.hpp"
 #include "pegr/script/Script.hpp"
-#include "pegr/script/Script_Helper.hpp"
+#include "pegr/script/Script_Util.hpp"
 #include "pegr/logger/Logger.hpp"
 #include "pegr/test/Tests.hpp"
 
@@ -78,13 +95,6 @@ int li_debug_timer_end(lua_State* l) {
 }
 
 void setup() {
-    Logger::initialize();
-    
-    Script::initialize();
-    
-    Gensys::LI::initialize();
-    Sched::LI::initialize();
-    
     const luaL_Reg test_api[] = {
         {"debug_stage_compile", li_debug_stage_compile},
         {"debug_collect_garbage", li_debug_collect_garbage},
@@ -94,10 +104,7 @@ void setup() {
         // Sentinel
         {nullptr, nullptr}
     };
-    
     Script::multi_expose_c_functions(test_api);
-    
-    Gensys::initialize();
 }
 
 void log_header(const char* name, char divider = '.') {
@@ -155,7 +162,7 @@ bool run_lua_test(const Test::NamedLuaTest& test) {
         Script::Unique_Regref func(
                 Script::load_lua_function(
                         sss.str().c_str(), sandbox, test.m_name));
-        Script::Helper::run_simple_function(func, 0);
+        Script::Util::run_simple_function(func, 0);
         Logger::log()->info("%v\t...PASSED!%v", COLOR_GREEN, COLOR_RESET);
         success = true;
     }
@@ -224,7 +231,7 @@ void run_extras() {
             Script::Unique_Regref func(
                     Script::load_lua_function(
                             sss.str().c_str(), sandbox, sss.str().c_str()));
-            Script::Helper::run_simple_function(func, 1);
+            Script::Util::run_simple_function(func, 1);
             Script::Pop_Guard pg(1);
             
             if (lua_isfunction(l, -1)) {
@@ -301,20 +308,26 @@ void run() {
     run_extras();
 }
 
-void cleanup() {
-    Gensys::cleanup();
+class Test_State : public Engine::App_State {
+public:
+    Test_State()
+    : Engine::App_State("Test") {}
+    virtual ~Test_State() {}
     
-    Sched::LI::cleanup();
-    Gensys::LI::cleanup();
-    
-    Script::cleanup();
-    
-    Logger::cleanup();
-}
+    virtual void initialize() override {
+        setup();
+        run();
+        Engine::pop_state();
+    }
+};
 
 int main() {
-    setup();
-    run();
-    cleanup();
+    Engine::initialize(Engine::INIT_FLAG_LOGGER 
+            | Engine::INIT_FLAG_GENSYS 
+            | Engine::INIT_FLAG_SCRIPT 
+            | Engine::INIT_FLAG_SCHED);
+    Engine::push_state(std::make_unique<Test_State>());
+    Engine::run();
+    Engine::cleanup();
     return 0;
 }

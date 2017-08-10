@@ -1,9 +1,25 @@
+/*
+ *  Copyright 2017 James Fong
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 #include <sstream>
 #include <iomanip>
 
 #include "pegr/gensys/Interm_Types.hpp"
 #include "pegr/logger/Logger.hpp"
-#include "pegr/script/Script_Helper.hpp"
+#include "pegr/script/Script_Util.hpp"
 
 namespace pegr {
 namespace Test {
@@ -66,7 +82,7 @@ void test_0030_gensys_primitive() {
         throw std::runtime_error("Type must be function!");
     }
     
-    Script::Helper::run_simple_function(*prim.get_function(), 1);
+    Script::Util::run_simple_function(*prim.get_function(), 1);
     lua_getfield(l, -1, "a");
     
     std::size_t strsize;
@@ -123,12 +139,12 @@ void test_0030_gensys_primitive_multiple() {
     prim_foo.set_function(func_foo);
     prim_bar.set_function(func_bar);
     
-    Script::Helper::run_simple_function(*prim_foo.get_function(), 1);
-    std::string str_foo = Script::Helper::to_string(-1);
+    Script::Util::run_simple_function(*prim_foo.get_function(), 1);
+    std::string str_foo = Script::Util::to_string(-1);
     lua_pop(l, 1);
     
-    Script::Helper::run_simple_function(*prim_bar.get_function(), 1);
-    std::string str_bar = Script::Helper::to_string(-1);
+    Script::Util::run_simple_function(*prim_bar.get_function(), 1);
+    std::string str_bar = Script::Util::to_string(-1);
     lua_pop(l, 1);
     
     if (str_foo != "foo") {
@@ -152,8 +168,8 @@ void test_0030_gensys_primitive_multiple() {
         throw std::runtime_error("Expected FUNC");
     }
     
-    Script::Helper::run_simple_function(*prim_maybe_foo.get_function(), 1);
-    std::string str_maybe_foo = Script::Helper::to_string(-1);
+    Script::Util::run_simple_function(*prim_maybe_foo.get_function(), 1);
+    std::string str_maybe_foo = Script::Util::to_string(-1);
     lua_pop(l, 1);
     
     if (str_foo != str_maybe_foo) {

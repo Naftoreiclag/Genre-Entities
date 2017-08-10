@@ -14,17 +14,17 @@
 
 # Populates:
 # - LUAJIT_FOUND
-# - LUAJIT_INCLUDE_DIR
-# - LUAJIT_LIBRARY
+# - LUAJIT_INCLUDE_DIRS
+# - LUAJIT_LIBRARIES
 
 set(LUAJIT_FOUND FALSE)
-find_path(LUAJIT_INCLUDE_DIR NAMES "lua.h" "luaxlib.h" "lualib.h" "luajit.h")
-find_library(LUAJIT_LIBRARY NAMES "luaJIT")
+find_path(LUAJIT_INCLUDE_DIRS NAMES "lua.h" "luaxlib.h" "lualib.h" "luajit.h")
+find_library(LUAJIT_LIBRARIES NAMES "luaJIT")
 
-if(LUAJIT_INCLUDE_DIR)
+if(LUAJIT_INCLUDE_DIRS)
     set(LUAJIT_FOUND TRUE)
 endif()
 
 mark_as_advanced(
-    LUAJIT_INCLUDE_DIR
+    LUAJIT_INCLUDE_DIRS
 )

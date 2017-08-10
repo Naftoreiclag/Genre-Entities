@@ -1,9 +1,25 @@
+/*
+ *  Copyright 2017 James Fong
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 #include <cstddef>
 #include <sstream>
 #include <map>
 #include <cassert>
 
-#include "pegr/script/Script_Helper.hpp"
+#include "pegr/script/Script_Util.hpp"
 #include "pegr/script/Script.hpp"
 #include "pegr/logger/Logger.hpp"
 #include "pegr/test/Test_Util.hpp"
@@ -65,7 +81,7 @@ void test_0028_to_number_safe() {
         Script::Pop_Guard pg(1);
         lua_Number expected = lua_tonumber(l, -1);
         lua_Number result;
-        bool success = Script::Helper::to_number_safe(-1, result);
+        bool success = Script::Util::to_number_safe(-1, result);
         
         assert(expected != 0);
         
@@ -95,7 +111,7 @@ void test_0028_to_number_safe() {
         Script::Pop_Guard pg(1);
         lua_Number expected = lua_tonumber(l, -1);
         lua_Number result = 12345;
-        bool success = Script::Helper::to_number_safe(-1, result);
+        bool success = Script::Util::to_number_safe(-1, result);
         
         assert(expected == 0);
         
@@ -124,12 +140,12 @@ void test_0028_simple_deep_copy() {
         {"d", "durian"}
     };
     
-    Script::Helper::run_simple_function(table_fun, 1);
+    Script::Util::run_simple_function(table_fun, 1);
     Script::Pop_Guard pop_guard(1);
     
     assert_expected_string_table(l, expected);
     
-    Script::Helper::simple_deep_copy(-1);
+    Script::Util::simple_deep_copy(-1);
     pop_guard.on_push(1);
     
     assert_expected_string_table(l, expected);
@@ -141,10 +157,10 @@ void test_0028_simple_deep_copy_recursive() {
     RG sandbox(Script::new_sandbox());
     RG table_fun(
             Script::load_lua_function("test/common/recursive_table.lua", sandbox));
-    Script::Helper::run_simple_function(table_fun, 1);
+    Script::Util::run_simple_function(table_fun, 1);
     Script::Pop_Guard pop_guard(1);
     Logger::log()->info("Beginning copy...");
-    Script::Helper::simple_deep_copy(-1);
+    Script::Util::simple_deep_copy(-1);
     pop_guard.on_push(1);
     Logger::log()->info("Copy completed in finite time");
 }
@@ -156,7 +172,7 @@ void test_0028_for_pairs() {
     RG sandbox(Script::new_sandbox());
     RG table_fun(Script::load_lua_function("test/common/simple_table.lua", sandbox));
     
-    Script::Helper::run_simple_function(table_fun, 1);
+    Script::Util::run_simple_function(table_fun, 1);
     Script::Pop_Guard pop_guard(1);
     
     std::map<std::string, std::string> expected = {
@@ -186,11 +202,11 @@ void test_0028_for_pairs() {
         Logger::log()->verbose(1, "%v\t%v", key, val);
     };
     
-    Script::Helper::for_pairs(-1, [body, l]()->bool {
+    Script::Util::for_pairs(-1, [body, l]()->bool {
         body();
         return true;
     }, false);
-    Script::Helper::for_pairs(-1, [body, l]()->bool {
+    Script::Util::for_pairs(-1, [body, l]()->bool {
         body();
         lua_pop(l, 1);
         return true;
@@ -224,11 +240,11 @@ void test_0028_for_pairs_exception() {
     RG sandbox(Script::new_sandbox());
     RG table_fun(Script::load_lua_function("test/common/simple_table.lua", sandbox));
     
-    Script::Helper::run_simple_function(table_fun, 1);
+    Script::Util::run_simple_function(table_fun, 1);
     Script::Pop_Guard pop_guard(1);
     
     try {
-        Script::Helper::for_pairs(-1, []()->bool {
+        Script::Util::for_pairs(-1, []()->bool {
             throw std::runtime_error("orange juice");
         }, false);
     }
@@ -249,8 +265,8 @@ void test_0028_to_string() {
     RG table_fun(
             Script::load_lua_function("test/common/complex_tostring.lua", sandbox));
             
-    Script::Helper::run_simple_function(table_fun, 1);
-    std::string resp = Script::Helper::to_string(-1);
+    Script::Util::run_simple_function(table_fun, 1);
+    std::string resp = Script::Util::to_string(-1);
     lua_pop(l, 1);
     
     if (resp != "bottom") {
@@ -270,7 +286,7 @@ void test_0028_for_pairs_number_sorted() {
     RG table_fun(Script::load_lua_function(
             "test/common/sparse_array.lua", sandbox));
     
-    Script::Helper::run_simple_function(table_fun, 1);
+    Script::Util::run_simple_function(table_fun, 1);
     Script::Pop_Guard pop_guard(1);
     
     std::string expected = "Shall I compare thee to a summer's day?";
@@ -285,7 +301,7 @@ void test_0028_for_pairs_number_sorted() {
         return true;
     };
     
-    Script::Helper::for_number_pairs_sorted(-1, body, false);
+    Script::Util::for_number_pairs_sorted(-1, body, false);
     
     Logger::log()->info(expected);
     
@@ -300,7 +316,7 @@ void test_0028_for_pairs_number_sorted() {
     expected = "day?summer's a to thee compare I Shall ";
     got = std::stringstream();
     
-    Script::Helper::for_number_pairs_sorted(-1, body, false, true);
+    Script::Util::for_number_pairs_sorted(-1, body, false, true);
     
     Logger::log()->info(expected);
     
@@ -320,7 +336,7 @@ void test_0028_unique_regref_manager() {
     lua_newtable(l);
     Script::Unique_Regref ref(Script::grab_reference());
     
-    Script::Helper::Unique_Regref_Manager urm;
+    Script::Util::Unique_Regref_Manager urm;
     
     Script::Regref wref1 = urm.add_lua_value(ref.get());
     

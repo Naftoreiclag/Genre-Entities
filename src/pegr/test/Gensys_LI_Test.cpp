@@ -1,6 +1,22 @@
+/*
+ *  Copyright 2017 James Fong
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 #include <stdexcept>
 
-#include "pegr/script/Script_Helper.hpp"
+#include "pegr/script/Script_Util.hpp"
 #include "pegr/script/Script.hpp"
 #include "pegr/logger/Logger.hpp"
 #include "pegr/gensys/Compiler.hpp"
@@ -20,7 +36,7 @@ void test_0080_00_gensys_primitive() {
     Script::Unique_Regref func(
         Script::load_lua_function("test/common/prim_cstr_table.lua", sandbox));
         
-    Script::Helper::run_simple_function(func, 1);
+    Script::Util::run_simple_function(func, 1);
     
     prim = Gensys::LI::parse_primitive(-1);
     lua_pop(l, 1);

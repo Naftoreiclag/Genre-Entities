@@ -1,3 +1,19 @@
+/*
+ *  Copyright 2017 James Fong
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 #include "pegr/gensys/Runtime.hpp"
 
 #include <algorithm>
@@ -9,7 +25,7 @@
 
 #include "pegr/debug/Debug_Macros.hpp"
 #include "pegr/logger/Logger.hpp"
-#include "pegr/script/Script_Helper.hpp"
+#include "pegr/script/Script_Util.hpp"
 #include "pegr/gensys/Util.hpp"
 
 namespace pegr {
@@ -187,7 +203,7 @@ Script::Regref Entity::get_table() {
 Script::Regref Entity::get_weak_table() {
     if (m_generic_weak_table.is_nil()) {
         assert_balance(0);
-        Script::Helper::push_new_weak_table("v"); // +1
+        Script::Util::push_new_weak_table("v"); // +1
         m_generic_weak_table.reset(Script::grab_reference()); // -1
     }
     return m_generic_weak_table.get();

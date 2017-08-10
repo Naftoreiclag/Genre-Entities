@@ -1,3 +1,19 @@
+/*
+ *  Copyright 2017 James Fong
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 #include "pegr/script/Script.hpp"
 
 #include <stdexcept>
@@ -10,7 +26,7 @@
 
 #include "pegr/debug/Debug_Macros.hpp"
 #include "pegr/logger/Logger.hpp"
-#include "pegr/script/Script_Helper.hpp"
+#include "pegr/script/Script_Util.hpp"
 
 namespace pegr {
 namespace Script {
@@ -35,12 +51,6 @@ Unique_Regref& Unique_Regref::operator =(Unique_Regref&& rhs) {
     reset();
     m_reference = rhs.m_reference;
     rhs.m_reference = LUA_REFNIL;
-    return *this;
-}
-
-// Assignment of value
-Unique_Regref& Unique_Regref::operator =(const Regref& value) {
-    reset(value);
     return *this;
 }
 
@@ -454,7 +464,7 @@ Regref new_sandbox() {
     assert(is_initialized());
     // Make a deep copy of the pristine sandbox
     push_reference(m_pristine_sandbox);
-    Helper::simple_deep_copy(-1);
+    Util::simple_deep_copy(-1);
     // Set the "_G" member to itself
     lua_pushvalue(m_l, -1);
     lua_setfield(m_l, -2, "_G");

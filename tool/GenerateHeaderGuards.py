@@ -13,9 +13,12 @@
 #   limitations under the License.
 
 import os
+from Common import get_project_name
 
-searchPath = '../src/pegr/'
-includePrefix = 'pegr/'
+proj_name = get_project_name()
+
+searchPath = '../src/' + proj_name + '/'
+includePrefix = proj_name + '/'
 
 from Common import indexFiles
 

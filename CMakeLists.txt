@@ -12,9 +12,10 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-##### GENREENT CMAKE CONFIG #####
-
 ### Basic CMake project and build information ###
+
+set(PGLOCAL_HUMAN_NAME "Naftoreiclag's Genre Entity System")
+set(PGLOCAL_PROJ_NAME "pegr")
 
 # CMake minimum version
 # 3.7.2 is the first version that FindVulkan is supported
@@ -22,7 +23,7 @@ cmake_minimum_required(VERSION 3.7.2)
 
 # Project name/version
 project(GENREENT VERSION 0.1.0)
-message(STATUS "Genre Entity System version ${GENREENT_VERSION}")
+message(STATUS "${PGLOCAL_HUMAN_NAME} version ${GENREENT_VERSION}")
 
 # Where to find modules
 list(APPEND CMAKE_MODULE_PATH "${GENREENT_SOURCE_DIR}/cmake")
@@ -36,8 +37,8 @@ set(PGLOCAL_SOURCE_DIR "${GENREENT_SOURCE_DIR}/src")
 set(PGLOCAL_INCLUDE_DIRS ${PGLOCAL_SOURCE_DIR})
 
 # Name of target executable
-set(PGLOCAL_MAIN_TARGET "GenreEntitySystem")
-set(PGLOCAL_TEST_TARGET "GenreEntitySystemTest")
+set(PGLOCAL_MAIN_TARGET "${PGLOCAL_PROJ_NAME}")
+set(PGLOCAL_TEST_TARGET "${PGLOCAL_PROJ_NAME}Test")
 
 ### User options ###
 
@@ -48,25 +49,12 @@ set(PGLOCAL_MAIN_SOURCES_LIST ${PGLOCAL_SOURCES_LIST})
 include("TestSrcList")
 set(PGLOCAL_TEST_SOURCES_LIST ${PGLOCAL_SOURCES_LIST})
 set(PGLOCAL_SOURCES_LIST "")
+include("IncludesList")
+list(APPEND PGLOCAL_INCLUDE_DIRS ${PGLOCAL_INCLUDES_LIST})
+set(PGLOCAL_INCLUDES_LIST "")
 
 set(PGLOCAL_ALL_REQUIRED_READY TRUE)
 message(STATUS "Package status: ")
-
-## Header-Only / Compiled Third-party ##
-
-# EasyLog++ #
-message(STATUS "EasyLog++ ============")
-find_package(EasyLoggingPP)
-if(EASYLOGPP_FOUND)
-    message(STATUS "\tInclude Dirs: " ${EASYLOGPP_INCLUDE_DIR})
-    message(STATUS "\tSource Files: " ${EASYLOGPP_SOURCE_FILES})
-    list(APPEND PGLOCAL_INCLUDE_DIRS ${EASYLOGPP_INCLUDE_DIR})
-    list(APPEND PGLOCAL_MAIN_SOURCES_LIST ${EASYLOGPP_SOURCE_FILES})
-    list(APPEND PGLOCAL_TEST_SOURCES_LIST ${EASYLOGPP_SOURCE_FILES})
-else()
-    message("\tNOT FOUND")
-    set(PGLOCAL_ALL_REQUIRED_READY FALSE)
-endif()
 
 # Add build targets
 add_executable(${PGLOCAL_MAIN_TARGET} ${PGLOCAL_MAIN_SOURCES_LIST})
@@ -82,15 +70,44 @@ set_property(TARGET ${PGLOCAL_TEST_TARGET} PROPERTY CXX_STANDARD 14)
 message(STATUS "Lua 5.1 ==============")
 find_package(LuaJIT)
 if(LUAJIT_FOUND)
-    message(STATUS "\tInclude Dirs: " ${LUAJIT_INCLUDE_DIR})
-    message(STATUS "\tLibraries: " ${LUAJIT_LIBRARY})
-    list(APPEND PGLOCAL_INCLUDE_DIRS ${LUAJIT_INCLUDE_DIR})
-    target_link_libraries(${PGLOCAL_MAIN_TARGET} ${LUAJIT_LIBRARY})
-    target_link_libraries(${PGLOCAL_TEST_TARGET} ${LUAJIT_LIBRARY})
+    message(STATUS "\tInclude Dirs: " ${LUAJIT_INCLUDE_DIRS})
+    message(STATUS "\tLibraries: " ${LUAJIT_LIBRARIES})
+    list(APPEND PGLOCAL_INCLUDE_DIRS ${LUAJIT_INCLUDE_DIRS})
+    target_link_libraries(${PGLOCAL_MAIN_TARGET} ${LUAJIT_LIBRARIES})
+    target_link_libraries(${PGLOCAL_TEST_TARGET} ${LUAJIT_LIBRARIES})
 else()
     message("\tNOT FOUND")
     set(PGLOCAL_ALL_REQUIRED_READY FALSE)
 endif()
+
+# SDL2 #
+message(STATUS "SDL2 =================")
+find_package(SDL2)
+if(SDL2_FOUND)
+    message(STATUS "\tInclude Dirs: " ${SDL2_INCLUDE_DIRS})
+    message(STATUS "\tLibraries: " ${SDL2_LIBRARIES})
+    list(APPEND PGLOCAL_INCLUDE_DIRS ${SDL2_INCLUDE_DIRS})
+    target_link_libraries(${PGLOCAL_MAIN_TARGET} ${SDL2_LIBRARIES})
+    target_link_libraries(${PGLOCAL_TEST_TARGET} ${SDL2_LIBRARIES})
+else()
+    message("\tNOT FOUND")
+    set(PGLOCAL_ALL_REQUIRED_READY FALSE)
+endif()
+
+# bgfx #
+message(STATUS "bgfx =================")
+find_package(bgfx)
+if(BGFX_FOUND)
+    message(STATUS "\tInclude Dirs: " ${BGFX_INCLUDE_DIRS})
+    message(STATUS "\tLibraries: " ${BGFX_LIBRARIES})
+    list(APPEND PGLOCAL_INCLUDE_DIRS ${BGFX_INCLUDE_DIRS})
+    target_link_libraries(${PGLOCAL_MAIN_TARGET} ${BGFX_LIBRARIES})
+    target_link_libraries(${PGLOCAL_TEST_TARGET} ${BGFX_LIBRARIES})
+else()
+    message("\tNOT FOUND")
+    set(PGLOCAL_ALL_REQUIRED_READY FALSE)
+endif()
+
 
 # Helpful information
 if(PGLOCAL_ALL_REQUIRED_READY)

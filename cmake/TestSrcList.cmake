@@ -12,18 +12,23 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-# This file contains a listing of all of the source files used in the engine
+# This file contains a listing of all of the source files used in the
 # build target. Populates a list called PGLOCAL_SOURCES_LIST
 
 # Preferred method of adding source items is through the Python script in:
-# `util/GenerateEngineSrcList.py`
+# `util/Generate*SrcList.py`
 
 # This function appends the provided string list to PGLOCAL_SOURCES_LIST
 set(PGLOCAL_SOURCES_LIST "")
 foreach(fname 
 
+"../thirdparty/easyloggingpp/easylogging++.cc"
 "Test.cpp"
+"app/Game.cpp"
 "debug/Debug_Assert_Lua_Balance.cpp"
+"engine/App_State.cpp"
+"engine/App_State_Machine.cpp"
+"engine/Engine.cpp"
 "gensys/Compiler.cpp"
 "gensys/Gensys.cpp"
 "gensys/Interm_Types.cpp"
@@ -33,11 +38,14 @@ foreach(fname
 "gensys/Runtime.cpp"
 "gensys/Util.cpp"
 "logger/Logger.cpp"
+"render/Shaders.cpp"
+"resource/Resources.cpp"
 "scheduler/Lua_Interf.cpp"
 "script/Lua_Interf_Util.cpp"
 "script/Script.cpp"
-"script/Script_Helper.cpp"
+"script/Script_Util.cpp"
 "test/Algs_Test.cpp"
+"test/App_State_Machine_Test.cpp"
 "test/Debug_Test.cpp"
 "test/Flag_Test.cpp"
 "test/Gensys_Intermediate_Test.cpp"
@@ -48,8 +56,12 @@ foreach(fname
 "test/Pod_Chunk_Test.cpp"
 "test/Script_Helper_Test.cpp"
 "test/Script_Test.cpp"
+"test/Unique_Handles_Test.cpp"
 "test/Unique_Ptr_Test.cpp"
+"winput/Enum_Utils.cpp"
+"winput/Winput.cpp"
 
 )
-list(APPEND PGLOCAL_SOURCES_LIST "${PGLOCAL_SOURCE_DIR}/pegr/${fname}")
+list(APPEND PGLOCAL_SOURCES_LIST 
+        "${PGLOCAL_SOURCE_DIR}/${PGLOCAL_PROJ_NAME}/${fname}")
 endforeach()

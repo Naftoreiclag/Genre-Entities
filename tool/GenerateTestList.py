@@ -15,13 +15,16 @@
 import os
 from Common import indexFiles
 from Common import writeWithReplacements
+from Common import get_project_name
+
+proj_name = get_project_name()
 
 luasListVector = '/*### LUA TESTS LIST ###*/'
 cppsListVector = '/*### TESTS LIST ###*/'
 cppsFwdDeclVector = '/*### TESTS FWD ###*/'
 boilerplateFilename = 'TestsBoilerplate.hpp'
-outputFilename = '../src/pegr/test/Tests.hpp'
-cppSourcesDir = '../src/pegr/test/'
+outputFilename = '../src/' + proj_name + '/test/Tests.hpp'
+cppSourcesDir = '../src/' + proj_name + '/test/'
 luaSourcesDir = '../run/test/tests/'
 
 cppsFiles, _, __ = indexFiles(cppSourcesDir, ['.cpp'], [], True)
