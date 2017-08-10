@@ -22,6 +22,7 @@
 set(PGLOCAL_SOURCES_LIST "")
 foreach(fname 
 
+"../thirdparty/easyloggingpp/easylogging++.cc"
 "Test.cpp"
 "app/Game.cpp"
 "debug/Debug_Assert_Lua_Balance.cpp"

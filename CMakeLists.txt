@@ -56,22 +56,6 @@ set(PGLOCAL_INCLUDES_LIST "")
 set(PGLOCAL_ALL_REQUIRED_READY TRUE)
 message(STATUS "Package status: ")
 
-## Header-Only / Compiled Third-party ##
-
-# EasyLog++ #
-message(STATUS "EasyLog++ ============")
-find_package(EasyLoggingPP)
-if(EASYLOGPP_FOUND)
-    message(STATUS "\tInclude Dirs: " ${EASYLOGPP_INCLUDE_DIRS})
-    message(STATUS "\tSource Files: " ${EASYLOGPP_SOURCE_FILES})
-    list(APPEND PGLOCAL_INCLUDE_DIRS ${EASYLOGPP_INCLUDE_DIRS})
-    list(APPEND PGLOCAL_MAIN_SOURCES_LIST ${EASYLOGPP_SOURCE_FILES})
-    list(APPEND PGLOCAL_TEST_SOURCES_LIST ${EASYLOGPP_SOURCE_FILES})
-else()
-    message("\tNOT FOUND")
-    set(PGLOCAL_ALL_REQUIRED_READY FALSE)
-endif()
-
 # Add build targets
 add_executable(${PGLOCAL_MAIN_TARGET} ${PGLOCAL_MAIN_SOURCES_LIST})
 add_executable(${PGLOCAL_TEST_TARGET} ${PGLOCAL_TEST_SOURCES_LIST})

@@ -22,6 +22,7 @@
 set(PGLOCAL_INCLUDES_LIST "")
 foreach(dir 
 
+"thirdparty/easyloggingpp"
 
 )
 list(APPEND PGLOCAL_INCLUDES_LIST 
