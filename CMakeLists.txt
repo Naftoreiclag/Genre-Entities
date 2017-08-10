@@ -12,9 +12,10 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-##### GENREENT CMAKE CONFIG #####
-
 ### Basic CMake project and build information ###
+
+set(PGLOCAL_HUMAN_NAME "Naftoreiclag's Genre Entity System")
+set(PGLOCAL_PROJ_NAME "pegr")
 
 # CMake minimum version
 # 3.7.2 is the first version that FindVulkan is supported
@@ -22,7 +23,7 @@ cmake_minimum_required(VERSION 3.7.2)
 
 # Project name/version
 project(GENREENT VERSION 0.1.0)
-message(STATUS "Genre Entity System version ${GENREENT_VERSION}")
+message(STATUS "${PGLOCAL_HUMAN_NAME} version ${GENREENT_VERSION}")
 
 # Where to find modules
 list(APPEND CMAKE_MODULE_PATH "${GENREENT_SOURCE_DIR}/cmake")
@@ -36,8 +37,8 @@ set(PGLOCAL_SOURCE_DIR "${GENREENT_SOURCE_DIR}/src")
 set(PGLOCAL_INCLUDE_DIRS ${PGLOCAL_SOURCE_DIR})
 
 # Name of target executable
-set(PGLOCAL_MAIN_TARGET "GenreEntitySystem")
-set(PGLOCAL_TEST_TARGET "GenreEntitySystemTest")
+set(PGLOCAL_MAIN_TARGET "${PGLOCAL_PROJ_NAME}")
+set(PGLOCAL_TEST_TARGET "${PGLOCAL_PROJ_NAME}Test")
 
 ### User options ###
 
@@ -48,6 +49,9 @@ set(PGLOCAL_MAIN_SOURCES_LIST ${PGLOCAL_SOURCES_LIST})
 include("TestSrcList")
 set(PGLOCAL_TEST_SOURCES_LIST ${PGLOCAL_SOURCES_LIST})
 set(PGLOCAL_SOURCES_LIST "")
+include("IncludesList")
+list(APPEND PGLOCAL_INCLUDE_DIRS ${PGLOCAL_INCLUDES_LIST})
+set(PGLOCAL_INCLUDES_LIST "")
 
 set(PGLOCAL_ALL_REQUIRED_READY TRUE)
 message(STATUS "Package status: ")

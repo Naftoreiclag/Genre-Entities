@@ -103,7 +103,7 @@ const NamedLuaTest n_lua_tests[] = {
     {nullptr, nullptr}
 };
 
-}
-}
+} // namespace pegr
+} // namespace Test
 
 #endif // PEGR_TEST_TESTS_HPP

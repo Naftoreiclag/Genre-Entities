@@ -12,11 +12,11 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-# This file contains a listing of all of the source files used in the engine
+# This file contains a listing of all of the source files used in the
 # build target. Populates a list called PGLOCAL_SOURCES_LIST
 
 # Preferred method of adding source items is through the Python script in:
-# `util/GenerateEngineSrcList.py`
+# `util/Generate*SrcList.py`
 
 # This function appends the provided string list to PGLOCAL_SOURCES_LIST
 set(PGLOCAL_SOURCES_LIST "")
@@ -47,5 +47,6 @@ foreach(fname
 "winput/Winput.cpp"
 
 )
-list(APPEND PGLOCAL_SOURCES_LIST "${PGLOCAL_SOURCE_DIR}/pegr/${fname}")
+list(APPEND PGLOCAL_SOURCES_LIST 
+        "${PGLOCAL_SOURCE_DIR}/${PGLOCAL_PROJ_NAME}/${fname}")
 endforeach()
