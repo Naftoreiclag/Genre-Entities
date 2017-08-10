@@ -17,12 +17,15 @@
 #ifndef PEGR_RESOURCE_RESOURCES_HPP
 #define PEGR_RESOURCE_RESOURCES_HPP
 
+#include <boost/filesystem.hpp>
+
 namespace pegr {
 namespace Resour {
 
-struct File {
-    
-};
+void initialize();
+
+
+void cleanup();
     
 } // namespace Resour
 } // namespace pegr

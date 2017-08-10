@@ -28,7 +28,7 @@ namespace Engine {
 extern const uint16_t INIT_FLAG_LOGGER;
 extern const uint16_t INIT_FLAG_SCRIPT;
 extern const uint16_t INIT_FLAG_GENSYS;
-extern const uint16_t INIT_FLAG_SCHED;
+extern const uint16_t INIT_FLAG_SCHEDU;
 extern const uint16_t INIT_FLAG_WINPUT;
 extern const uint16_t INIT_FLAG_ALL;
 extern const uint16_t INIT_FLAG_NONE;
@@ -36,7 +36,7 @@ extern const uint16_t INIT_FLAG_NONE;
 bool logger_used();
 bool script_used();
 bool gensys_used();
-bool sched_used();
+bool schedu_used();
 bool winput_used();
 
 void initialize(uint16_t flags = INIT_FLAG_ALL);

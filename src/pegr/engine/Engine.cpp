@@ -35,7 +35,7 @@ namespace Engine {
 const uint16_t INIT_FLAG_LOGGER = 0x0001;
 const uint16_t INIT_FLAG_SCRIPT = 0x0002 | INIT_FLAG_LOGGER;
 const uint16_t INIT_FLAG_GENSYS = 0x0004 | INIT_FLAG_SCRIPT;
-const uint16_t INIT_FLAG_SCHED = 0x0008 | INIT_FLAG_SCRIPT;
+const uint16_t INIT_FLAG_SCHEDU = 0x0008 | INIT_FLAG_SCRIPT;
 const uint16_t INIT_FLAG_WINPUT = 0x0010 | INIT_FLAG_LOGGER;
 const uint16_t INIT_FLAG_ALL = 0xFFFF;
 const uint16_t INIT_FLAG_NONE = 0x0000;
@@ -51,8 +51,8 @@ bool script_used() {
 bool gensys_used() {
     return (n_flags & INIT_FLAG_GENSYS) == INIT_FLAG_GENSYS;
 }
-bool sched_used() {
-    return (n_flags & INIT_FLAG_SCHED) == INIT_FLAG_SCHED;
+bool schedu_used() {
+    return (n_flags & INIT_FLAG_SCHEDU) == INIT_FLAG_SCHEDU;
 }
 bool winput_used() {
     return (n_flags & INIT_FLAG_WINPUT) == INIT_FLAG_WINPUT;
@@ -70,7 +70,7 @@ void initialize(uint16_t flags) {
         Logger::log()->info("Logger: %v", logger_used());
         Logger::log()->info("Script: %v", script_used());
         Logger::log()->info("Gensys: %v", gensys_used());
-        Logger::log()->info("Scheduler: %v", sched_used());
+        Logger::log()->info("Scheduler: %v", schedu_used());
         Logger::log()->info("Window/Input: %v", winput_used());
     }
     
@@ -83,8 +83,8 @@ void initialize(uint16_t flags) {
         Gensys::LI::initialize();
     }
     
-    if (sched_used()) {
-        Sched::LI::initialize();
+    if (schedu_used()) {
+        Schedu::LI::initialize();
     }
     
     if (winput_used()) {
@@ -136,8 +136,8 @@ void cleanup() {
         Winput::cleanup();
     }
     
-    if (sched_used()) {
-        Sched::LI::cleanup();
+    if (schedu_used()) {
+        Schedu::LI::cleanup();
     }
     
     if (gensys_used()) {

@@ -325,7 +325,7 @@ int main() {
     Engine::initialize(Engine::INIT_FLAG_LOGGER 
             | Engine::INIT_FLAG_GENSYS 
             | Engine::INIT_FLAG_SCRIPT 
-            | Engine::INIT_FLAG_SCHED);
+            | Engine::INIT_FLAG_SCHEDU);
     Engine::push_state(std::make_unique<Test_State>());
     Engine::run();
     Engine::cleanup();
