@@ -27,6 +27,7 @@
 #include "pegr/script/Script.hpp"
 #include "pegr/logger/Logger.hpp"
 #include "pegr/winput/Winput.hpp"
+#include "pegr/resource/Resources.hpp"
 #include "pegr/engine/App_State_Machine.hpp"
 
 namespace pegr {
@@ -37,6 +38,7 @@ const uint16_t INIT_FLAG_SCRIPT = 0x0002 | INIT_FLAG_LOGGER;
 const uint16_t INIT_FLAG_GENSYS = 0x0004 | INIT_FLAG_SCRIPT;
 const uint16_t INIT_FLAG_SCHEDU = 0x0008 | INIT_FLAG_SCRIPT;
 const uint16_t INIT_FLAG_WINPUT = 0x0010 | INIT_FLAG_LOGGER;
+const uint16_t INIT_FLAG_RESOUR = 0x0020 | INIT_FLAG_LOGGER;
 const uint16_t INIT_FLAG_ALL = 0xFFFF;
 const uint16_t INIT_FLAG_NONE = 0x0000;
 
@@ -57,6 +59,9 @@ bool schedu_used() {
 bool winput_used() {
     return (n_flags & INIT_FLAG_WINPUT) == INIT_FLAG_WINPUT;
 }
+bool resour_used() {
+    return (n_flags & INIT_FLAG_RESOUR) == INIT_FLAG_RESOUR;
+}
 
 bool n_main_loop_running = false;
 
@@ -72,6 +77,7 @@ void initialize(uint16_t flags) {
         Logger::log()->info("Gensys: %v", gensys_used());
         Logger::log()->info("Scheduler: %v", schedu_used());
         Logger::log()->info("Window/Input: %v", winput_used());
+        Logger::log()->info("Resources: %v", resour_used());
     }
     
     if (script_used()) {
@@ -89,6 +95,10 @@ void initialize(uint16_t flags) {
     
     if (winput_used()) {
         Winput::initialize();
+    }
+    
+    if (resour_used()) {
+        Resour::initialize();
     }
 }
 
@@ -131,6 +141,10 @@ void run() {
 
 void cleanup() {
     n_app_state_machine.clear_all();
+    
+    if (resour_used()) {
+        Resour::cleanup();
+    }
     
     if (winput_used()) {
         Winput::cleanup();

@@ -23,6 +23,7 @@ set(PGLOCAL_SOURCES_LIST "")
 foreach(fname 
 
 "../thirdparty/easyloggingpp/easylogging++.cc"
+"../thirdparty/jsoncpp/jsoncpp.cpp"
 "Test.cpp"
 "app/Game.cpp"
 "debug/Debug_Assert_Lua_Balance.cpp"
@@ -39,6 +40,7 @@ foreach(fname
 "gensys/Util.cpp"
 "logger/Logger.cpp"
 "render/Shaders.cpp"
+"resource/Json_Util.cpp"
 "resource/Resources.cpp"
 "scheduler/Lua_Interf.cpp"
 "script/Lua_Interf_Util.cpp"

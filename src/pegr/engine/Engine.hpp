@@ -30,6 +30,7 @@ extern const uint16_t INIT_FLAG_SCRIPT;
 extern const uint16_t INIT_FLAG_GENSYS;
 extern const uint16_t INIT_FLAG_SCHEDU;
 extern const uint16_t INIT_FLAG_WINPUT;
+extern const uint16_t INIT_FLAG_RESOUR;
 extern const uint16_t INIT_FLAG_ALL;
 extern const uint16_t INIT_FLAG_NONE;
 
@@ -38,6 +39,7 @@ bool script_used();
 bool gensys_used();
 bool schedu_used();
 bool winput_used();
+bool resour_used();
 
 void initialize(uint16_t flags = INIT_FLAG_ALL);
 void push_state(std::unique_ptr<App_State>&& state);

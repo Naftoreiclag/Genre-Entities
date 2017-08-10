@@ -16,10 +16,36 @@
 
 #include "pegr/resource/Resources.hpp"
 
+#include <boost/filesystem.hpp>
+#include <json/json.h>
+
 namespace pegr {
 namespace Resour {
-    
 
+const boost::filesystem::path& n_core_res_dir = "core";
+
+Package::Package(boost::filesystem::path package_file) {
+    m_home = package_file.parent_path();
+}
+
+void initialize() {
+    if (!boost::filesystem::exists(n_core_res_dir)) {
+        boost::filesystem::create_directory(n_core_res_dir);
+    }
+    boost::filesystem::directory_iterator end_iter;
+    for (boost::filesystem::directory_iterator iter(n_core_res_dir); 
+            iter != end_iter; ++iter) {
+        boost::filesystem::path subdir = *iter;
+        
+        if (boost::filesystem::is_directory(subdir)) {
+            
+        }
+    }
+}
+
+void cleanup() {
     
+}
+
 } // namespace Resour
 } // namespace pegr

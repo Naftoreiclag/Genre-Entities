@@ -17,13 +17,37 @@
 #ifndef PEGR_RESOURCE_RESOURCES_HPP
 #define PEGR_RESOURCE_RESOURCES_HPP
 
+#include <string>
+#include <map>
+
 #include <boost/filesystem.hpp>
 
 namespace pegr {
 namespace Resour {
 
+class Package {
+public:
+    Package(boost::filesystem::path package_file);
+    
+    std::string get_id();
+    std::string get_human_name();
+    std::string get_human_desc();
+    boost::filesystem::path get_file(std::string id);
+    
+private:
+    std::string m_human_name;
+    std::string m_human_desc;
+    std::string m_id;
+    
+    boost::filesystem::path m_home;
+    
+    // Paths are relative to the package home
+    std::map<std::string, boost::filesystem::path> m_name_to_file;
+    
+    friend void initialize();
+};
+    
 void initialize();
-
 
 void cleanup();
     
