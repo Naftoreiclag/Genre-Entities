@@ -37,6 +37,8 @@ foreach(fname
 "gensys/Runtime.cpp"
 "gensys/Util.cpp"
 "logger/Logger.cpp"
+"render/Shaders.cpp"
+"resource/Resources.cpp"
 "scheduler/Lua_Interf.cpp"
 "script/Lua_Interf_Util.cpp"
 "script/Script.cpp"
