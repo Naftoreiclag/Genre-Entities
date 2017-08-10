@@ -126,6 +126,9 @@ void initialize() {
     }
     bgfx::reset(n_window_width, n_window_height, BGFX_RESET_VSYNC);
     SDL_ShowWindow(n_window);
+    
+    Logger::log()->info("bgfx renderer type: %v", 
+            Util::to_string_bgfx_rt(bgfx::getRendererType()));
 }
 
 void on_sdl_window_resize(const SDL_WindowEvent& window) {
