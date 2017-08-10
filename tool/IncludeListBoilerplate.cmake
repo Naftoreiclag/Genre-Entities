@@ -12,19 +12,19 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-# This file contains a listing of all of the source files used in the
-# build target. Populates a list called PGLOCAL_SOURCES_LIST
+# This file contains a listing of all of the additional include dirs used in the
+# build targets. Populates a list called PGLOCAL_INCLUDES_LIST
 
 # Preferred method of adding source items is through the Python script in:
-# `util/Generate*SrcList.py`
+# `util/GenerateIncludesList.py`
 
-# This function appends the provided string list to PGLOCAL_SOURCES_LIST
-set(PGLOCAL_SOURCES_LIST "")
-foreach(fname 
+# This function appends the provided string list to PGLOCAL_INCLUDES_LIST
+set(PGLOCAL_INCLUDES_LIST "")
+foreach(dir 
 
-### SOURCE LIST ###
+### DIRECTORY LIST ###
 
 )
-list(APPEND PGLOCAL_SOURCES_LIST 
-        "${PGLOCAL_SOURCE_DIR}/${PGLOCAL_PROJ_NAME}/${fname}")
+list(APPEND PGLOCAL_INCLUDES_LIST 
+        "${PGLOCAL_SOURCE_DIR}/${dir}")
 endforeach()
