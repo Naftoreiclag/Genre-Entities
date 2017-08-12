@@ -57,6 +57,7 @@ void test_0085_00_podchunk_test();
 void test_0099_gensys_runtime();
 void test_0100_unique_handle_validity();
 void test_0100_unique_render_handles();
+void test_0101_resource_oid_test();
 
 struct NamedTest {
     const char* m_name;
@@ -95,6 +96,7 @@ const NamedTest n_tests[] = {
     {"Gensys Runtime Test", test_0099_gensys_runtime},
     {"Unique handle validity", test_0100_unique_handle_validity},
     {"Unique render handles templates", test_0100_unique_render_handles},
+    {"Resource OID test", test_0101_resource_oid_test},
     
     // Sentinel
     {nullptr, std::function<void()>()}

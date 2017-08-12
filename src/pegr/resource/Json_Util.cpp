@@ -22,9 +22,9 @@
 
 namespace pegr {
 namespace Resour {
-namespace Util {
+namespace Json_Util {
 
-Json::Value readJsonFile(boost::filesystem::path file) {
+Json::Value read_commentated(boost::filesystem::path file) {
     Json::Value retval;
     std::ifstream fs(file.string());
     std::stringstream sss;
@@ -51,19 +51,47 @@ Json::Value readJsonFile(boost::filesystem::path file) {
     try {
         sss >> retval;
     } catch (Json::RuntimeError e) {
-        Logger::log()->warn("Failed to parse JSON file, %v: %v", 
-                file, e.what());
+        std::stringstream ess;
+        ess << "Failed to parse JSON file, "
+            << file << ": " << e.what();
+        throw std::runtime_error(ess.str());
+    }
+    return retval;
+}
+Json::Value read(boost::filesystem::path file) {
+    Json::Value retval;
+    std::ifstream fs(file.string());
+    try {
+        fs >> retval;
+    } catch (Json::RuntimeError e) {
+        std::stringstream ess;
+        ess << "Failed to parse JSON file, "
+            << file << ": " << e.what();
+        throw std::runtime_error(ess.str());
     }
     return retval;
 }
 
-void writeJsonFile(std::string filename, Json::Value& value, bool compact) {
+void write(std::string filename, Json::Value& value, bool compact) {
     std::ofstream fs(filename.c_str());
     Json::FastWriter fast_writer;
     fs << fast_writer.write(value);
     fs.close();
 }
 
-} // namespace Util
+std::string as_string(const Json::Value& val, const char* def) {
+    if (val.isConvertibleTo(Json::ValueType::stringValue)) {
+        return val.asString();
+    }
+    if (!def) {
+        std::stringstream sss;
+        sss << "Cannot convert JSON value to string: "
+            << val.toStyledString();
+        throw std::runtime_error(sss.str());
+    }
+    return def;
+}
+
+} // namespace Json_Util
 } // namespace Resour
 } // namespace pegr

@@ -56,10 +56,12 @@ foreach(fname
 "test/Initialization_Sanity_Test.cpp"
 "test/Memory_Test.cpp"
 "test/Pod_Chunk_Test.cpp"
+"test/Resources_Test.cpp"
 "test/Script_Helper_Test.cpp"
 "test/Script_Test.cpp"
 "test/Unique_Handles_Test.cpp"
 "test/Unique_Ptr_Test.cpp"
+"text/Text.cpp"
 "winput/Enum_Utils.cpp"
 "winput/Winput.cpp"
 

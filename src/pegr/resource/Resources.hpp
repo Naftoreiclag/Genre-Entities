@@ -24,15 +24,77 @@
 
 namespace pegr {
 namespace Resour {
+    
+/**
+ * @class Oid
+ * @brief Object id
+ */
+class Oid {
+public:
+    Oid() = default;
+    Oid(std::string repr, std::string def_pack = "");
+    Oid(const char* core_res);
+
+    const std::string& get_package() const;
+    const std::string& get_resource() const;
+private:
+    std::string m_package;
+    std::string m_resource;
+};
+
+/**
+ * @class Object
+ * @brief Single resource file
+ */
+struct Object {
+    enum Type {
+        MATERIAL,
+        MODEL,
+        SHADER_PROGRAM,
+        TEXTURE,
+        IMAGE,
+        GEOMETRY,
+        FONT,
+        WAVEFORM,
+        SHADER,
+        SCRIPT,
+        STRING,
+        
+        UNKNOWN
+    };
+    
+    Type m_type;
+    boost::filesystem::path m_fname;
+};
+
+/**
+ * @brief Get an object type from the standard string representation
+ * @param str 
+ * @return Type
+ */
+Object::Type object_type_from_string(std::string str);
 
 class Package {
 public:
+    Package() = default;
     Package(boost::filesystem::path package_file);
     
-    std::string get_id();
-    std::string get_human_name();
-    std::string get_human_desc();
-    boost::filesystem::path get_file(std::string id);
+    std::string get_id() const;
+    std::string get_human_name() const;
+    std::string get_human_desc() const;
+    const Object& find_object(const std::string& id) const;
+    const boost::filesystem::path& get_home() const;
+    
+    std::size_t get_num_resources() const;
+    
+    /**
+     * @brief Becomes a co-owner of the resources stored in the other package.
+     * If there are any ID conflicts, the this package's object overwrites the
+     * other one's.
+     */
+    void merge(Package& package);
+    
+    void make_core();
     
 private:
     std::string m_human_name;
@@ -41,15 +103,14 @@ private:
     
     boost::filesystem::path m_home;
     
-    // Paths are relative to the package home
-    std::map<std::string, boost::filesystem::path> m_name_to_file;
-    
-    friend void initialize();
+    std::map<std::string, Object> m_name_to_object;
 };
     
 void initialize();
 
 void cleanup();
+
+const Object& find_object(const Oid& oid);
     
 } // namespace Resour
 } // namespace pegr

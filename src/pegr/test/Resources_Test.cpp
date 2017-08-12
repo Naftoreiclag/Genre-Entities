@@ -1,12 +1,12 @@
 /*
- *  Copyright 2015-2017 James Fong
- *  
+ *  Copyright 2017 James Fong
+ *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *  
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,26 +14,15 @@
  *  limitations under the License.
  */
 
-#ifndef PEGR_RESOURCE_JSONUTIL_HPP
-#define PEGR_RESOURCE_JSONUTIL_HPP
-
-#include <string>
-
-#include <boost/filesystem.hpp>
-#include <json/json.h>
+#include "pegr/resource/Resources.hpp"
 
 namespace pegr {
-namespace Resour {
-namespace Json_Util {
+namespace Test {
 
-Json::Value read_commentated(boost::filesystem::path file);
-Json::Value read(boost::filesystem::path file);
-void write(boost::filesystem::path filename, const Json::Value& value);
+//@Test Resource OID test
+void test_0101_resource_oid_test() {
+    Resour::find_object("hello_world.txt");
+}
 
-std::string as_string(const Json::Value& val, const char* def = nullptr);
-
-} // namespace Json_Util
-} // namespace Resour
+} // namespace Test
 } // namespace pegr
-
-#endif // PEGR_RESOURCE_JSONUTIL_HPP
