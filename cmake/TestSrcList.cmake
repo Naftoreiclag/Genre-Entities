@@ -30,6 +30,7 @@ foreach(fname
 "engine/App_State.cpp"
 "engine/App_State_Machine.cpp"
 "engine/Engine.cpp"
+"except/Except.cpp"
 "gensys/Compiler.cpp"
 "gensys/Gensys.cpp"
 "gensys/Interm_Types.cpp"

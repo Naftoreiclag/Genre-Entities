@@ -16,7 +16,6 @@
 
 #include "pegr/script/Script.hpp"
 
-#include <stdexcept>
 #include <cassert>
 #include <cstddef>
 #include <fstream>
@@ -27,6 +26,7 @@
 #include "pegr/debug/Debug_Macros.hpp"
 #include "pegr/logger/Logger.hpp"
 #include "pegr/script/Script_Util.hpp"
+#include "pegr/except/Except.hpp"
 
 namespace pegr {
 namespace Script {
@@ -410,7 +410,7 @@ Regref load_lua_function(const char* filename, Regref environment,
         std::stringstream ss;
         ss << "Could not open file for " << chunkname;
         lua_pushstring(m_l, ss.str().c_str());
-        throw std::runtime_error(ss.str());
+        throw Except::Runtime(ss.str());
     }
     int peek = file.peek();
     // File is empty
@@ -418,14 +418,14 @@ Regref load_lua_function(const char* filename, Regref environment,
         std::stringstream ss;
         ss << "File for " << chunkname << " is empty";
         lua_pushstring(m_l, ss.str().c_str());
-        throw std::runtime_error(ss.str());
+        throw Except::Runtime(ss.str());
     }
     // Bytecode
     if (peek == 0x1B) {
         std::stringstream ss;
         ss << "File for " << chunkname << " is bytecode";
         lua_pushstring(m_l, ss.str().c_str());
-        throw std::runtime_error(ss.str());
+        throw Except::Runtime(ss.str());
     }
     int status;
     {
@@ -436,7 +436,7 @@ Regref load_lua_function(const char* filename, Regref environment,
         case LUA_ERRSYNTAX:
         case LUA_ERRMEM: {
             const char* errmsg = lua_tostring(m_l, -1);
-            throw std::runtime_error(errmsg);
+            throw Except::Runtime(errmsg);
         }
         default: break;
     }
@@ -455,7 +455,7 @@ void run_function(int nargs, int nresults) {
         case LUA_ERRERR: {
             size_t strlen;
             const char* luastr = lua_tolstring(m_l, -1, &strlen);
-            throw std::runtime_error(std::string(luastr, strlen));
+            throw Except::Runtime(std::string(luastr, strlen));
         }
     }
 }

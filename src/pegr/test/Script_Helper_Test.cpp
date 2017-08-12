@@ -38,7 +38,7 @@ void assert_expected_string_table(
         if (lua_isnil(l, -1)) {
             std::stringstream sss;
             sss << "No value for key \"" << iter.first << '"';
-            throw std::runtime_error(sss.str());
+            throw Except::Runtime(sss.str());
         }
         
         std::size_t strlen;
@@ -53,7 +53,7 @@ void assert_expected_string_table(
                 << "\" got: \""
                 << val
                 << '"';
-            throw std::runtime_error(sss.str());
+            throw Except::Runtime(sss.str());
         }
     }
 }
@@ -88,13 +88,13 @@ void test_0028_to_number_safe() {
         if (!success) {
             std::stringstream sss;
             sss << "Fail to parse: " << str;
-            throw std::runtime_error(sss.str());
+            throw Except::Runtime(sss.str());
         }
         
         if (expected != result) {
             std::stringstream sss;
             sss << "Expected: " << expected << " Got: " << result;
-            throw std::runtime_error(sss.str());
+            throw Except::Runtime(sss.str());
         }
     }
     
@@ -121,7 +121,7 @@ void test_0028_to_number_safe() {
                 << " got: " << result
                 << " (Note, if it says \"12345\""
                     "then something is really wrong.)";
-            throw std::runtime_error(sss.str());
+            throw Except::Runtime(sss.str());
         }
     }
 }
@@ -218,7 +218,7 @@ void test_0028_for_pairs() {
             std::stringstream ss;
             ss << "Resulting table missing key: ";
             ss << key_value.first;
-            throw std::runtime_error(ss.str());
+            throw Except::Runtime(ss.str());
         }
         if (key_value.second != (*iter).second) {
             std::stringstream ss;
@@ -228,7 +228,7 @@ void test_0028_for_pairs() {
             ss << key_value.second;
             ss << ": Got: ";
             ss << (*iter).second;
-            throw std::runtime_error(ss.str());
+            throw Except::Runtime(ss.str());
         }
     }
 }
@@ -245,16 +245,16 @@ void test_0028_for_pairs_exception() {
     
     try {
         Script::Util::for_pairs(-1, []()->bool {
-            throw std::runtime_error("orange juice");
+            throw Except::Runtime("orange juice");
         }, false);
     }
-    catch (std::runtime_error e) {
+    catch (Except::Runtime e) {
         if (std::string(e.what()) != "orange juice") {
             throw e;
         }
         return;
     }
-    throw std::runtime_error("Error did not bubble up!");
+    throw Except::Runtime("Error did not bubble up!");
 }
 //@Test Script Helper to_string
 void test_0028_to_string() {
@@ -270,11 +270,11 @@ void test_0028_to_string() {
     lua_pop(l, 1);
     
     if (resp != "bottom") {
-        throw std::runtime_error("Did not reach the bottom of tostring");
+        throw Except::Runtime("Did not reach the bottom of tostring");
     }
     
     if (original_size != lua_gettop(l)) {
-        throw std::runtime_error("Unbalanced");
+        throw Except::Runtime("Unbalanced");
     }
 }
 
@@ -310,7 +310,7 @@ void test_0028_for_pairs_number_sorted() {
         sss << "Expected shakespeare, got: \""
             << got.str()
             << '"';
-        throw std::runtime_error(sss.str());
+        throw Except::Runtime(sss.str());
     }
     
     expected = "day?summer's a to thee compare I Shall ";
@@ -325,7 +325,7 @@ void test_0028_for_pairs_number_sorted() {
         sss << "Expected shakespeare, got: \""
             << got.str()
             << '"';
-        throw std::runtime_error(sss.str());
+        throw Except::Runtime(sss.str());
     }
 }
 

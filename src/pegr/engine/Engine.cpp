@@ -17,7 +17,6 @@
 #include "pegr/engine/Engine.hpp"
 
 #include <cassert>
-#include <stdexcept>
 #include <algorithm>
 #include <vector>
 
@@ -29,6 +28,7 @@
 #include "pegr/winput/Winput.hpp"
 #include "pegr/resource/Resources.hpp"
 #include "pegr/engine/App_State_Machine.hpp"
+#include "pegr/except/Except.hpp"
 
 namespace pegr {
 namespace Engine {
@@ -83,11 +83,11 @@ void initialize(uint16_t flags) {
     if (script_used()) {
         try {
             Script::initialize();
-        } catch (std::runtime_error e) {
+        } catch (Except::Runtime e) {
             std::stringstream sss;
             sss << "Error while initializing scripting: "
                 << e.what();
-            throw std::runtime_error(e.what());
+            throw Except::Runtime(sss.str());
         }
     }
     
@@ -95,44 +95,44 @@ void initialize(uint16_t flags) {
         try {
             Gensys::initialize();
             Gensys::LI::initialize();
-        } catch (std::runtime_error e) {
+        } catch (Except::Runtime e) {
             std::stringstream sss;
             sss << "Error while initializing gensys: "
                 << e.what();
-            throw std::runtime_error(e.what());
+            throw Except::Runtime(sss.str());
         }
     }
     
     if (schedu_used()) {
         try {
             Schedu::LI::initialize();
-        } catch (std::runtime_error e) {
+        } catch (Except::Runtime e) {
             std::stringstream sss;
             sss << "Error while initializing scheduler: "
                 << e.what();
-            throw std::runtime_error(e.what());
+            throw Except::Runtime(sss.str());
         }
     }
     
     if (winput_used()) {
         try {
             Winput::initialize();
-        } catch (std::runtime_error e) {
+        } catch (Except::Runtime e) {
             std::stringstream sss;
             sss << "Error while initializing window/input: "
                 << e.what();
-            throw std::runtime_error(e.what());
+            throw Except::Runtime(sss.str());
         }
     }
     
     if (resour_used()) {
         try {
             Resour::initialize();
-        } catch (std::runtime_error e) {
+        } catch (Except::Runtime e) {
             std::stringstream sss;
             sss << "Error while initializing resources: "
                 << e.what();
-            throw std::runtime_error(e.what());
+            throw Except::Runtime(sss.str());
         }
     }
 }

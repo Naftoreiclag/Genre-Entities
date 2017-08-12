@@ -16,7 +16,6 @@
 
 #include "pegr/winput/Winput.hpp"
 
-#include <stdexcept>
 #include <sstream>
 #include <cstdint>
 
@@ -28,6 +27,7 @@
 #include "pegr/engine/Engine.hpp"
 #include "pegr/logger/Logger.hpp"
 #include "pegr/winput/Enum_Utils.hpp"
+#include "pegr/except/Except.hpp"
 
 namespace pegr {
 namespace Winput {
@@ -81,7 +81,7 @@ bgfx::PlatformData extract_plat_specific(const SDL_SysWMinfo& syswm_info) {
         sss << "Binding bgfx to "
             << Util::to_string_syswm_type(n_syswm_info.subsystem)
             << " currently unimplemented";
-        throw std::runtime_error(sss.str());
+        throw Except::Runtime(sss.str());
     }
     
     return plat_specific;
@@ -94,7 +94,7 @@ void initialize() {
         std::stringstream sss;
         sss << "Could not initalize SDL: "
             << SDL_GetError();
-        throw std::runtime_error(sss.str());
+        throw Except::Runtime(sss.str());
     }
     
     // Create the window
@@ -110,7 +110,7 @@ void initialize() {
         n_window_height = height;
     }
     if(!n_window) {
-        throw std::runtime_error("Could not create SDL window");
+        throw Except::Runtime("Could not create SDL window");
     }
     
     SDL_version version;
@@ -127,7 +127,7 @@ void initialize() {
         std::stringstream sss;
         sss << "Could not retrieve window info from SDL: "
             << SDL_GetError();
-        throw std::runtime_error(sss.str());
+        throw Except::Runtime(sss.str());
     }
     
     Logger::log()->info("Running SDL on %v", 
@@ -138,7 +138,7 @@ void initialize() {
     bgfx::setPlatformData(pdat);
     
     if (!bgfx::init(bgfx::RendererType::Count, BGFX_PCI_ID_NONE)) {
-        throw std::runtime_error("Failed to init bgfx");
+        throw Except::Runtime("Failed to init bgfx");
     }
     bgfx::reset(n_window_width, n_window_height, BGFX_RESET_VSYNC);
     SDL_ShowWindow(n_window);

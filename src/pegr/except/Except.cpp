@@ -14,18 +14,13 @@
  *  limitations under the License.
  */
 
-#include "pegr/script/Script.hpp"
 #include "pegr/except/Except.hpp"
 
 namespace pegr {
-namespace Test {
+namespace Except {
 
-//@Test Initialization Sanity Test
-void test_0001_init_sanity() {
-    if (!Script::is_initialized()) {
-        throw Except::Runtime("Script system not initialized!");
-    }
-}
+Runtime::Runtime(const std::string& msg)
+: std::runtime_error(msg) {}
 
-} // namespace Test
+} // namespace Except
 } // namespace pegr

@@ -19,6 +19,7 @@
 #include <fstream>
 
 #include "pegr/logger/Logger.hpp"
+#include "pegr/except/Except.hpp"
 
 namespace pegr {
 namespace Resour {
@@ -54,7 +55,7 @@ Json::Value read_commentated(boost::filesystem::path file) {
         std::stringstream ess;
         ess << "Failed to parse JSON file, "
             << file << ": " << e.what();
-        throw std::runtime_error(ess.str());
+        throw Except::Runtime(ess.str());
     }
     return retval;
 }
@@ -67,7 +68,7 @@ Json::Value read(boost::filesystem::path file) {
         std::stringstream ess;
         ess << "Failed to parse JSON file, "
             << file << ": " << e.what();
-        throw std::runtime_error(ess.str());
+        throw Except::Runtime(ess.str());
     }
     return retval;
 }
@@ -87,7 +88,7 @@ std::string as_string(const Json::Value& val, const char* def) {
         std::stringstream sss;
         sss << "Cannot convert JSON value to string: "
             << val.toStyledString();
-        throw std::runtime_error(sss.str());
+        throw Except::Runtime(sss.str());
     }
     return def;
 }

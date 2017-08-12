@@ -20,6 +20,7 @@
 #include "pegr/gensys/Interm_Types.hpp"
 #include "pegr/logger/Logger.hpp"
 #include "pegr/script/Script_Util.hpp"
+#include "pegr/except/Except.hpp"
 
 namespace pegr {
 namespace Test {
@@ -32,13 +33,13 @@ void test_0030_gensys_primitive() {
     Gensys::Interm::Prim prim;
     
     if (!prim.is_error()) {
-        throw std::runtime_error("Prim is not an error!");
+        throw Except::Runtime("Prim is not an error!");
     }
     
     prim.set_f32(0.5f);
     
     if (prim.get_type() != Gensys::Interm::Prim::Type::F32) {
-        throw std::runtime_error("Type must be F32!");
+        throw Except::Runtime("Type must be F32!");
     }
     
     double pi = 3.14159265358979323846264338328d;
@@ -59,14 +60,14 @@ void test_0030_gensys_primitive() {
     prim.set_f64(pi);
     
     if (prim.get_type() != Gensys::Interm::Prim::Type::F64) {
-        throw std::runtime_error("Type must be F64!");
+        throw Except::Runtime("Type must be F64!");
     }
     
     if (prim.get_f64() != pi) {
         std::stringstream ss;
         ss << "Wrong double: ";
         ss << prim.get_f64();
-        throw std::runtime_error(ss.str());
+        throw Except::Runtime(ss.str());
     }
     std::stringstream ss;
     ss << prim.get_f64();
@@ -79,7 +80,7 @@ void test_0030_gensys_primitive() {
     prim.set_function(Script::make_shared(table_fun));
     
     if (prim.get_type() != Gensys::Interm::Prim::Type::FUNC) {
-        throw std::runtime_error("Type must be function!");
+        throw Except::Runtime("Type must be function!");
     }
     
     Script::Util::run_simple_function(*prim.get_function(), 1);
@@ -94,7 +95,7 @@ void test_0030_gensys_primitive() {
         std::stringstream ss;
         ss << "Loaded function failed: ";
         ss << a_val;
-        throw std::runtime_error(ss.str());
+        throw Except::Runtime(ss.str());
     }
     Logger::log()->info("Correct function return val: %v", a_val);
     
@@ -106,19 +107,19 @@ void test_0030_gensys_primitive() {
     prim.set_string(str);
     
     if (prim.get_type() != Gensys::Interm::Prim::Type::STR) {
-        throw std::runtime_error("Type must be string!");
+        throw Except::Runtime("Type must be string!");
     }
     
     if (prim.get_string() != str) {
         std::stringstream ss;
         ss << "Wrong string returned: ";
         ss << prim.get_string();
-        throw std::runtime_error(ss.str());
+        throw Except::Runtime(ss.str());
     }
     Logger::log()->info("Correct string retrieved: %v", prim.get_string());
     
     if (lua_gettop(l) != stack_size) {
-        throw std::runtime_error("Unbalanced!");
+        throw Except::Runtime("Unbalanced!");
     }
 }
 
@@ -148,24 +149,24 @@ void test_0030_gensys_primitive_multiple() {
     lua_pop(l, 1);
     
     if (str_foo != "foo") {
-        throw std::runtime_error("Expected \"foo\"");
+        throw Except::Runtime("Expected \"foo\"");
     }
     
     if (str_bar != "bar") {
-        throw std::runtime_error("Expected \"bar\"");
+        throw Except::Runtime("Expected \"bar\"");
     }
     
     Gensys::Interm::Prim prim_maybe_foo;
     prim_maybe_foo.set_f32(2.718f);
     
     if (prim_maybe_foo.get_type() != Gensys::Interm::Prim::Type::F32) {
-        throw std::runtime_error("Expected F32");
+        throw Except::Runtime("Expected F32");
     }
     
     prim_maybe_foo = prim_foo;
     
     if (prim_maybe_foo.get_type() != Gensys::Interm::Prim::Type::FUNC) {
-        throw std::runtime_error("Expected FUNC");
+        throw Except::Runtime("Expected FUNC");
     }
     
     Script::Util::run_simple_function(*prim_maybe_foo.get_function(), 1);
@@ -173,11 +174,11 @@ void test_0030_gensys_primitive_multiple() {
     lua_pop(l, 1);
     
     if (str_foo != str_maybe_foo) {
-        throw std::runtime_error("Wrong assignment of functions!");
+        throw Except::Runtime("Wrong assignment of functions!");
     }
     
     if (lua_gettop(l) != stack_size) {
-        throw std::runtime_error("Unbalanced!");
+        throw Except::Runtime("Unbalanced!");
     }
 }
 

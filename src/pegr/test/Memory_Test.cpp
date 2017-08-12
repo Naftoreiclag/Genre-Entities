@@ -20,6 +20,7 @@
 #include <cstdint>
 
 #include "pegr/logger/Logger.hpp"
+#include "pegr/except/Except.hpp"
 
 namespace pegr {
 namespace Test {
@@ -53,7 +54,7 @@ void test_0000_memory_test() {
     if (expected != got) {
         std::stringstream ers;
         ers << "Expected: " << expected;
-        throw std::runtime_error(ers.str());
+        throw Except::Runtime(ers.str());
     }
 }
 

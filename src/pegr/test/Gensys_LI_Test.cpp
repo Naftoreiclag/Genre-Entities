@@ -14,14 +14,13 @@
  *  limitations under the License.
  */
 
-#include <stdexcept>
-
 #include "pegr/script/Script_Util.hpp"
 #include "pegr/script/Script.hpp"
 #include "pegr/logger/Logger.hpp"
 #include "pegr/gensys/Compiler.hpp"
 #include "pegr/gensys/Interm_Types.hpp"
 #include "pegr/gensys/Lua_Interf.hpp"
+#include "pegr/except/Except.hpp"
 
 namespace pegr {
 namespace Test {
@@ -42,7 +41,7 @@ void test_0080_00_gensys_primitive() {
     lua_pop(l, 1);
     
     if (prim.get_type() != Gensys::Interm::Prim::Type::FUNC) {
-        throw std::runtime_error("Expected FUNC!");
+        throw Except::Runtime("Expected FUNC!");
     }
 }
 

@@ -14,13 +14,13 @@
  *  limitations under the License.
  */
 
-#include <stdexcept>
 #include <vector>
 
 #include "pegr/script/Script_Util.hpp"
 #include "pegr/script/Script.hpp"
 #include "pegr/logger/Logger.hpp"
 #include "pegr/test/Test_Util.hpp"
+#include "pegr/except/Except.hpp"
 
 namespace pegr {
 namespace Test {
@@ -33,12 +33,12 @@ void test_0010_check_script_loading() {
         Script::Unique_Regref error(
             Script::load_lua_function("test/common/error_syntax.lua", sandbox));
     }
-    catch (std::runtime_error e) {
+    catch (Except::Runtime e) {
         lua_pop(l, 1);
         return;
     }
     lua_pop(l, 1);
-    throw std::runtime_error("No syntax error");
+    throw Except::Runtime("No syntax error");
 }
 
 //@Test Script Pop_Guard memory leaks
@@ -59,7 +59,7 @@ void test_0010_check_guard_memory_leaks() {
     Script::push_reference(rr);
     if (!lua_isnil(l, -1)) {
         lua_pop(l, 1);
-        throw std::runtime_error("Could not release reference!");
+        throw Except::Runtime("Could not release reference!");
     }
     lua_pop(l, 1);
     Logger::log()->info("Testing guard...");
@@ -74,7 +74,7 @@ void test_0010_check_guard_memory_leaks() {
     Script::push_reference(ref);
     if (!lua_isnil(l, -1)) {
         lua_pop(l, 1);
-        throw std::runtime_error("Guard did not release reference!");
+        throw Except::Runtime("Guard did not release reference!");
     }
     lua_pop(l, 1);
 }
@@ -96,7 +96,7 @@ void test_0010_check_guard_memory_leaks_shared() {
     Script::push_reference(ref);
     if (!lua_isnil(l, -1)) {
         lua_pop(l, 1);
-        throw std::runtime_error("Shared guard did not release reference!");
+        throw Except::Runtime("Shared guard did not release reference!");
     }
     lua_pop(l, 1);
     

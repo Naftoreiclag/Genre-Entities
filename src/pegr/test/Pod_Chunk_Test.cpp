@@ -16,8 +16,9 @@
 
 #include "pegr/gensys/Pod_Chunk.hpp"
 
-#include <stdexcept>
 #include <sstream>
+
+#include "pegr/except/Except.hpp"
 
 namespace pegr {
 namespace Test {
@@ -37,7 +38,7 @@ void test_0085_00_podchunk_test() {
             std::stringstream sss;
             sss << "Wrong int32 "
                 << got;
-            throw std::runtime_error(sss.str());
+            throw Except::Runtime(sss.str());
         }
     }
     {
@@ -46,7 +47,7 @@ void test_0085_00_podchunk_test() {
             std::stringstream sss;
             sss << "Wrong int64 "
                 << got;
-            throw std::runtime_error(sss.str());
+            throw Except::Runtime(sss.str());
         }
     }
     {
@@ -55,7 +56,7 @@ void test_0085_00_podchunk_test() {
             std::stringstream sss;
             sss << "Wrong float "
                 << got;
-            throw std::runtime_error(sss.str());
+            throw Except::Runtime(sss.str());
         }
     }
     {
@@ -64,7 +65,7 @@ void test_0085_00_podchunk_test() {
             std::stringstream sss;
             sss << "Wrong double "
                 << got;
-            throw std::runtime_error(sss.str());
+            throw Except::Runtime(sss.str());
         }
     }
     

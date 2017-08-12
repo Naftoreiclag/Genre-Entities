@@ -14,7 +14,6 @@
  *  limitations under the License.
  */
 
-#include <stdexcept>
 #include <iostream>
 #include <sstream>
 #include <chrono>
@@ -29,6 +28,7 @@
 #include "pegr/script/Script_Util.hpp"
 #include "pegr/logger/Logger.hpp"
 #include "pegr/test/Tests.hpp"
+#include "pegr/except/Except.hpp"
 
 using namespace pegr;
 
@@ -139,13 +139,13 @@ bool run_test(const Test::NamedTest& test) {
                 lua_pop(l, diff);
             }
             ss << ") Later tests may fail inexplicably!";
-            throw std::runtime_error(ss.str());
+            throw Except::Runtime(ss.str());
         }
         
         Logger::log()->info("%v\t...PASSED!%v", COLOR_GREEN, COLOR_RESET);
         return true;
     }
-    catch (std::runtime_error e) {
+    catch (Except::Runtime e) {
         Logger::log()->warn("%v\t...FAILED! %v%v", 
                 COLOR_RED, e.what(), COLOR_RESET);
         return false;
@@ -166,7 +166,7 @@ bool run_lua_test(const Test::NamedLuaTest& test) {
         Logger::log()->info("%v\t...PASSED!%v", COLOR_GREEN, COLOR_RESET);
         success = true;
     }
-    catch (std::runtime_error e) {
+    catch (Except::Runtime e) {
         Logger::log()->warn("%v\t...FAILED! %v%v", 
                 COLOR_RED, e.what(), COLOR_RESET);
         success = false;
@@ -247,7 +247,7 @@ void run_extras() {
             
             Logger::log()->info("%v\t...PASSED!%v", COLOR_GREEN, COLOR_RESET);
         }
-        catch (std::runtime_error e) {
+        catch (Except::Runtime e) {
             Logger::log()->warn("%v\t...FAILED! %v%v", 
                     COLOR_RED, e.what(), COLOR_RESET);
         }

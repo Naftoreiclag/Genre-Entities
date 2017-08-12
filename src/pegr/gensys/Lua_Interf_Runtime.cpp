@@ -16,7 +16,6 @@
 
 #include "pegr/gensys/Lua_Interf.hpp"
 
-#include <stdexcept>
 #include <sstream>
 #include <cassert>
 #include <cstddef>
@@ -32,6 +31,7 @@
 #include "pegr/gensys/Runtime.hpp"
 #include "pegr/gensys/Gensys.hpp"
 #include "pegr/util/Algs.hpp"
+#include "pegr/except/Except.hpp"
 
 namespace pegr {
 namespace Gensys {

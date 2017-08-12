@@ -21,6 +21,7 @@
 
 #include "pegr/logger/Logger.hpp"
 #include "pegr/resource/Json_Util.hpp"
+#include "pegr/except/Except.hpp"
 
 namespace pegr {
 namespace Resour {
@@ -142,7 +143,7 @@ const Object& Package::find_object(const std::string& name) const {
         }
         sss << name
             << "]";
-        throw std::runtime_error(sss.str());
+        throw Except::Runtime(sss.str());
     }
     const Object& obj = iter->second;
     return obj;
@@ -210,11 +211,11 @@ void read_core_packages(Load_Workspace& wl) {
                         << opack.get_home()
                         << " and "
                         << subdir;
-                    throw std::runtime_error(sss.str());
+                    throw Except::Runtime(sss.str());
                 }
                 
                 wl.m_core_packages.emplace(id, std::move(package));
-            } catch (std::runtime_error e) {
+            } catch (Except::Runtime e) {
                 Logger::log()->warn("Package in %v is corrupted: %v", 
                         subdir, e.what());
             }
@@ -234,7 +235,7 @@ void collapse_core_packages(Load_Workspace& wl) {
             sss << "Package \""
                 << pack_id
                 << "\" specified in load order config, but was not found";
-            throw std::runtime_error(sss.str());
+            throw Except::Runtime(sss.str());
         }
         
         Package& pack = pack_iter->second;
@@ -255,27 +256,27 @@ void load_core() {
     Load_Workspace lw;
     try {
         read_core_load_order(lw);
-    } catch (std::runtime_error e) {
+    } catch (Except::Runtime e) {
         std::stringstream sss;
         sss << "Error while reading core load order: "
             << e.what();
-        throw std::runtime_error(sss.str());
+        throw Except::Runtime(sss.str());
     }
     try {
         read_core_packages(lw);
-    } catch (std::runtime_error e) {
+    } catch (Except::Runtime e) {
         std::stringstream sss;
         sss << "Error while loading core packages: "
             << e.what();
-        throw std::runtime_error(sss.str());
+        throw Except::Runtime(sss.str());
     }
     try {
         collapse_core_packages(lw);
-    } catch (std::runtime_error e) {
+    } catch (Except::Runtime e) {
         std::stringstream sss;
         sss << "Error while collapsing core packages: "
             << e.what();
-        throw std::runtime_error(sss.str());
+        throw Except::Runtime(sss.str());
     }
     
     Logger::log()->info("Core resources loaded successfully");
@@ -305,7 +306,7 @@ const Object& find_object(const Oid& oid, Object::Type required_type) {
             << ':'
             << oid.get_resource()
             << ']';
-        throw std::runtime_error(sss.str());
+        throw Except::Runtime(sss.str());
     }
     const Package& pack = iter->second;
     
@@ -321,7 +322,7 @@ const Object& find_object(const Oid& oid, Object::Type required_type) {
             << object_type_to_string(obj.m_type)
             << ", but expected type "
             << object_type_to_string(required_type);
-        throw std::runtime_error(sss.str());
+        throw Except::Runtime(sss.str());
     }
     
     return obj;

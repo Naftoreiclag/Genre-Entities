@@ -19,6 +19,8 @@
 #include <fstream>
 #include <sstream>
 
+#include "pegr/except/Except.hpp"
+
 namespace pegr {
 namespace Text {
 
@@ -35,7 +37,7 @@ Text_Res_Cptr find_text_resource(Resour::Oid oid) {
 std::string read_file_as_string(boost::filesystem::path file) {
     std::ifstream is(file.string().c_str(), std::ios::in | std::ios::binary);
     if (!is) {
-        throw std::runtime_error("Failed to open file");
+        throw Except::Runtime("Failed to open file");
     }
     
     

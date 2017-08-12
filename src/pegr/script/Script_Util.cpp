@@ -17,12 +17,12 @@
 #include "pegr/script/Script_Util.hpp"
 
 #include <algorithm>
-#include <stdexcept>
 #include <cassert>
 
 #include "pegr/debug/Debug_Macros.hpp"
 #include "pegr/script/Script.hpp"
 #include "pegr/logger/Logger.hpp"
+#include "pegr/except/Except.hpp"
 
 namespace pegr {
 namespace Script {
@@ -194,7 +194,7 @@ std::string to_string(int idx, const char* def, int max_recusions) {
     if (def) {
         return def;
     }
-    throw std::runtime_error(
+    throw Except::Runtime(
         "Maximum recusion depth reached when trying to convert a Lua "
         "value into a string through tostring()");
 }
