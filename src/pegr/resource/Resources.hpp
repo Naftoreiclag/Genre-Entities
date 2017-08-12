@@ -74,6 +74,13 @@ struct Object {
  */
 Object::Type object_type_from_string(std::string str);
 
+/**
+ * @brief Inverse of object_type_from_string
+ * @param ot
+ * @return String
+ */
+const char* object_type_to_string(Object::Type ot);
+
 class Package {
 public:
     Package() = default;
@@ -110,7 +117,16 @@ void initialize();
 
 void cleanup();
 
-const Object& find_object(const Oid& oid);
+/**
+ * @brief Attempts to find an object with the given object id. If the required
+ * type is specified, then an error is thrown if the object is of a different
+ * type.
+ * @param oid The object id to use when looking for the resource
+ * @param required_type Optional, specifies a required returned object type
+ * @return The object/resource
+ */
+const Object& find_object(const Oid& oid,
+        Object::Type required_type = Object::Type::UNKNOWN);
     
 } // namespace Resour
 } // namespace pegr

@@ -16,12 +16,18 @@
 
 #include "pegr/resource/Resources.hpp"
 
+#include "pegr/text/Text.hpp"
+#include "pegr/test/Test_Util.hpp"
+
 namespace pegr {
 namespace Test {
 
 //@Test Resource OID test
 void test_0101_resource_oid_test() {
     Resour::find_object("hello_world.txt");
+    
+    Text::Text_Res_Cptr res = Text::find_text_resource("hello_world.txt");
+    verify_equals(std::string("Hello, world!"), res->m_string);
 }
 
 } // namespace Test

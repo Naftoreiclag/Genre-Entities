@@ -17,8 +17,25 @@
 #ifndef PEGR_TEXT_TEXT_HPP
 #define PEGR_TEXT_TEXT_HPP
 
+#include <memory>
+
+#include <boost/filesystem.hpp>
+
+#include "pegr/resource/Resources.hpp"
+
 namespace pegr {
 namespace Text {
+    
+struct Text_Res {
+    std::string m_string;
+};
+
+typedef std::shared_ptr<Text_Res> Text_Res_Ptr;
+typedef std::shared_ptr<const Text_Res> Text_Res_Cptr;
+
+Text_Res_Cptr find_text_resource(Resour::Oid oid);
+
+std::string read_file_as_string(boost::filesystem::path file);
 
 } // namespace Text
 } // namespace pegr

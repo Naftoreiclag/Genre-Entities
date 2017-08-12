@@ -74,6 +74,23 @@ Object::Type object_type_from_string(std::string str) {
     return iter->second;
 }
 
+const char* object_type_to_string(Object::Type ot) {
+    switch (ot) {
+        case Object::Type::MATERIAL: return "material";
+        case Object::Type::MODEL: return "model";
+        case Object::Type::SHADER_PROGRAM: return "shader-program";
+        case Object::Type::TEXTURE: return "texture";
+        case Object::Type::IMAGE: return "image";
+        case Object::Type::GEOMETRY: return "geometry";
+        case Object::Type::FONT: return "font";
+        case Object::Type::WAVEFORM: return "waveform";
+        case Object::Type::SHADER: return "shader";
+        case Object::Type::SCRIPT: return "script";
+        case Object::Type::STRING: return "string";
+        default: return "unknown";
+    }
+}
+
 Package::Package(boost::filesystem::path package_file) {
     m_home = package_file.parent_path();
     
@@ -276,7 +293,7 @@ void cleanup() {
     n_core_package = Package();
 }
 
-const Object& find_object(const Oid& oid) {
+const Object& find_object(const Oid& oid, Object::Type required_type) {
     if (oid.get_package() == "") {
         return n_core_package.find_object(oid.get_resource());
     }
@@ -291,7 +308,23 @@ const Object& find_object(const Oid& oid) {
         throw std::runtime_error(sss.str());
     }
     const Package& pack = iter->second;
-    return pack.find_object(oid.get_resource());
+    
+    const Object& obj = pack.find_object(oid.get_resource());
+    
+    if (required_type != Object::Type::UNKNOWN && obj.m_type != required_type) {
+        std::stringstream sss;
+        sss << "Resource with id ["
+            << oid.get_package()
+            << ':'
+            << oid.get_resource()
+            << "] is type "
+            << object_type_to_string(obj.m_type)
+            << ", but expected type "
+            << object_type_to_string(required_type);
+        throw std::runtime_error(sss.str());
+    }
+    
+    return obj;
 }
 
 } // namespace Resour

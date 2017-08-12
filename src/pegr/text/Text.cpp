@@ -16,10 +16,39 @@
 
 #include "pegr/text/Text.hpp"
 
+#include <fstream>
+#include <sstream>
+
 namespace pegr {
 namespace Text {
 
-void get_text_resource();
+Text_Res_Cptr find_text_resource(Resour::Oid oid) {
+    const Resour::Object& obj = Resour::find_object(oid, 
+            Resour::Object::Type::STRING);
+    
+    Text_Res_Ptr text_res = std::make_shared<Text_Res>();
+    text_res->m_string = read_file_as_string(obj.m_fname);
+    
+    return text_res;
+}
+
+std::string read_file_as_string(boost::filesystem::path file) {
+    std::ifstream is(file.string().c_str(), std::ios::in | std::ios::binary);
+    if (!is) {
+        throw std::runtime_error("Failed to open file");
+    }
+    
+    
+    // Reserve enough space ahead of time
+    is.seekg(0, std::ios::end);
+    std::string retval(is.tellg(), '\0');
+    assert(retval.size() == is.tellg());
+    
+    // Read everything
+    is.seekg(0, std::ios::beg);
+    is.read(&retval[0], retval.size());
+    return retval;
+}
 
 } // namespace Text
 } // namespace pegr
