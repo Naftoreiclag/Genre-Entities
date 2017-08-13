@@ -37,6 +37,9 @@ public:
 
     const std::string& get_package() const;
     const std::string& get_resource() const;
+    
+    std::string get_dbg_string() const;
+    
 private:
     std::string m_package;
     std::string m_resource;

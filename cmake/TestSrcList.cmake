@@ -46,6 +46,7 @@ foreach(fname
 "scheduler/Lua_Interf.cpp"
 "script/Lua_Interf_Util.cpp"
 "script/Script.cpp"
+"script/Script_Resource.cpp"
 "script/Script_Util.cpp"
 "test/Algs_Test.cpp"
 "test/App_State_Machine_Test.cpp"

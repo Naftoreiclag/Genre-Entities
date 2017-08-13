@@ -25,6 +25,7 @@
 #include "pegr/engine/Engine.hpp"
 #include "pegr/engine/App_State.hpp"
 #include "pegr/script/Script.hpp"
+#include "pegr/script/Script_Resource.hpp"
 #include "pegr/script/Script_Util.hpp"
 #include "pegr/gensys/Lua_Interf.hpp"
 #include "pegr/gensys/Gensys.hpp"
@@ -40,25 +41,25 @@ Game_State::Game_State()
 Game_State::~Game_State() {}
 
 void Game_State::initialize() {
-    Script::Unique_Regref sandbox(Script::new_sandbox());
+    Script::Unique_Regref sandbox = Script::new_sandbox();
     Script::Unique_Regref init_fun;
     Script::Unique_Regref postinit_fun;
     try {
-        init_fun = Script::load_lua_function("init.lua", sandbox);
-        postinit_fun = Script::load_lua_function("postinit.lua", sandbox);
+        init_fun = Script::find_script("init.lua", sandbox.get());
+        postinit_fun = Script::find_script("postinit.lua", sandbox.get());
     } catch (Except::Runtime& e) {
         Logger::log()->warn(e.what());
     }
     
     try {
-        Script::Util::run_simple_function(init_fun, 0);
+        Script::Util::run_simple_function(init_fun.get(), 0);
     } catch (Except::Runtime& e) {
         Logger::log()->warn(e.what());
     }
     Gensys::LI::stage_all();
     Gensys::compile();
     try {
-        Script::Util::run_simple_function(postinit_fun, 0);
+        Script::Util::run_simple_function(postinit_fun.get(), 0);
     } catch (Except::Runtime& e) {
         Logger::log()->warn(e.what());
     }

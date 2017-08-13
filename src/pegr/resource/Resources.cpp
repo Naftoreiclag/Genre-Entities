@@ -16,6 +16,8 @@
 
 #include "pegr/resource/Resources.hpp"
 
+#include <cassert>
+
 #include <boost/filesystem.hpp>
 #include <json/json.h>
 
@@ -37,6 +39,7 @@ Oid::Oid(std::string repr, std::string def_pack) {
     }
 }
 Oid::Oid(const char* core_res) {
+    assert(std::string(core_res).find(':') == std::string::npos);
     m_package = "";
     m_resource = core_res;
 }
@@ -47,6 +50,17 @@ const std::string& Oid::get_package() const {
 
 const std::string& Oid::get_resource() const {
     return m_resource;
+}
+
+std::string Oid::get_dbg_string() const {
+    std::string retval;
+    retval.reserve(3 + m_package.size() + m_resource.size());
+    retval.append(1, '[');
+    retval.append(m_package);
+    retval.append(1, ':');
+    retval.append(m_resource);
+    retval.append(1, ']');
+    return retval;
 }
 
 Package n_core_package;
@@ -135,7 +149,7 @@ const Object& Package::find_object(const std::string& name) const {
     if (iter == m_name_to_object.end()) {
         std::stringstream sss;
         if (m_id == "") {
-            sss << "Cannot find core resource, [";
+            sss << "Cannot find core resource, [:";
         } else {
             sss << "Cannot find resource, ["
                 << m_id
@@ -320,7 +334,7 @@ const Object& find_object(const Oid& oid, Object::Type required_type) {
             << oid.get_resource()
             << "] is type "
             << object_type_to_string(obj.m_type)
-            << ", but expected type "
+            << ", but needed type "
             << object_type_to_string(required_type);
         throw Except::Runtime(sss.str());
     }
