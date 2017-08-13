@@ -33,9 +33,10 @@ void test_0080_00_gensys_primitive() {
     
     Script::Unique_Regref sandbox(Script::new_sandbox());
     Script::Unique_Regref func(
-        Script::load_lua_function("test/common/prim_cstr_table.lua", sandbox));
+        Script::load_lua_function("test/common/prim_cstr_table.lua", 
+                sandbox.get()));
         
-    Script::Util::run_simple_function(func, 1);
+    Script::Util::run_simple_function(func.get(), 1);
     
     prim = Gensys::LI::parse_primitive(-1);
     lua_pop(l, 1);

@@ -31,7 +31,8 @@ void test_0010_check_script_loading() {
     Script::Unique_Regref sandbox(Script::new_sandbox());
     try {
         Script::Unique_Regref error(
-            Script::load_lua_function("test/common/error_syntax.lua", sandbox));
+            Script::load_lua_function("test/common/error_syntax.lua", 
+                    sandbox.get()));
     }
     catch (Except::Runtime& e) {
         lua_pop(l, 1);
@@ -53,7 +54,7 @@ void test_0010_check_guard_memory_leaks() {
     lua_State* l = Script::get_lua_state();
     Logger::log()->info("Testing explicit...");
     
-    Script::Regref rr = Script::new_sandbox();
+    Script::Regref rr = Script::new_sandbox().release();
     Logger::log()->info("Should drop reference...");
     Script::drop_reference(rr);
     Script::push_reference(rr);
@@ -67,7 +68,7 @@ void test_0010_check_guard_memory_leaks() {
     Script::Regref ref;
     {
         Script::Unique_Regref sandbox(Script::new_sandbox());
-        ref = sandbox;
+        ref = sandbox.get();
         Logger::log()->info("Should drop reference...");
     }
     lua_gc(l, LUA_GCCOLLECT, 0);
@@ -83,7 +84,7 @@ void test_0010_check_guard_memory_leaks() {
 void test_0010_check_guard_memory_leaks_shared() {
     lua_State* l = Script::get_lua_state();
     Script::Regref ref;
-    ref = Script::new_sandbox();
+    ref = Script::new_sandbox().release();
     
     {
         Script::Shared_Regref shared1;

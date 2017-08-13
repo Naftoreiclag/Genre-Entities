@@ -75,7 +75,8 @@ void test_0030_gensys_primitive() {
     
     Script::Unique_Regref sandbox(Script::new_sandbox());
     Script::Regref table_fun = 
-            Script::load_lua_function("test/common/simple_table.lua", sandbox);
+            Script::load_lua_function(
+                    "test/common/simple_table.lua", sandbox.get()).release();
     
     prim.set_function(Script::make_shared(table_fun));
     
@@ -83,7 +84,7 @@ void test_0030_gensys_primitive() {
         throw Except::Runtime("Type must be function!");
     }
     
-    Script::Util::run_simple_function(*prim.get_function(), 1);
+    Script::Util::run_simple_function(prim.get_function()->get(), 1);
     lua_getfield(l, -1, "a");
     
     std::size_t strsize;
@@ -133,18 +134,20 @@ void test_0030_gensys_primitive_multiple() {
     
     Script::Unique_Regref sandbox(Script::new_sandbox());
     Script::Shared_Regref func_foo = Script::make_shared(
-            Script::load_lua_function("test/common/return_foo.lua", sandbox));
+            Script::load_lua_function("test/common/return_foo.lua", 
+                    sandbox.get()).release());
     Script::Shared_Regref func_bar = Script::make_shared(
-            Script::load_lua_function("test/common/return_bar.lua", sandbox));
+            Script::load_lua_function("test/common/return_bar.lua", 
+                    sandbox.get()).release());
     
     prim_foo.set_function(func_foo);
     prim_bar.set_function(func_bar);
     
-    Script::Util::run_simple_function(*prim_foo.get_function(), 1);
+    Script::Util::run_simple_function(prim_foo.get_function()->get(), 1);
     std::string str_foo = Script::Util::to_string(-1);
     lua_pop(l, 1);
     
-    Script::Util::run_simple_function(*prim_bar.get_function(), 1);
+    Script::Util::run_simple_function(prim_bar.get_function()->get(), 1);
     std::string str_bar = Script::Util::to_string(-1);
     lua_pop(l, 1);
     
@@ -169,7 +172,7 @@ void test_0030_gensys_primitive_multiple() {
         throw Except::Runtime("Expected FUNC");
     }
     
-    Script::Util::run_simple_function(*prim_maybe_foo.get_function(), 1);
+    Script::Util::run_simple_function(prim_maybe_foo.get_function()->get(), 1);
     std::string str_maybe_foo = Script::Util::to_string(-1);
     lua_pop(l, 1);
     

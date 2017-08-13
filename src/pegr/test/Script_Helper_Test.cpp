@@ -131,7 +131,8 @@ void test_0028_simple_deep_copy() {
     lua_State* l = Script::get_lua_state();
     
     RG sandbox(Script::new_sandbox());
-    RG table_fun(Script::load_lua_function("test/common/simple_table.lua", sandbox));
+    RG table_fun(Script::load_lua_function("test/common/simple_table.lua", 
+            sandbox.get()));
     
     std::vector<std::pair<std::string, std::string> > expected = {
         {"a", "apple"},
@@ -140,7 +141,7 @@ void test_0028_simple_deep_copy() {
         {"d", "durian"}
     };
     
-    Script::Util::run_simple_function(table_fun, 1);
+    Script::Util::run_simple_function(table_fun.get(), 1);
     Script::Pop_Guard pop_guard(1);
     
     assert_expected_string_table(l, expected);
@@ -156,8 +157,9 @@ void test_0028_simple_deep_copy_recursive() {
     lua_State* l = Script::get_lua_state();
     RG sandbox(Script::new_sandbox());
     RG table_fun(
-            Script::load_lua_function("test/common/recursive_table.lua", sandbox));
-    Script::Util::run_simple_function(table_fun, 1);
+            Script::load_lua_function("test/common/recursive_table.lua", 
+                    sandbox.get()));
+    Script::Util::run_simple_function(table_fun.get(), 1);
     Script::Pop_Guard pop_guard(1);
     Logger::log()->info("Beginning copy...");
     Script::Util::simple_deep_copy(-1);
@@ -170,9 +172,10 @@ void test_0028_for_pairs() {
     lua_State* l = Script::get_lua_state();
     
     RG sandbox(Script::new_sandbox());
-    RG table_fun(Script::load_lua_function("test/common/simple_table.lua", sandbox));
+    RG table_fun(Script::load_lua_function("test/common/simple_table.lua", 
+            sandbox.get()));
     
-    Script::Util::run_simple_function(table_fun, 1);
+    Script::Util::run_simple_function(table_fun.get(), 1);
     Script::Pop_Guard pop_guard(1);
     
     std::map<std::string, std::string> expected = {
@@ -238,9 +241,10 @@ void test_0028_for_pairs_exception() {
     lua_State* l = Script::get_lua_state();
     
     RG sandbox(Script::new_sandbox());
-    RG table_fun(Script::load_lua_function("test/common/simple_table.lua", sandbox));
+    RG table_fun(Script::load_lua_function("test/common/simple_table.lua", 
+            sandbox.get()));
     
-    Script::Util::run_simple_function(table_fun, 1);
+    Script::Util::run_simple_function(table_fun.get(), 1);
     Script::Pop_Guard pop_guard(1);
     
     try {
@@ -263,9 +267,10 @@ void test_0028_to_string() {
     
     RG sandbox(Script::new_sandbox());
     RG table_fun(
-            Script::load_lua_function("test/common/complex_tostring.lua", sandbox));
+            Script::load_lua_function("test/common/complex_tostring.lua", 
+                    sandbox.get()));
             
-    Script::Util::run_simple_function(table_fun, 1);
+    Script::Util::run_simple_function(table_fun.get(), 1);
     std::string resp = Script::Util::to_string(-1);
     lua_pop(l, 1);
     
@@ -284,9 +289,9 @@ void test_0028_for_pairs_number_sorted() {
     
     RG sandbox(Script::new_sandbox());
     RG table_fun(Script::load_lua_function(
-            "test/common/sparse_array.lua", sandbox));
+            "test/common/sparse_array.lua", sandbox.get()));
     
-    Script::Util::run_simple_function(table_fun, 1);
+    Script::Util::run_simple_function(table_fun.get(), 1);
     Script::Pop_Guard pop_guard(1);
     
     std::string expected = "Shall I compare thee to a summer's day?";

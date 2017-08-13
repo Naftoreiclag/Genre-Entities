@@ -161,8 +161,8 @@ bool run_lua_test(const Test::NamedLuaTest& test) {
         sss << "test/tests/" << test.m_lua_file;
         Script::Unique_Regref func(
                 Script::load_lua_function(
-                        sss.str().c_str(), sandbox, test.m_name));
-        Script::Util::run_simple_function(func, 0);
+                        sss.str().c_str(), sandbox.get(), test.m_name));
+        Script::Util::run_simple_function(func.get(), 0);
         Logger::log()->info("%v\t...PASSED!%v", COLOR_GREEN, COLOR_RESET);
         success = true;
     }
@@ -230,8 +230,10 @@ void run_extras() {
             sss << "test/more/" << finput << ".lua";
             Script::Unique_Regref func(
                     Script::load_lua_function(
-                            sss.str().c_str(), sandbox, sss.str().c_str()));
-            Script::Util::run_simple_function(func, 1);
+                            sss.str().c_str(), 
+                            sandbox.get(), 
+                            sss.str().c_str()));
+            Script::Util::run_simple_function(func.get(), 1);
             Script::Pop_Guard pg(1);
             
             if (lua_isfunction(l, -1)) {
