@@ -83,7 +83,7 @@ void initialize(uint16_t flags) {
     if (script_used()) {
         try {
             Script::initialize();
-        } catch (Except::Runtime e) {
+        } catch (Except::Runtime& e) {
             std::stringstream sss;
             sss << "Error while initializing scripting: "
                 << e.what();
@@ -95,7 +95,7 @@ void initialize(uint16_t flags) {
         try {
             Gensys::initialize();
             Gensys::LI::initialize();
-        } catch (Except::Runtime e) {
+        } catch (Except::Runtime& e) {
             std::stringstream sss;
             sss << "Error while initializing gensys: "
                 << e.what();
@@ -106,7 +106,7 @@ void initialize(uint16_t flags) {
     if (schedu_used()) {
         try {
             Schedu::LI::initialize();
-        } catch (Except::Runtime e) {
+        } catch (Except::Runtime& e) {
             std::stringstream sss;
             sss << "Error while initializing scheduler: "
                 << e.what();
@@ -117,7 +117,7 @@ void initialize(uint16_t flags) {
     if (winput_used()) {
         try {
             Winput::initialize();
-        } catch (Except::Runtime e) {
+        } catch (Except::Runtime& e) {
             std::stringstream sss;
             sss << "Error while initializing window/input: "
                 << e.what();
@@ -128,7 +128,7 @@ void initialize(uint16_t flags) {
     if (resour_used()) {
         try {
             Resour::initialize();
-        } catch (Except::Runtime e) {
+        } catch (Except::Runtime& e) {
             std::stringstream sss;
             sss << "Error while initializing resources: "
                 << e.what();

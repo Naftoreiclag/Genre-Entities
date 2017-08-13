@@ -46,20 +46,20 @@ void Game_State::initialize() {
     try {
         init_fun = Script::load_lua_function("init.lua", sandbox);
         postinit_fun = Script::load_lua_function("postinit.lua", sandbox);
-    } catch (Except::Runtime e) {
+    } catch (Except::Runtime& e) {
         Logger::log()->warn(e.what());
     }
     
     try {
         Script::Util::run_simple_function(init_fun, 0);
-    } catch (Except::Runtime e) {
+    } catch (Except::Runtime& e) {
         Logger::log()->warn(e.what());
     }
     Gensys::LI::stage_all();
     Gensys::compile();
     try {
         Script::Util::run_simple_function(postinit_fun, 0);
-    } catch (Except::Runtime e) {
+    } catch (Except::Runtime& e) {
         Logger::log()->warn(e.what());
     }
     

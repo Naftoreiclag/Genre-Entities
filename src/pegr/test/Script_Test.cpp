@@ -33,7 +33,7 @@ void test_0010_check_script_loading() {
         Script::Unique_Regref error(
             Script::load_lua_function("test/common/error_syntax.lua", sandbox));
     }
-    catch (Except::Runtime e) {
+    catch (Except::Runtime& e) {
         lua_pop(l, 1);
         return;
     }

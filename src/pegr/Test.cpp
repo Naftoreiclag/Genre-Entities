@@ -145,7 +145,7 @@ bool run_test(const Test::NamedTest& test) {
         Logger::log()->info("%v\t...PASSED!%v", COLOR_GREEN, COLOR_RESET);
         return true;
     }
-    catch (Except::Runtime e) {
+    catch (Except::Runtime& e) {
         Logger::log()->warn("%v\t...FAILED! %v%v", 
                 COLOR_RED, e.what(), COLOR_RESET);
         return false;
@@ -166,7 +166,7 @@ bool run_lua_test(const Test::NamedLuaTest& test) {
         Logger::log()->info("%v\t...PASSED!%v", COLOR_GREEN, COLOR_RESET);
         success = true;
     }
-    catch (Except::Runtime e) {
+    catch (Except::Runtime& e) {
         Logger::log()->warn("%v\t...FAILED! %v%v", 
                 COLOR_RED, e.what(), COLOR_RESET);
         success = false;
@@ -247,7 +247,7 @@ void run_extras() {
             
             Logger::log()->info("%v\t...PASSED!%v", COLOR_GREEN, COLOR_RESET);
         }
-        catch (Except::Runtime e) {
+        catch (Except::Runtime& e) {
             Logger::log()->warn("%v\t...FAILED! %v%v", 
                     COLOR_RED, e.what(), COLOR_RESET);
         }

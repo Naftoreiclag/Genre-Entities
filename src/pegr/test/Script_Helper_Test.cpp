@@ -248,7 +248,7 @@ void test_0028_for_pairs_exception() {
             throw Except::Runtime("orange juice");
         }, false);
     }
-    catch (Except::Runtime e) {
+    catch (Except::Runtime& e) {
         if (std::string(e.what()) != "orange juice") {
             throw e;
         }

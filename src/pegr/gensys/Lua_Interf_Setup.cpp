@@ -257,7 +257,7 @@ Interm::Prim parse_primitive(int idx, Interm::Prim::Type required_t) {
                 try {
                     ret_val.set_string(Script::Util::to_string(-1));
                 }
-                catch (Except::Runtime e) {
+                catch (Except::Runtime& e) {
                     std::stringstream sss;
                     sss << "Cannot parse string value for primitive: "
                         << e.what();
@@ -307,7 +307,7 @@ std::unique_ptr<Interm::Comp> parse_component_definition(int table_idx) {
         try {
             value = parse_primitive(-1);
         }
-        catch (Except::Runtime e) {
+        catch (Except::Runtime& e) {
             std::stringstream sss;
             sss << "Cannot parse primitive for member \""
                 << symbol << "\": " << e.what();
@@ -344,7 +344,7 @@ Interm::Arche::Implement parse_archetype_implementation(int table_idx) {
     std::string comp_id;
     try {
         comp_id = Script::Util::to_string(-1);
-    } catch (Except::Runtime e) {
+    } catch (Except::Runtime& e) {
         std::stringstream sss;
         sss << "Cannot convert __is value to string: " << e.what();
         throw Except::Runtime(sss.str());
@@ -392,7 +392,7 @@ Interm::Arche::Implement parse_archetype_implementation(int table_idx) {
             implement.m_values[symbol] = 
                     parse_primitive(-1, prim_def.get_type());
         }
-        catch (Except::Runtime e) {
+        catch (Except::Runtime& e) {
             std::stringstream sss;
             sss << "Error while parsing primitive in implementation: "
                 << e.what();
@@ -419,7 +419,7 @@ std::unique_ptr<Interm::Arche> parse_archetype(int table_idx) {
         try {
             implement = parse_archetype_implementation(-1);
             implement.m_error_msg_name = symbol;
-        } catch (Except::Runtime e) {
+        } catch (Except::Runtime& e) {
             std::stringstream sss;
             sss << "Cannot parse archetype implementation \""
                 << symbol << "\": "
@@ -675,7 +675,7 @@ std::map<Interm::Symbol, Interm::Prim>
             try {
                 source_prim = parse_primitive(-1);
             }
-            catch (Except::Runtime e) {
+            catch (Except::Runtime& e) {
                 std::stringstream sss;
                 sss << "Cannot parse primitive for static value \""
                     << dest_member_symb << "\": " << e.what();
@@ -733,7 +733,7 @@ Interm::Genre::Pattern parse_genre_pattern(int value_idx,
             try {
                 pattern.m_matching = 
                         std::move(parse_genre_pattern_matching(-1));
-            } catch (Except::Runtime e) {
+            } catch (Except::Runtime& e) {
                 std::stringstream sss;
                 sss << "Error in \"matching\" field: "
                     << e.what();
@@ -749,7 +749,7 @@ Interm::Genre::Pattern parse_genre_pattern(int value_idx,
                         std::move(parse_genre_pattern_aliases(-1,
                                 pattern.m_matching,
                                 genre_interface));
-            } catch (Except::Runtime e) {
+            } catch (Except::Runtime& e) {
                 std::stringstream sss;
                 sss << "Error in \"aliases\" field: "
                     << e.what();
@@ -764,7 +764,7 @@ Interm::Genre::Pattern parse_genre_pattern(int value_idx,
                 pattern.m_static_redefine = 
                         std::move(parse_genre_pattern_static(-1,
                                 genre_interface));
-            } catch (Except::Runtime e) {
+            } catch (Except::Runtime& e) {
                 std::stringstream sss;
                 sss << "Error in \"static\" field: "
                     << e.what();
@@ -817,7 +817,7 @@ std::map<Interm::Symbol, Interm::Prim> parse_genre_interface(int table_idx) {
             try {
                 value = parse_primitive(-1);
             }
-            catch (Except::Runtime e) {
+            catch (Except::Runtime& e) {
                 std::stringstream sss;
                 sss << "Cannot parse primitive for member \""
                     << symbol << "\": " << e.what();
@@ -860,7 +860,7 @@ std::vector<Interm::Genre::Pattern> parse_genre_pattern_list(int list_idx,
                 pattern.m_error_msg_idx = idx;
                 retval.emplace_back(std::move(pattern));
             }
-            catch (Except::Runtime e) {
+            catch (Except::Runtime& e) {
                 std::stringstream sss;
                 sss << "Cannot parse pattern #" << idx << ": " << e.what();
                 throw Except::Runtime(sss.str());
@@ -889,7 +889,7 @@ std::unique_ptr<Interm::Genre> parse_genre(int table_idx) {
     Script::Pop_Guard pop_guard(1);
     try {
         genre->m_interface = std::move(parse_genre_interface(-1));
-    } catch (Except::Runtime e) {
+    } catch (Except::Runtime& e) {
         std::stringstream sss;
         sss << "Cannot parse interface: "
             << e.what();
@@ -902,7 +902,7 @@ std::unique_ptr<Interm::Genre> parse_genre(int table_idx) {
     try {
         genre->m_patterns = 
                 std::move(parse_genre_pattern_list(-1, genre->m_interface));
-    } catch (Except::Runtime e) {
+    } catch (Except::Runtime& e) {
         std::stringstream sss;
         sss << "Cannot parse pattern list: "
             << e.what();
@@ -940,7 +940,7 @@ void stage_all() {
             Compiler::stage_component(id, std::move(obj));
             Logger::log()->info("Successfully parsed compnent [%v]", id);
         }
-        catch (Except::Runtime e) {
+        catch (Except::Runtime& e) {
             Logger::log()->warn("Failed to parse component [%v]: %v", 
                     id, e.what());
         }
@@ -966,7 +966,7 @@ void stage_all() {
             Compiler::stage_archetype(id, std::move(obj));
             Logger::log()->info("Successfully parsed archetype [%v]", id);
         }
-        catch (Except::Runtime e) {
+        catch (Except::Runtime& e) {
             Logger::log()->warn("Failed to parse archetype [%v]: %v", 
                     id, e.what());
         }
@@ -992,7 +992,7 @@ void stage_all() {
             Compiler::stage_genre(id, std::move(obj));
             Logger::log()->info("Successfully parsed genre [%v]", id);
         }
-        catch (Except::Runtime e) {
+        catch (Except::Runtime& e) {
             Logger::log()->warn("Failed to parse genre [%v]: %v", 
                     id, e.what());
         }

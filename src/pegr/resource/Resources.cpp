@@ -215,7 +215,7 @@ void read_core_packages(Load_Workspace& wl) {
                 }
                 
                 wl.m_core_packages.emplace(id, std::move(package));
-            } catch (Except::Runtime e) {
+            } catch (Except::Runtime& e) {
                 Logger::log()->warn("Package in %v is corrupted: %v", 
                         subdir, e.what());
             }
@@ -256,7 +256,7 @@ void load_core() {
     Load_Workspace lw;
     try {
         read_core_load_order(lw);
-    } catch (Except::Runtime e) {
+    } catch (Except::Runtime& e) {
         std::stringstream sss;
         sss << "Error while reading core load order: "
             << e.what();
@@ -264,7 +264,7 @@ void load_core() {
     }
     try {
         read_core_packages(lw);
-    } catch (Except::Runtime e) {
+    } catch (Except::Runtime& e) {
         std::stringstream sss;
         sss << "Error while loading core packages: "
             << e.what();
@@ -272,7 +272,7 @@ void load_core() {
     }
     try {
         collapse_core_packages(lw);
-    } catch (Except::Runtime e) {
+    } catch (Except::Runtime& e) {
         std::stringstream sss;
         sss << "Error while collapsing core packages: "
             << e.what();
