@@ -18,14 +18,20 @@
 #define PEGR_RENDER_SHADERS_HPP
 
 #include "pegr/render/Handles.hpp"
+#include "pegr/resource/Resources.hpp"
 
 namespace pegr {
 namespace Render {
     
-Unique_Shader load_shader(const char* filename);
+Resour::Oid add_platform_subtype(const Resour::Oid& oid);
+    
+Shared_Shader find_shader(const Resour::Oid& oid, bool do_cache = true);
 
-Unique_Program load_program(const char* vert_fname, const char* frag_fname);
+Shared_Program find_program(
+        const Resour::Oid& vert_oid, const Resour::Oid& frag_oid);
 
+void clear_cached_shaders();
+void clear_cached_programs();
 
 } // namespace Render
 } // namespace pegr

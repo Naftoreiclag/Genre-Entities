@@ -18,6 +18,7 @@
 #define PEGR_RENDER_HANDLES_HPP
 
 #include <cassert>
+#include <memory>
 
 #include <bgfx/bgfx.h>
 
@@ -161,6 +162,20 @@ typedef Unique_Handle<bgfx::TextureHandle> Unique_Texture;
 typedef Unique_Handle<bgfx::UniformHandle> Unique_Uniform;
 typedef Unique_Handle<bgfx::VertexBufferHandle> Unique_Vertex_Buffer;
 //typedef Unique_Handle<bgfx::VertexDeclHandle> Unique_Vertex_Decl; // unused
+
+typedef std::shared_ptr<const Unique_Dynamic_Index_Buffer> 
+        Shared_Dynamic_Index_Buffer;
+typedef std::shared_ptr<const Unique_Dynamic_Vertex_Buffer> 
+        Shared_Dynamic_Vertex_Buffer;
+typedef std::shared_ptr<const Unique_Frame_Buffer> Shared_Frame_Buffer;
+typedef std::shared_ptr<const Unique_Index_Buffer> Shared_Index_Buffer;
+typedef std::shared_ptr<const Unique_Indirect_Buffer> Shared_Indirect_Buffer;
+typedef std::shared_ptr<const Unique_Occlusion_Query> Shared_Occlusion_Query;
+typedef std::shared_ptr<const Unique_Program> Shared_Program;
+typedef std::shared_ptr<const Unique_Shader> Shared_Shader;
+typedef std::shared_ptr<const Unique_Texture> Shared_Texture;
+typedef std::shared_ptr<const Unique_Uniform> Shared_Uniform;
+typedef std::shared_ptr<const Unique_Vertex_Buffer> Shared_Vertex_Buffer;
 
 } // namespace Render
 } // namespace pegr

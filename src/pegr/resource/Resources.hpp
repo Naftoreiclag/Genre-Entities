@@ -38,7 +38,11 @@ public:
     const std::string& get_package() const;
     const std::string& get_resource() const;
     
+    Oid get_subtype(std::string subtype) const;
+    
     std::string get_dbg_string() const;
+    
+    bool operator <(const Oid& rhs) const;
     
 private:
     std::string m_package;

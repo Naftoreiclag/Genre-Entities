@@ -44,6 +44,17 @@ Oid::Oid(const char* core_res) {
     m_resource = core_res;
 }
 
+Oid Oid::get_subtype(std::string subtype) const {
+    Oid retval;
+    retval.m_package = m_package;
+    retval.m_resource.reserve(1 + m_resource.size() + subtype.size());
+    retval.m_resource.append(m_resource);
+    retval.m_resource.append(1, '#');
+    retval.m_resource.append(subtype);
+    
+    return retval;
+}
+
 const std::string& Oid::get_package() const {
     return m_package;
 }
@@ -61,6 +72,11 @@ std::string Oid::get_dbg_string() const {
     retval.append(m_resource);
     retval.append(1, ']');
     return retval;
+}
+    
+bool Oid::operator <(const Oid& rhs) const {
+    return m_package < rhs.m_package || 
+            (m_package == rhs.m_package && m_resource < rhs.m_resource);
 }
 
 Package n_core_package;
