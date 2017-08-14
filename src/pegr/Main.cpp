@@ -14,8 +14,8 @@
  *  limitations under the License.
  */
 
-#include "pegr/engine/Engine.hpp"
 #include "pegr/app/Game.hpp"
+#include "pegr/engine/Engine.hpp"
 
 using namespace pegr;
 

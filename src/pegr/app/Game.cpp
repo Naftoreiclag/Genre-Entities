@@ -16,23 +16,23 @@
 
 #include "pegr/app/Game.hpp"
 
-#include <cassert>
 #include <algorithm>
+#include <cassert>
 #include <vector>
 
 #include <bgfx/bgfx.h>
 
-#include "pegr/engine/Engine.hpp"
 #include "pegr/engine/App_State.hpp"
+#include "pegr/engine/Engine.hpp"
+#include "pegr/except/Except.hpp"
+#include "pegr/gensys/Gensys.hpp"
+#include "pegr/gensys/Lua_Interf.hpp"
+#include "pegr/logger/Logger.hpp"
+#include "pegr/render/Shaders.hpp"
 #include "pegr/script/Script.hpp"
 #include "pegr/script/Script_Resource.hpp"
 #include "pegr/script/Script_Util.hpp"
-#include "pegr/gensys/Lua_Interf.hpp"
-#include "pegr/gensys/Gensys.hpp"
-#include "pegr/logger/Logger.hpp"
 #include "pegr/winput/Winput.hpp"
-#include "pegr/except/Except.hpp"
-#include "pegr/render/Shaders.hpp"
 
 namespace pegr {
 namespace App {

@@ -17,8 +17,8 @@
 #include "pegr/gensys/Gensys.hpp"
 
 #include "pegr/gensys/Compiler.hpp"
-#include "pegr/gensys/Util.hpp"
 #include "pegr/gensys/Runtime.hpp"
+#include "pegr/gensys/Util.hpp"
 
 namespace pegr {
 namespace Gensys {

@@ -17,8 +17,8 @@
 #ifndef PEGR_SCRIPT_SCRIPTRESOURCE_HPP
 #define PEGR_SCRIPT_SCRIPTRESOURCE_HPP
 
-#include "pegr/script/Script.hpp"
 #include "pegr/resource/Resources.hpp"
+#include "pegr/script/Script.hpp"
 
 namespace pegr {
 namespace Script {

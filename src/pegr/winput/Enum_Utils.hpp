@@ -17,9 +17,9 @@
 #ifndef PEGR_WINPUT_ENUMUTILS_HPP
 #define PEGR_WINPUT_ENUMUTILS_HPP
 
-#include <bgfx/bgfx.h>
 #include <SDL.h>
 #include <SDL_syswm.h>
+#include <bgfx/bgfx.h>
 
 namespace pegr {
 namespace Winput {

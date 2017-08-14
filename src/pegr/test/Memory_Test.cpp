@@ -14,13 +14,13 @@
  *  limitations under the License.
  */
 
-#include <sstream>
+#include <cstdint>
 #include <cstdint>
 #include <cstdlib>
-#include <cstdint>
+#include <sstream>
 
-#include "pegr/logger/Logger.hpp"
 #include "pegr/except/Except.hpp"
+#include "pegr/logger/Logger.hpp"
 
 namespace pegr {
 namespace Test {

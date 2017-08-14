@@ -16,19 +16,19 @@
 
 #include "pegr/engine/Engine.hpp"
 
-#include <cassert>
 #include <algorithm>
+#include <cassert>
 #include <vector>
 
-#include "pegr/gensys/Lua_Interf.hpp"
-#include "pegr/gensys/Gensys.hpp"
-#include "pegr/scheduler/Lua_Interf.hpp"
-#include "pegr/script/Script.hpp"
-#include "pegr/logger/Logger.hpp"
-#include "pegr/winput/Winput.hpp"
-#include "pegr/resource/Resources.hpp"
 #include "pegr/engine/App_State_Machine.hpp"
 #include "pegr/except/Except.hpp"
+#include "pegr/gensys/Gensys.hpp"
+#include "pegr/gensys/Lua_Interf.hpp"
+#include "pegr/logger/Logger.hpp"
+#include "pegr/resource/Resources.hpp"
+#include "pegr/scheduler/Lua_Interf.hpp"
+#include "pegr/script/Script.hpp"
+#include "pegr/winput/Winput.hpp"
 
 namespace pegr {
 namespace Engine {

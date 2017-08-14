@@ -20,10 +20,10 @@
 #include <cassert>
 
 #include "pegr/debug/Debug_Macros.hpp"
+#include "pegr/except/Except.hpp"
+#include "pegr/logger/Logger.hpp"
 #include "pegr/script/Script.hpp"
 #include "pegr/script/Script_Util.hpp"
-#include "pegr/logger/Logger.hpp"
-#include "pegr/except/Except.hpp"
 
 namespace pegr {
 namespace Script {

@@ -16,11 +16,11 @@
 
 #include <vector>
 
-#include "pegr/script/Script_Util.hpp"
-#include "pegr/script/Script.hpp"
-#include "pegr/logger/Logger.hpp"
-#include "pegr/test/Test_Util.hpp"
 #include "pegr/except/Except.hpp"
+#include "pegr/logger/Logger.hpp"
+#include "pegr/script/Script.hpp"
+#include "pegr/script/Script_Util.hpp"
+#include "pegr/test/Test_Util.hpp"
 
 namespace pegr {
 namespace Test {

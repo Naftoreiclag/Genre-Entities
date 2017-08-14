@@ -17,8 +17,8 @@
 #ifndef PEGR_EXCEPT_EXCEPT_HPP
 #define PEGR_EXCEPT_EXCEPT_HPP
 
-#include <string>
 #include <stdexcept>
+#include <string>
 
 namespace pegr {
 namespace Except {

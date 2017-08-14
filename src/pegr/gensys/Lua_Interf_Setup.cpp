@@ -17,22 +17,22 @@
 #include "pegr/gensys/Lua_Interf.hpp"
 
 #include <algorithm>
-#include <sstream>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
-#include <vector>
 #include <map>
+#include <sstream>
+#include <vector>
 
 #include "pegr/debug/Debug_Macros.hpp"
-#include "pegr/logger/Logger.hpp"
-#include "pegr/gensys/Compiler.hpp"
-#include "pegr/script/Script_Util.hpp"
-#include "pegr/gensys/Gensys.hpp"
-#include "pegr/script/Lua_Interf_Util.hpp"
-#include "pegr/util/Algs.hpp"
 #include "pegr/except/Except.hpp"
+#include "pegr/gensys/Compiler.hpp"
+#include "pegr/gensys/Gensys.hpp"
+#include "pegr/logger/Logger.hpp"
+#include "pegr/script/Lua_Interf_Util.hpp"
+#include "pegr/script/Script_Util.hpp"
+#include "pegr/util/Algs.hpp"
 
 namespace pegr {
 namespace Gensys {

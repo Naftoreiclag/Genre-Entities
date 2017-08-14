@@ -16,8 +16,8 @@
 
 #include "pegr/winput/Winput.hpp"
 
-#include <sstream>
 #include <cstdint>
+#include <sstream>
 
 #include <SDL.h>
 #include <SDL_syswm.h>
@@ -25,10 +25,10 @@
 #include <bgfx/platform.h>
 
 #include "pegr/engine/Engine.hpp"
-#include "pegr/logger/Logger.hpp"
-#include "pegr/winput/Enum_Utils.hpp"
 #include "pegr/except/Except.hpp"
+#include "pegr/logger/Logger.hpp"
 #include "pegr/render/Shaders.hpp"
+#include "pegr/winput/Enum_Utils.hpp"
 
 namespace pegr {
 namespace Winput {

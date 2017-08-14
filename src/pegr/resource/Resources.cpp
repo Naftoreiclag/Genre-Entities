@@ -21,9 +21,9 @@
 #include <boost/filesystem.hpp>
 #include <json/json.h>
 
+#include "pegr/except/Except.hpp"
 #include "pegr/logger/Logger.hpp"
 #include "pegr/resource/Json_Util.hpp"
-#include "pegr/except/Except.hpp"
 
 namespace pegr {
 namespace Resour {

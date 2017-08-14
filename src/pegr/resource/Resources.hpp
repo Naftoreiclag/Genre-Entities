@@ -17,8 +17,8 @@
 #ifndef PEGR_RESOURCE_RESOURCES_HPP
 #define PEGR_RESOURCE_RESOURCES_HPP
 
-#include <string>
 #include <map>
+#include <string>
 
 #include <boost/filesystem.hpp>
 

@@ -16,8 +16,8 @@
 
 #include "pegr/gensys/Pod_Chunk.hpp"
 
-#include <cassert>
 #include <algorithm>
+#include <cassert>
 
 namespace pegr {
 namespace Gensys {

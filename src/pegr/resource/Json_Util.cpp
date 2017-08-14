@@ -18,8 +18,8 @@
 
 #include <fstream>
 
-#include "pegr/logger/Logger.hpp"
 #include "pegr/except/Except.hpp"
+#include "pegr/logger/Logger.hpp"
 
 namespace pegr {
 namespace Resour {

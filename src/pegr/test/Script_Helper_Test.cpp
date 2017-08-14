@@ -14,14 +14,14 @@
  *  limitations under the License.
  */
 
-#include <cstddef>
-#include <sstream>
-#include <map>
 #include <cassert>
+#include <cstddef>
+#include <map>
+#include <sstream>
 
-#include "pegr/script/Script_Util.hpp"
-#include "pegr/script/Script.hpp"
 #include "pegr/logger/Logger.hpp"
+#include "pegr/script/Script.hpp"
+#include "pegr/script/Script_Util.hpp"
 #include "pegr/test/Test_Util.hpp"
 
 namespace pegr {

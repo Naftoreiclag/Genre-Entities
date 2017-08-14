@@ -16,8 +16,8 @@
 
 #include "pegr/resource/Resources.hpp"
 
-#include "pegr/text/Text.hpp"
 #include "pegr/test/Test_Util.hpp"
+#include "pegr/text/Text.hpp"
 
 namespace pegr {
 namespace Test {

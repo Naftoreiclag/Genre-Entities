@@ -17,8 +17,8 @@
 #ifndef PEGR_ENGINE_ENGINE_HPP
 #define PEGR_ENGINE_ENGINE_HPP
 
-#include <memory>
 #include <cstdint>
+#include <memory>
 
 #include "pegr/engine/App_State.hpp"
 

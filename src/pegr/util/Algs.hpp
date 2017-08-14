@@ -17,10 +17,10 @@
 #ifndef PEGR_UTIL_ALGS_HPP
 #define PEGR_UTIL_ALGS_HPP
 
-#include <cassert>
 #include <algorithm>
-#include <vector>
+#include <cassert>
 #include <map>
+#include <vector>
 
 namespace pegr {
 namespace Util {
