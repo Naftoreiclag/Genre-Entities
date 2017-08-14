@@ -64,7 +64,7 @@ const bgfx::Memory* read_file(const boost::filesystem::path& file) {
     return bgfx::copy(vec.data(), vec.size());
 }
 
-Shared_Shader find_shader(const Resour::Oid& oid, bool do_cache) {
+Shared_Shader find_shader(const Resour::Oid& oid) {
     auto cache_iter = n_cached_shaders.find(oid);
     if (cache_iter != n_cached_shaders.end()) {
         return cache_iter->second;
@@ -73,18 +73,12 @@ Shared_Shader find_shader(const Resour::Oid& oid, bool do_cache) {
             Resour::Object::Type::SHADER);
     Shared_Shader shader = std::make_shared<const Unique_Shader>(
             bgfx::createShader(read_file(obj.m_fname)));
-    if (do_cache) {
-        n_cached_shaders.emplace(oid, shader);
-    }
+    n_cached_shaders.emplace(oid, shader);
     return shader;
 }
 
-Shared_Program find_program(
-        const Resour::Oid& vert_oid, 
-        const Resour::Oid& frag_oid) {
-    Shared_Shader vert_shader = find_shader(vert_oid);
-    Shared_Shader frag_shader = find_shader(frag_oid);
-    
+Shared_Program make_program(
+        const Shared_Shader& vert_shader, const Shared_Shader& frag_shader) {
     Shared_Program program = std::make_shared<const Unique_Program>(
             bgfx::createProgram(vert_shader->get(), frag_shader->get()));
     return program;

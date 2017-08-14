@@ -28,6 +28,7 @@
 #include "pegr/logger/Logger.hpp"
 #include "pegr/winput/Enum_Utils.hpp"
 #include "pegr/except/Except.hpp"
+#include "pegr/render/Shaders.hpp"
 
 namespace pegr {
 namespace Winput {
@@ -183,6 +184,10 @@ void pollEvents() {
 }
 void cleanup() {
     Logger::log()->info("Cleaning window and input");
+    
+    Render::clear_cached_programs();
+    Render::clear_cached_shaders();
+    
     bgfx::shutdown();
     
     n_window_width = WINDOW_DEFAULT_WIDTH;

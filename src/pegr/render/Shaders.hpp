@@ -22,13 +22,30 @@
 
 namespace pegr {
 namespace Render {
-    
-Resour::Oid add_platform_subtype(const Resour::Oid& oid);
-    
-Shared_Shader find_shader(const Resour::Oid& oid, bool do_cache = true);
 
-Shared_Program find_program(
-        const Resour::Oid& vert_oid, const Resour::Oid& frag_oid);
+/**
+ * @brief Appends the proper subtype suffix to the OID, (#glsl, #spirv, etc)
+ * @param oid
+ * @return A new oid with the proper subtype suffix
+ */
+Resour::Oid add_platform_subtype(const Resour::Oid& oid);
+
+/**
+ * @brief Finds and loads a shader in bgfx
+ * @param oid
+ * @return A bgfx shader
+ */
+Shared_Shader find_shader(const Resour::Oid& oid);
+
+/**
+ * @brief Constructs a new shader program from a vertex and fragment shader
+ * pair
+ * @param vert_shader
+ * @param frag_shader
+ * @return A bgfx shader program
+ */
+Shared_Program make_program(
+        const Shared_Shader& vert_shader, const Shared_Shader& frag_shader);
 
 void clear_cached_shaders();
 void clear_cached_programs();
