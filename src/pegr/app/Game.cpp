@@ -32,6 +32,7 @@
 #include "pegr/logger/Logger.hpp"
 #include "pegr/winput/Winput.hpp"
 #include "pegr/except/Except.hpp"
+#include "pegr/render/Shaders.hpp"
 
 namespace pegr {
 namespace App {
@@ -72,6 +73,9 @@ void Game_State::initialize() {
             Winput::get_window_width(), 
             Winput::get_window_height());
     
+    m_shader_prog = Render::make_program(
+            Render::find_shader("basic_color.fs"), 
+            Render::find_shader("basic_color.vs"));
 }
 
 void Game_State::on_frame() {
