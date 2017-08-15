@@ -21,6 +21,7 @@
 #include <vector>
 
 #include <bgfx/bgfx.h>
+#include <bexam_cubes/cubes.hpp>
 
 #include "pegr/engine/App_State.hpp"
 #include "pegr/engine/Engine.hpp"
@@ -36,7 +37,7 @@
 
 namespace pegr {
 namespace App {
-
+    
 Game_State::Game_State()
 : Engine::App_State("Main") {}
 Game_State::~Game_State() {}
@@ -72,16 +73,24 @@ void Game_State::initialize() {
     bgfx::setViewRect(0, 0, 0, 
             Winput::get_window_width(), 
             Winput::get_window_height());
+            
+    Cubes_Example::pegr_init();
+    m_vert_buff.reset(Cubes_Example::m_vbh);
+    m_index_buff.reset(Cubes_Example::m_ibh);
     
-    m_shader_prog = Render::make_program(
-            Render::find_shader("basic_color.fs"), 
-            Render::find_shader("basic_color.vs"));
+    m_program = Render::make_program(
+            Render::find_shader("basic_color.vs"), 
+            Render::find_shader("basic_color.fs"));
 }
 
 void Game_State::on_frame() {
-    bgfx::touch(0);
     bgfx::dbgTextClear();
     bgfx::dbgTextPrintf(0, 0, 0x0f, "Hello world");
+
+    Cubes_Example::pegr_update(0, 
+            Winput::get_window_width(),
+            Winput::get_window_height(), m_program.get());
+    
     bgfx::frame();
 }
 

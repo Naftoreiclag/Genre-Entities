@@ -35,7 +35,9 @@ public:
     virtual void on_window_resize(int32_t width, int32_t height) override;
     
 private:
-    Render::Shared_Program m_shader_prog;
+    Render::Unique_Vertex_Buffer m_vert_buff;
+    Render::Unique_Index_Buffer m_index_buff;
+    Render::Unique_Program m_program;
 };
 
 } // namespace App

@@ -23,6 +23,8 @@
 namespace pegr {
 namespace Render {
 
+const bgfx::Memory* read_file(const boost::filesystem::path& file);
+
 /**
  * @brief Appends the proper subtype suffix to the OID, (#glsl, #spirv, etc)
  * @param oid
@@ -44,7 +46,7 @@ Shared_Shader find_shader(const Resour::Oid& oid);
  * @param frag_shader
  * @return A bgfx shader program
  */
-Shared_Program make_program(
+Unique_Program make_program(
         const Shared_Shader& vert_shader, const Shared_Shader& frag_shader);
 
 void clear_cached_shaders();

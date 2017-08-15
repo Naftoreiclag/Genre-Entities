@@ -77,9 +77,9 @@ Shared_Shader find_shader(const Resour::Oid& oid) {
     return shader;
 }
 
-Shared_Program make_program(
+Unique_Program make_program(
         const Shared_Shader& vert_shader, const Shared_Shader& frag_shader) {
-    Shared_Program program = std::make_shared<const Unique_Program>(
+    Unique_Program program(
             bgfx::createProgram(vert_shader->get(), frag_shader->get()));
     return program;
 }
