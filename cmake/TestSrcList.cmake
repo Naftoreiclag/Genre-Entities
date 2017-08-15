@@ -22,6 +22,7 @@
 set(PGLOCAL_SOURCES_LIST "")
 foreach(fname 
 
+"../thirdparty/bgfx_examples/bexam_cubes/cubes.cpp"
 "../thirdparty/easyloggingpp/easylogging++.cc"
 "../thirdparty/jsoncpp/jsoncpp.cpp"
 "Test.cpp"
