@@ -24,7 +24,7 @@
 
 namespace pegr {
 namespace Render {
-
+    
 /**
  * @class Unique_Handle
  * @brief Template for capturing bgfx EtcHandles into unique_ptr-like RAII
@@ -75,7 +75,7 @@ public:
     Unique_Handle& operator=(Unique_Handle<T>&& rhs) {
         // Either the references are different or both are invalid
         assert(!handles_equal(m_handle, rhs.m_handle) || 
-                (!bgfx::isValid(m_handle) && !bgfx::isValid(rhs)));
+                (!bgfx::isValid(m_handle) && !bgfx::isValid(rhs.m_handle)));
         
         reset();
         m_handle = rhs.m_handle;
