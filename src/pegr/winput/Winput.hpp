@@ -30,6 +30,8 @@ void initialize();
 void pollEvents();
 void cleanup();
 
+void submit_frame();
+
 int32_t get_window_width();
 int32_t get_window_height();
 

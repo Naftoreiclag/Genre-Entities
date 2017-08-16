@@ -31,7 +31,7 @@ public:
     virtual ~Game_State();
     virtual void initialize() override;
     
-    virtual void on_frame() override;
+    virtual void do_frame() override;
     virtual void on_window_resize(int32_t width, int32_t height) override;
     
 private:

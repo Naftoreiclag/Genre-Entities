@@ -141,7 +141,8 @@ void initialize() {
     if (!bgfx::init(bgfx::RendererType::Count, BGFX_PCI_ID_NONE)) {
         throw Except::Runtime("Failed to init bgfx");
     }
-    bgfx::reset(n_window_width, n_window_height, BGFX_RESET_VSYNC);
+    bgfx::reset(n_window_width, n_window_height, 
+            BGFX_RESET_VSYNC | BGFX_RESET_MSAA_X4);
     SDL_ShowWindow(n_window);
     
     Logger::log()->info("bgfx renderer type: %v", 
@@ -153,7 +154,8 @@ void on_sdl_window_resize(const SDL_WindowEvent& window) {
     n_window_height = window.data2;
     Logger::log()->info("Window resized to %vx%v", 
             n_window_width, n_window_height);
-    bgfx::reset(n_window_width, n_window_height, BGFX_RESET_VSYNC);
+    bgfx::reset(n_window_width, n_window_height, 
+            BGFX_RESET_VSYNC | BGFX_RESET_MSAA_X4);
     Engine::on_window_resize(n_window_width, n_window_height);
 }
 
@@ -195,6 +197,11 @@ void cleanup() {
     
     SDL_DestroyWindow(n_window);
     SDL_Quit();
+}
+
+void submit_frame() {
+    bgfx::touch(0);
+    bgfx::frame();
 }
 
 } // namespace Winput

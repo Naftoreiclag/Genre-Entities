@@ -83,15 +83,13 @@ void Game_State::initialize() {
             Render::find_shader("basic_color.fs"));
 }
 
-void Game_State::on_frame() {
+void Game_State::do_frame() {
     bgfx::dbgTextClear();
     bgfx::dbgTextPrintf(0, 0, 0x0f, "Hello world");
 
     Cubes_Example::pegr_update(0, 
             Winput::get_window_width(),
             Winput::get_window_height(), m_program.get());
-    
-    bgfx::frame();
 }
 
 void Game_State::on_window_resize(int32_t width, int32_t height) {

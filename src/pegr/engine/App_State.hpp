@@ -32,7 +32,12 @@ public:
     virtual void pause(App_State* to);
     virtual void unpause(App_State* from);
     
-    virtual void on_frame();
+    /**
+     * @brief Render a frame.
+     */
+    virtual void do_frame();
+    virtual void do_tick();
+    
     virtual void on_window_resize(int32_t width, int32_t height);
     
     virtual void cleanup();

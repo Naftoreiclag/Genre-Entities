@@ -166,7 +166,10 @@ void run() {
         if (winput_used()) {
             Winput::pollEvents();
         }
-        app_state->on_frame();
+        app_state->do_frame();
+        if (winput_used()) {
+            Winput::submit_frame();
+        }
         if (!app_state) {
             quit();
             break;
@@ -201,6 +204,10 @@ void cleanup() {
     if (logger_used()) {
         Logger::cleanup();
     }
+}
+
+double get_frame_time() {
+    
 }
 
 void quit() {
