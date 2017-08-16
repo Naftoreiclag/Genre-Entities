@@ -27,7 +27,8 @@ namespace Resour {
     
 /**
  * @class Oid
- * @brief Object id
+ * @brief Object id. Consists of a package to draw from, and the internal name
+ * of the resource.
  */
 class Oid {
 public:
