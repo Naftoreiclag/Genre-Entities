@@ -32,7 +32,7 @@ def generate(destination, dirList):
     
 # Generate for main sources
 _, dirList, __ = indexFiles('../src/thirdparty/', \
-        ['.h', '.hpp', '.c', '.cpp', '.cc'], [], False, 1)
+        [''], [], False, 1)
 dirList.sort()
 print('Third-party Projects: ' + str(len(dirList)))
 generate('../cmake/IncludesList.cmake', dirList)

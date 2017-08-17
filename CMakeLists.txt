@@ -108,6 +108,25 @@ else()
     set(PGLOCAL_ALL_REQUIRED_READY FALSE)
 endif()
 
+# Boost #
+message(STATUS "Boost ================")
+find_package(Boost 1.46.0 COMPONENTS system filesystem date_time)
+# (asio and bind have nothing to link to)
+if(Boost_FOUND)
+    message(STATUS "\tInclude Dirs: " ${Boost_INCLUDE_DIRS})
+    message(STATUS "\tLibraries: " ${Boost_LIBRARIES})
+    list(APPEND PGLOCAL_INCLUDE_DIRS ${Boost_INCLUDE_DIRS})
+    target_link_libraries(${PGLOCAL_MAIN_TARGET} ${Boost_LIBRARIES})
+    target_link_libraries(${PGLOCAL_TEST_TARGET} ${Boost_LIBRARIES})
+    # For asio
+    if(WIN32)
+        target_link_libraries(${PGLOCAL_MAIN_TARGET} wsock32 ws2_32)
+        target_link_libraries(${PGLOCAL_TEST_TARGET} wsock32 ws2_32)
+    endif()
+else()
+    message("\tNOT FOUND")
+    set(PGLOCAL_ALL_REQUIRED_READY FALSE)
+endif()
 
 # Helpful information
 if(PGLOCAL_ALL_REQUIRED_READY)

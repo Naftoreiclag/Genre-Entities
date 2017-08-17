@@ -18,11 +18,11 @@
 #define PEGR_GENSYS_INTERMTYPES_HPP
 
 #include <cstdint>
-#include <vector>
 #include <map>
+#include <vector>
 
-#include "pegr/script/Script.hpp"
 #include "pegr/gensys/Pod_Chunk.hpp"
+#include "pegr/script/Script.hpp"
 
 namespace pegr {
 namespace Gensys {

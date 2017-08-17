@@ -14,14 +14,14 @@
  *  limitations under the License.
  */
 
-#include <cstddef>
-#include <sstream>
-#include <map>
 #include <cassert>
+#include <cstddef>
+#include <map>
+#include <sstream>
 
-#include "pegr/script/Script_Util.hpp"
-#include "pegr/script/Script.hpp"
 #include "pegr/logger/Logger.hpp"
+#include "pegr/script/Script.hpp"
+#include "pegr/script/Script_Util.hpp"
 #include "pegr/test/Test_Util.hpp"
 
 namespace pegr {
@@ -38,7 +38,7 @@ void assert_expected_string_table(
         if (lua_isnil(l, -1)) {
             std::stringstream sss;
             sss << "No value for key \"" << iter.first << '"';
-            throw std::runtime_error(sss.str());
+            throw Except::Runtime(sss.str());
         }
         
         std::size_t strlen;
@@ -53,7 +53,7 @@ void assert_expected_string_table(
                 << "\" got: \""
                 << val
                 << '"';
-            throw std::runtime_error(sss.str());
+            throw Except::Runtime(sss.str());
         }
     }
 }
@@ -88,13 +88,13 @@ void test_0028_to_number_safe() {
         if (!success) {
             std::stringstream sss;
             sss << "Fail to parse: " << str;
-            throw std::runtime_error(sss.str());
+            throw Except::Runtime(sss.str());
         }
         
         if (expected != result) {
             std::stringstream sss;
             sss << "Expected: " << expected << " Got: " << result;
-            throw std::runtime_error(sss.str());
+            throw Except::Runtime(sss.str());
         }
     }
     
@@ -121,7 +121,7 @@ void test_0028_to_number_safe() {
                 << " got: " << result
                 << " (Note, if it says \"12345\""
                     "then something is really wrong.)";
-            throw std::runtime_error(sss.str());
+            throw Except::Runtime(sss.str());
         }
     }
 }
@@ -131,7 +131,8 @@ void test_0028_simple_deep_copy() {
     lua_State* l = Script::get_lua_state();
     
     RG sandbox(Script::new_sandbox());
-    RG table_fun(Script::load_lua_function("test/common/simple_table.lua", sandbox));
+    RG table_fun(Script::load_lua_function("test/common/simple_table.lua", 
+            sandbox.get()));
     
     std::vector<std::pair<std::string, std::string> > expected = {
         {"a", "apple"},
@@ -140,7 +141,7 @@ void test_0028_simple_deep_copy() {
         {"d", "durian"}
     };
     
-    Script::Util::run_simple_function(table_fun, 1);
+    Script::Util::run_simple_function(table_fun.get(), 1);
     Script::Pop_Guard pop_guard(1);
     
     assert_expected_string_table(l, expected);
@@ -156,8 +157,9 @@ void test_0028_simple_deep_copy_recursive() {
     lua_State* l = Script::get_lua_state();
     RG sandbox(Script::new_sandbox());
     RG table_fun(
-            Script::load_lua_function("test/common/recursive_table.lua", sandbox));
-    Script::Util::run_simple_function(table_fun, 1);
+            Script::load_lua_function("test/common/recursive_table.lua", 
+                    sandbox.get()));
+    Script::Util::run_simple_function(table_fun.get(), 1);
     Script::Pop_Guard pop_guard(1);
     Logger::log()->info("Beginning copy...");
     Script::Util::simple_deep_copy(-1);
@@ -170,9 +172,10 @@ void test_0028_for_pairs() {
     lua_State* l = Script::get_lua_state();
     
     RG sandbox(Script::new_sandbox());
-    RG table_fun(Script::load_lua_function("test/common/simple_table.lua", sandbox));
+    RG table_fun(Script::load_lua_function("test/common/simple_table.lua", 
+            sandbox.get()));
     
-    Script::Util::run_simple_function(table_fun, 1);
+    Script::Util::run_simple_function(table_fun.get(), 1);
     Script::Pop_Guard pop_guard(1);
     
     std::map<std::string, std::string> expected = {
@@ -218,7 +221,7 @@ void test_0028_for_pairs() {
             std::stringstream ss;
             ss << "Resulting table missing key: ";
             ss << key_value.first;
-            throw std::runtime_error(ss.str());
+            throw Except::Runtime(ss.str());
         }
         if (key_value.second != (*iter).second) {
             std::stringstream ss;
@@ -228,7 +231,7 @@ void test_0028_for_pairs() {
             ss << key_value.second;
             ss << ": Got: ";
             ss << (*iter).second;
-            throw std::runtime_error(ss.str());
+            throw Except::Runtime(ss.str());
         }
     }
 }
@@ -238,23 +241,24 @@ void test_0028_for_pairs_exception() {
     lua_State* l = Script::get_lua_state();
     
     RG sandbox(Script::new_sandbox());
-    RG table_fun(Script::load_lua_function("test/common/simple_table.lua", sandbox));
+    RG table_fun(Script::load_lua_function("test/common/simple_table.lua", 
+            sandbox.get()));
     
-    Script::Util::run_simple_function(table_fun, 1);
+    Script::Util::run_simple_function(table_fun.get(), 1);
     Script::Pop_Guard pop_guard(1);
     
     try {
         Script::Util::for_pairs(-1, []()->bool {
-            throw std::runtime_error("orange juice");
+            throw Except::Runtime("orange juice");
         }, false);
     }
-    catch (std::runtime_error e) {
+    catch (Except::Runtime& e) {
         if (std::string(e.what()) != "orange juice") {
             throw e;
         }
         return;
     }
-    throw std::runtime_error("Error did not bubble up!");
+    throw Except::Runtime("Error did not bubble up!");
 }
 //@Test Script Helper to_string
 void test_0028_to_string() {
@@ -263,18 +267,19 @@ void test_0028_to_string() {
     
     RG sandbox(Script::new_sandbox());
     RG table_fun(
-            Script::load_lua_function("test/common/complex_tostring.lua", sandbox));
+            Script::load_lua_function("test/common/complex_tostring.lua", 
+                    sandbox.get()));
             
-    Script::Util::run_simple_function(table_fun, 1);
+    Script::Util::run_simple_function(table_fun.get(), 1);
     std::string resp = Script::Util::to_string(-1);
     lua_pop(l, 1);
     
     if (resp != "bottom") {
-        throw std::runtime_error("Did not reach the bottom of tostring");
+        throw Except::Runtime("Did not reach the bottom of tostring");
     }
     
     if (original_size != lua_gettop(l)) {
-        throw std::runtime_error("Unbalanced");
+        throw Except::Runtime("Unbalanced");
     }
 }
 
@@ -284,9 +289,9 @@ void test_0028_for_pairs_number_sorted() {
     
     RG sandbox(Script::new_sandbox());
     RG table_fun(Script::load_lua_function(
-            "test/common/sparse_array.lua", sandbox));
+            "test/common/sparse_array.lua", sandbox.get()));
     
-    Script::Util::run_simple_function(table_fun, 1);
+    Script::Util::run_simple_function(table_fun.get(), 1);
     Script::Pop_Guard pop_guard(1);
     
     std::string expected = "Shall I compare thee to a summer's day?";
@@ -310,7 +315,7 @@ void test_0028_for_pairs_number_sorted() {
         sss << "Expected shakespeare, got: \""
             << got.str()
             << '"';
-        throw std::runtime_error(sss.str());
+        throw Except::Runtime(sss.str());
     }
     
     expected = "day?summer's a to thee compare I Shall ";
@@ -325,7 +330,7 @@ void test_0028_for_pairs_number_sorted() {
         sss << "Expected shakespeare, got: \""
             << got.str()
             << '"';
-        throw std::runtime_error(sss.str());
+        throw Except::Runtime(sss.str());
     }
 }
 

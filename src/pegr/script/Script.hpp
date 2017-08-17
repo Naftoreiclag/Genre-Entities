@@ -100,11 +100,6 @@ public:
     void reset(Regref value = LUA_REFNIL);
     
     /**
-     * @brief Implicit conversion to the Regref type
-     */
-    operator Regref() const;
-    
-    /**
      * @brief Releases ownership of the held Regref (does not release the value
      * from the Lua registry) and returns it
      * @return The formerly guarded Regref
@@ -199,7 +194,7 @@ void cleanup();
  * @param closure_size 
  * @return 
  */
-Regref load_c_function(lua_CFunction func, int closure_size = 0);
+Unique_Regref load_c_function(lua_CFunction func, int closure_size = 0);
 
 /**
  * @brief Loads a function from a lua file
@@ -208,7 +203,7 @@ Regref load_c_function(lua_CFunction func, int closure_size = 0);
  * @param chunkname The name of the chunk used for debugging purposes
  * @return A lua reference to the new function
  */
-Regref load_lua_function(const char* filename, Regref environment,
+Unique_Regref load_lua_function(const char* filename, Regref environment,
                             const char* chunkname = nullptr);
 
 /**
@@ -225,7 +220,7 @@ void run_function(int nargs, int nresults);
  * @brief Produces a new sandbox environment for running user scripts in.
  * @return A lua reference to the new sandbox
  */
-Regref new_sandbox();
+Unique_Regref new_sandbox();
 
 /**
  * @brief Releases the reference to the lua value, allowing for it to be gc'd
@@ -245,6 +240,12 @@ void push_reference(Regref reference);
  * @return The new reference
  */
 Regref grab_reference();
+
+/**
+ * @brief Same as grab_reference(), but puts it into a unique reference instead.
+ * @return The new reference
+ */
+Unique_Regref grab_unique_reference();
 
 /**
  * @brief Get the global lua state

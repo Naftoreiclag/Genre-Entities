@@ -17,9 +17,10 @@
 #ifndef PEGR_TEST_TESTUTIL_HPP
 #define PEGR_TEST_TESTUTIL_HPP
 
-#include <stdexcept>
 #include <sstream>
 #include <vector>
+
+#include "pegr/except/Except.hpp"
 
 namespace pegr {
 namespace Test {
@@ -47,7 +48,7 @@ void verify_equals(E&& expected, G&& got, const char* msg = nullptr) {
             << expected
             << " Got: "
             << got;
-        throw std::runtime_error(sss.str());
+        throw Except::Runtime(sss.str());
     }
     if (got != expected) {
         std::stringstream sss;
@@ -59,7 +60,7 @@ void verify_equals(E&& expected, G&& got, const char* msg = nullptr) {
             << " Got: "
             << got
             << " (got != expected, but expected == got)";
-        throw std::runtime_error(sss.str());
+        throw Except::Runtime(sss.str());
     }
 }
 
@@ -74,7 +75,7 @@ void verify_not_equals(E&& unexpected, G&& got, const char* msg = nullptr) {
             << unexpected
             << " Got: "
             << got;
-        throw std::runtime_error(sss.str());
+        throw Except::Runtime(sss.str());
     }
     if (got == unexpected) {
         std::stringstream sss;
@@ -86,7 +87,7 @@ void verify_not_equals(E&& unexpected, G&& got, const char* msg = nullptr) {
             << " Got: "
             << got
             << " (got == unexpected, but unexpected ! got)";
-        throw std::runtime_error(sss.str());
+        throw Except::Runtime(sss.str());
     }
 }
     

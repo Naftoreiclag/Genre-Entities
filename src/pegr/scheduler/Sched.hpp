@@ -18,11 +18,11 @@
 #define PEGR_SCHEDULER_SCHED_HPP
 
 namespace pegr {
-namespace Sched {
+namespace Schedu {
 
 
 
-} // namespace Sched
+} // namespace Schedu
 } // namespace pegr
 
 #endif // PEGR_SCHEDULER_SCHED_HPP

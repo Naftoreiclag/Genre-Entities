@@ -1,0 +1,6 @@
+{
+    "info" : {
+        "id" : "core",
+        "description" : "The core resources needed for the main application"
+    }
+}

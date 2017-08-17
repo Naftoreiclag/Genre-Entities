@@ -19,8 +19,8 @@
 #include <cassert>
 #include <sstream>
 
-#include "pegr/script/Script.hpp"
 #include "pegr/logger/Logger.hpp"
+#include "pegr/script/Script.hpp"
 
 namespace pegr {
 namespace Debug {

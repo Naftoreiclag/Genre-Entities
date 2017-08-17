@@ -17,21 +17,21 @@
 #include "pegr/gensys/Lua_Interf.hpp"
 
 #include <algorithm>
-#include <stdexcept>
-#include <sstream>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
-#include <vector>
 #include <map>
+#include <sstream>
+#include <vector>
 
 #include "pegr/debug/Debug_Macros.hpp"
-#include "pegr/logger/Logger.hpp"
+#include "pegr/except/Except.hpp"
 #include "pegr/gensys/Compiler.hpp"
-#include "pegr/script/Script_Util.hpp"
 #include "pegr/gensys/Gensys.hpp"
+#include "pegr/logger/Logger.hpp"
 #include "pegr/script/Lua_Interf_Util.hpp"
+#include "pegr/script/Script_Util.hpp"
 #include "pegr/util/Algs.hpp"
 
 namespace pegr {
@@ -129,7 +129,7 @@ std::string assert_table_key_to_string(int idx, const char* err_msg) {
                         Script::Util::GENERIC_TO_STRING_DEFAULT);
         std::stringstream sss;
         sss << err_msg << str_debug;
-        throw std::runtime_error(sss.str());
+        throw Except::Runtime(sss.str());
     }
     return std::string(strdata, strlen);
 }
@@ -144,7 +144,7 @@ Interm::Prim parse_primitive(int idx, Interm::Prim::Type required_t) {
         sss << "Invalid primitive constructor: "
             << Script::Util::to_string(idx, 
                     Script::Util::GENERIC_TO_STRING_DEFAULT);
-        throw std::runtime_error(sss.str());
+        throw Except::Runtime(sss.str());
     }
     
     std::size_t strlen;
@@ -158,7 +158,7 @@ Interm::Prim parse_primitive(int idx, Interm::Prim::Type required_t) {
         sss << "Invalid type: "
             << Script::Util::to_string(-1, 
                     Script::Util::GENERIC_TO_STRING_DEFAULT);
-        throw std::runtime_error(sss.str());
+        throw Except::Runtime(sss.str());
     }
     // TODO: light userdata instead of strings
     pop_guard.pop(1);
@@ -180,7 +180,7 @@ Interm::Prim parse_primitive(int idx, Interm::Prim::Type required_t) {
     } else {
         std::stringstream sss;
         sss << "Unknown type: " << type_name;
-        throw std::runtime_error(sss.str());
+        throw Except::Runtime(sss.str());
     }
     
     if (required_t != Interm::Prim::Type::UNKNOWN
@@ -188,7 +188,7 @@ Interm::Prim parse_primitive(int idx, Interm::Prim::Type required_t) {
         std::stringstream sss;
         sss << "Type mismatch! Required: " << prim_type_to_debug_str(required_t)
             << " Found:" << prim_type_to_debug_str(ret_val.get_type());
-        throw std::runtime_error(sss.str());
+        throw Except::Runtime(sss.str());
     }
     
     lua_rawgeti(l, idx, 2); // Second member should be value
@@ -212,7 +212,7 @@ Interm::Prim parse_primitive(int idx, Interm::Prim::Type required_t) {
                         << Script::Util::to_string(-1, 
                                     Script::Util::GENERIC_TO_STRING_DEFAULT)
                         << "\")";
-                    throw std::runtime_error(sss.str());
+                    throw Except::Runtime(sss.str());
                 }
                 
                 // Try convert the value into a number
@@ -224,7 +224,7 @@ Interm::Prim parse_primitive(int idx, Interm::Prim::Type required_t) {
                         << Script::Util::to_string(-1, 
                                     Script::Util::GENERIC_TO_STRING_DEFAULT)
                         << "\")";
-                    throw std::runtime_error(sss.str());
+                    throw Except::Runtime(sss.str());
                 }
                 
                 switch (ret_val.get_type()) {
@@ -257,11 +257,11 @@ Interm::Prim parse_primitive(int idx, Interm::Prim::Type required_t) {
                 try {
                     ret_val.set_string(Script::Util::to_string(-1));
                 }
-                catch (std::runtime_error e) {
+                catch (Except::Runtime& e) {
                     std::stringstream sss;
                     sss << "Cannot parse string value for primitive: "
                         << e.what();
-                    throw std::runtime_error(sss.str());
+                    throw Except::Runtime(sss.str());
                 }
                 break;
             }
@@ -275,7 +275,7 @@ Interm::Prim parse_primitive(int idx, Interm::Prim::Type required_t) {
                         << Script::Util::to_string(-1, 
                                     Script::Util::GENERIC_TO_STRING_DEFAULT)
                         << "\")";
-                    throw std::runtime_error(sss.str());
+                    throw Except::Runtime(sss.str());
                 }
                 lua_pushvalue(l, -1);
                 ret_val.set_function(
@@ -307,18 +307,18 @@ std::unique_ptr<Interm::Comp> parse_component_definition(int table_idx) {
         try {
             value = parse_primitive(-1);
         }
-        catch (std::runtime_error e) {
+        catch (Except::Runtime& e) {
             std::stringstream sss;
             sss << "Cannot parse primitive for member \""
                 << symbol << "\": " << e.what();
-            throw std::runtime_error(sss.str());
+            throw Except::Runtime(sss.str());
         }
         // Check that no symbol is duplicated (possible through integer keys)
         if (comp_def->m_members.find(symbol) != comp_def->m_members.end()) {
             std::stringstream sss;
             sss << "Symbol \"" << symbol
                 << "\" occurs multiple times in component table";
-            throw std::runtime_error(sss.str());
+            throw Except::Runtime(sss.str());
         }
         comp_def->m_members[symbol] = std::move(value);
         return true;
@@ -338,16 +338,16 @@ Interm::Arche::Implement parse_archetype_implementation(int table_idx) {
     Script::Pop_Guard pop_guard(1);
     
     if (lua_isnil(l, -1)) {
-        throw std::runtime_error("Key __is cannot be nil!");
+        throw Except::Runtime("Key __is cannot be nil!");
     }
     
     std::string comp_id;
     try {
         comp_id = Script::Util::to_string(-1);
-    } catch (std::runtime_error e) {
+    } catch (Except::Runtime& e) {
         std::stringstream sss;
         sss << "Cannot convert __is value to string: " << e.what();
-        throw std::runtime_error(sss.str());
+        throw Except::Runtime(sss.str());
     }
     
     pop_guard.pop(1); // Pop __is string
@@ -357,7 +357,7 @@ Interm::Arche::Implement parse_archetype_implementation(int table_idx) {
     if (!implement.m_component) {
         std::stringstream sss;
         sss << "Cannot find a component with id [" << comp_id << ']';
-        throw std::runtime_error(sss.str());
+        throw Except::Runtime(sss.str());
     }
     
     Script::Util::for_pairs(table_idx, [&]()->bool {
@@ -373,7 +373,7 @@ Interm::Arche::Implement parse_archetype_implementation(int table_idx) {
             std::stringstream sss;
             sss << "Symbol \"" << symbol
                 << "\" occurs multiple times in archetype table";
-            throw std::runtime_error(sss.str());
+            throw Except::Runtime(sss.str());
         }
         
         auto iter = implement.m_component->m_members.find(symbol);
@@ -383,7 +383,7 @@ Interm::Arche::Implement parse_archetype_implementation(int table_idx) {
                 << "\" which does not exist in component \""
                 << implement.m_component->m_error_msg_name
                 << '"';
-            throw std::runtime_error(sss.str());
+            throw Except::Runtime(sss.str());
         }
         
         const Interm::Prim& prim_def = iter->second;
@@ -392,11 +392,11 @@ Interm::Arche::Implement parse_archetype_implementation(int table_idx) {
             implement.m_values[symbol] = 
                     parse_primitive(-1, prim_def.get_type());
         }
-        catch (std::runtime_error e) {
+        catch (Except::Runtime& e) {
             std::stringstream sss;
             sss << "Error while parsing primitive in implementation: "
                 << e.what();
-            throw std::runtime_error(sss.str());
+            throw Except::Runtime(sss.str());
         }
         return true;
     }, false);
@@ -419,19 +419,19 @@ std::unique_ptr<Interm::Arche> parse_archetype(int table_idx) {
         try {
             implement = parse_archetype_implementation(-1);
             implement.m_error_msg_name = symbol;
-        } catch (std::runtime_error e) {
+        } catch (Except::Runtime& e) {
             std::stringstream sss;
             sss << "Cannot parse archetype implementation \""
                 << symbol << "\": "
                 << e.what();
-            throw std::runtime_error(sss.str());
+            throw Except::Runtime(sss.str());
         }
         // Check that no symbol is duplicated (possible through integer keys)
         if (arche->m_implements.find(symbol) != arche->m_implements.end()) {
             std::stringstream sss;
             sss << "Symbol \"" << symbol
                 << "\" occurs multiple times in archetype table";
-            throw std::runtime_error(sss.str());
+            throw Except::Runtime(sss.str());
         }
         arche->m_implements[symbol] = std::move(implement);
         
@@ -455,7 +455,7 @@ void assert_pattern_source_has_symbol(
                     << "\" which does not exist in component \""
                     << pattern.m_from_component->m_error_msg_name
                     << '"';
-                throw std::runtime_error(sss.str());
+                throw Except::Runtime(sss.str());
             }
             break;
         }
@@ -469,7 +469,7 @@ void assert_pattern_source_has_symbol(
                     << "\" which does not exist in genre \""
                     << pattern.m_from_genre->m_error_msg_name
                     << '"';
-                throw std::runtime_error(sss.str());
+                throw Except::Runtime(sss.str());
             }
             break;
         }
@@ -501,7 +501,7 @@ std::map<Interm::Symbol, Interm::Comp*>
             if (!comp) {
                 std::stringstream sss;
                 sss << "No component with id [" << comp_id << ']';
-                throw std::runtime_error(sss.str());
+                throw Except::Runtime(sss.str());
             }
             
             // Check that no symbol is duplicated
@@ -509,7 +509,7 @@ std::map<Interm::Symbol, Interm::Comp*>
                 std::stringstream sss;
                 sss << "Symbol \"" << comp_symbol
                     << "\" occurs multiple times";
-                throw std::runtime_error(sss.str());
+                throw Except::Runtime(sss.str());
             }
             
             retval[comp_symbol] = comp;
@@ -521,7 +521,7 @@ std::map<Interm::Symbol, Interm::Comp*>
         std::stringstream sss;
         sss << "Incorrect type, "
             << lua_typename(l, lua_type(l, value_idx));
-        throw std::runtime_error(sss.str());
+        throw Except::Runtime(sss.str());
     }
     return retval;
 }
@@ -549,7 +549,7 @@ std::map<Interm::Symbol, Interm::Genre::Pattern::Alias>
                 std::stringstream sss;
                 sss << "Symbol \"" << dest_member_symb
                     << "\" not in interface";
-                throw std::runtime_error(sss.str());
+                throw Except::Runtime(sss.str());
             }
             const Interm::Prim& dest_prim = dest_member_iter->second;
             
@@ -572,7 +572,7 @@ std::map<Interm::Symbol, Interm::Genre::Pattern::Alias>
                     sss << "Could not separate component and member in alias "
                             "(missing \".\"): "
                         << alias_str;
-                    throw std::runtime_error(sss.str());
+                    throw Except::Runtime(sss.str());
                 }
                 local_comp_name = alias_str.substr(0, dot_idx);
                 source_member_symb = alias_str.substr(dot_idx + 1);
@@ -584,7 +584,7 @@ std::map<Interm::Symbol, Interm::Genre::Pattern::Alias>
                 std::stringstream sss;
                 sss << "Component \"" << local_comp_name
                     << "\" is unspecified (missing from \"matching\" table)";
-                throw std::runtime_error(sss.str());
+                throw Except::Runtime(sss.str());
             }
             
             // The comp to pull the data from
@@ -601,7 +601,7 @@ std::map<Interm::Symbol, Interm::Genre::Pattern::Alias>
                     << source_member_symb
                     << "\" in component \"" << source_comp->m_error_msg_name
                     << '"';
-                throw std::runtime_error(sss.str());
+                throw Except::Runtime(sss.str());
             }
             
             /* Verify that the source and destination member prims have the
@@ -614,7 +614,7 @@ std::map<Interm::Symbol, Interm::Genre::Pattern::Alias>
                     << Interm::prim_type_to_debug_str(dest_prim.get_type())
                     << ", got "
                     << Interm::prim_type_to_debug_str(source_prim.get_type());
-                throw std::runtime_error(sss.str());
+                throw Except::Runtime(sss.str());
             }
             
             // Construct the alias
@@ -627,7 +627,7 @@ std::map<Interm::Symbol, Interm::Genre::Pattern::Alias>
                 std::stringstream sss;
                 sss << "Symbol \"" << dest_member_symb
                     << "\" occurs multiple times";
-                throw std::runtime_error(sss.str());
+                throw Except::Runtime(sss.str());
             }
             
             retval[dest_member_symb] = alias;
@@ -639,7 +639,7 @@ std::map<Interm::Symbol, Interm::Genre::Pattern::Alias>
         std::stringstream sss;
         sss << "Incorrect type, "
             << lua_typename(l, lua_type(l, value_idx));
-        throw std::runtime_error(sss.str());
+        throw Except::Runtime(sss.str());
     }
     return retval;
 }
@@ -666,7 +666,7 @@ std::map<Interm::Symbol, Interm::Prim>
                 std::stringstream sss;
                 sss << "Symbol \"" << dest_member_symb
                     << "\" not in interface";
-                throw std::runtime_error(sss.str());
+                throw Except::Runtime(sss.str());
             }
             const Interm::Prim& dest_prim = dest_member_iter->second;
             
@@ -675,11 +675,11 @@ std::map<Interm::Symbol, Interm::Prim>
             try {
                 source_prim = parse_primitive(-1);
             }
-            catch (std::runtime_error e) {
+            catch (Except::Runtime& e) {
                 std::stringstream sss;
                 sss << "Cannot parse primitive for static value \""
                     << dest_member_symb << "\": " << e.what();
-                throw std::runtime_error(sss.str());
+                throw Except::Runtime(sss.str());
             }
             
             /* Verify that the source and destination member prims have the
@@ -691,7 +691,7 @@ std::map<Interm::Symbol, Interm::Prim>
                     << Interm::prim_type_to_debug_str(dest_prim.get_type())
                     << ", got "
                     << Interm::prim_type_to_debug_str(source_prim.get_type());
-                throw std::runtime_error(sss.str());
+                throw Except::Runtime(sss.str());
             }
             
             // Check that no symbol is duplicated
@@ -699,7 +699,7 @@ std::map<Interm::Symbol, Interm::Prim>
                 std::stringstream sss;
                 sss << "Symbol \"" << dest_member_symb
                     << "\" occurs multiple times";
-                throw std::runtime_error(sss.str());
+                throw Except::Runtime(sss.str());
             }
             
             retval[dest_member_symb] = source_prim;
@@ -711,7 +711,7 @@ std::map<Interm::Symbol, Interm::Prim>
         std::stringstream sss;
         sss << "Cannot be type, "
             << lua_typename(l, lua_type(l, value_idx));
-        throw std::runtime_error(sss.str());
+        throw Except::Runtime(sss.str());
     }
     
     return retval;
@@ -733,11 +733,11 @@ Interm::Genre::Pattern parse_genre_pattern(int value_idx,
             try {
                 pattern.m_matching = 
                         std::move(parse_genre_pattern_matching(-1));
-            } catch (std::runtime_error e) {
+            } catch (Except::Runtime& e) {
                 std::stringstream sss;
                 sss << "Error in \"matching\" field: "
                     << e.what();
-                throw std::runtime_error(sss.str());
+                throw Except::Runtime(sss.str());
             }
         }
         
@@ -749,11 +749,11 @@ Interm::Genre::Pattern parse_genre_pattern(int value_idx,
                         std::move(parse_genre_pattern_aliases(-1,
                                 pattern.m_matching,
                                 genre_interface));
-            } catch (std::runtime_error e) {
+            } catch (Except::Runtime& e) {
                 std::stringstream sss;
                 sss << "Error in \"aliases\" field: "
                     << e.what();
-                throw std::runtime_error(sss.str());
+                throw Except::Runtime(sss.str());
             }
         }
         
@@ -764,11 +764,11 @@ Interm::Genre::Pattern parse_genre_pattern(int value_idx,
                 pattern.m_static_redefine = 
                         std::move(parse_genre_pattern_static(-1,
                                 genre_interface));
-            } catch (std::runtime_error e) {
+            } catch (Except::Runtime& e) {
                 std::stringstream sss;
                 sss << "Error in \"static\" field: "
                     << e.what();
-                throw std::runtime_error(sss.str());
+                throw Except::Runtime(sss.str());
             }
         }
         
@@ -790,7 +790,7 @@ Interm::Genre::Pattern parse_genre_pattern(int value_idx,
                     delim = ", ";
                 }
                 sss << ')';
-                throw std::runtime_error(sss.str());
+                throw Except::Runtime(sss.str());
             }
         }
         
@@ -799,7 +799,7 @@ Interm::Genre::Pattern parse_genre_pattern(int value_idx,
         std::stringstream sss;
         sss << "Cannot be type "
             << lua_typename(l, lua_type(l, value_idx));
-        throw std::runtime_error(sss.str());
+        throw Except::Runtime(sss.str());
     }
 }
 
@@ -817,18 +817,18 @@ std::map<Interm::Symbol, Interm::Prim> parse_genre_interface(int table_idx) {
             try {
                 value = parse_primitive(-1);
             }
-            catch (std::runtime_error e) {
+            catch (Except::Runtime& e) {
                 std::stringstream sss;
                 sss << "Cannot parse primitive for member \""
                     << symbol << "\": " << e.what();
-                throw std::runtime_error(sss.str());
+                throw Except::Runtime(sss.str());
             }
             // Check that no symbol is duplicated
             if (retval.find(symbol) != retval.end()) {
                 std::stringstream sss;
                 sss << "Key \"" << symbol
                     << "\" occurs multiple times";
-                throw std::runtime_error(sss.str());
+                throw Except::Runtime(sss.str());
             }
             retval[symbol] = std::move(value);
             return true;
@@ -839,7 +839,7 @@ std::map<Interm::Symbol, Interm::Prim> parse_genre_interface(int table_idx) {
         std::stringstream sss;
         sss << "Cannot be type, "
             << lua_typename(l, lua_type(l, table_idx));
-        throw std::runtime_error(sss.str());
+        throw Except::Runtime(sss.str());
     }
     return retval;
 }
@@ -860,10 +860,10 @@ std::vector<Interm::Genre::Pattern> parse_genre_pattern_list(int list_idx,
                 pattern.m_error_msg_idx = idx;
                 retval.emplace_back(std::move(pattern));
             }
-            catch (std::runtime_error e) {
+            catch (Except::Runtime& e) {
                 std::stringstream sss;
                 sss << "Cannot parse pattern #" << idx << ": " << e.what();
-                throw std::runtime_error(sss.str());
+                throw Except::Runtime(sss.str());
             }
             return true;
         }, false);
@@ -873,7 +873,7 @@ std::vector<Interm::Genre::Pattern> parse_genre_pattern_list(int list_idx,
         std::stringstream sss;
         sss << "Cannot be type, "
             << lua_typename(l, lua_type(l, list_idx));
-        throw std::runtime_error(sss.str());
+        throw Except::Runtime(sss.str());
     }
     
     return retval;
@@ -889,11 +889,11 @@ std::unique_ptr<Interm::Genre> parse_genre(int table_idx) {
     Script::Pop_Guard pop_guard(1);
     try {
         genre->m_interface = std::move(parse_genre_interface(-1));
-    } catch (std::runtime_error e) {
+    } catch (Except::Runtime& e) {
         std::stringstream sss;
         sss << "Cannot parse interface: "
             << e.what();
-        throw std::runtime_error(e);
+        throw Except::Runtime(e);
     }
     pop_guard.pop(1);
     
@@ -902,11 +902,11 @@ std::unique_ptr<Interm::Genre> parse_genre(int table_idx) {
     try {
         genre->m_patterns = 
                 std::move(parse_genre_pattern_list(-1, genre->m_interface));
-    } catch (std::runtime_error e) {
+    } catch (Except::Runtime& e) {
         std::stringstream sss;
         sss << "Cannot parse pattern list: "
             << e.what();
-        throw std::runtime_error(e);
+        throw Except::Runtime(e);
     }
     pop_guard.pop(1);
     
@@ -940,7 +940,7 @@ void stage_all() {
             Compiler::stage_component(id, std::move(obj));
             Logger::log()->info("Successfully parsed compnent [%v]", id);
         }
-        catch (std::runtime_error e) {
+        catch (Except::Runtime& e) {
             Logger::log()->warn("Failed to parse component [%v]: %v", 
                     id, e.what());
         }
@@ -966,7 +966,7 @@ void stage_all() {
             Compiler::stage_archetype(id, std::move(obj));
             Logger::log()->info("Successfully parsed archetype [%v]", id);
         }
-        catch (std::runtime_error e) {
+        catch (Except::Runtime& e) {
             Logger::log()->warn("Failed to parse archetype [%v]: %v", 
                     id, e.what());
         }
@@ -992,7 +992,7 @@ void stage_all() {
             Compiler::stage_genre(id, std::move(obj));
             Logger::log()->info("Successfully parsed genre [%v]", id);
         }
-        catch (std::runtime_error e) {
+        catch (Except::Runtime& e) {
             Logger::log()->warn("Failed to parse genre [%v]: %v", 
                     id, e.what());
         }

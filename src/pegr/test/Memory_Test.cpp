@@ -14,11 +14,12 @@
  *  limitations under the License.
  */
 
-#include <sstream>
+#include <cstdint>
 #include <cstdint>
 #include <cstdlib>
-#include <cstdint>
+#include <sstream>
 
+#include "pegr/except/Except.hpp"
 #include "pegr/logger/Logger.hpp"
 
 namespace pegr {
@@ -53,7 +54,7 @@ void test_0000_memory_test() {
     if (expected != got) {
         std::stringstream ers;
         ers << "Expected: " << expected;
-        throw std::runtime_error(ers.str());
+        throw Except::Runtime(ers.str());
     }
 }
 

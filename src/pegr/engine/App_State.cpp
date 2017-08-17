@@ -28,7 +28,9 @@ void App_State::initialize() {}
 void App_State::pause(App_State* to) {}
 void App_State::unpause(App_State* from) {}
 
-void App_State::on_frame() {}
+void App_State::do_frame() {}
+void App_State::do_tick() {}
+
 void App_State::on_window_resize(int32_t width, int32_t height) {}
 
 void App_State::cleanup() {}

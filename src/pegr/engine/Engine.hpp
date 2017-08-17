@@ -17,8 +17,8 @@
 #ifndef PEGR_ENGINE_ENGINE_HPP
 #define PEGR_ENGINE_ENGINE_HPP
 
-#include <memory>
 #include <cstdint>
+#include <memory>
 
 #include "pegr/engine/App_State.hpp"
 
@@ -28,16 +28,18 @@ namespace Engine {
 extern const uint16_t INIT_FLAG_LOGGER;
 extern const uint16_t INIT_FLAG_SCRIPT;
 extern const uint16_t INIT_FLAG_GENSYS;
-extern const uint16_t INIT_FLAG_SCHED;
+extern const uint16_t INIT_FLAG_SCHEDU;
 extern const uint16_t INIT_FLAG_WINPUT;
+extern const uint16_t INIT_FLAG_RESOUR;
 extern const uint16_t INIT_FLAG_ALL;
 extern const uint16_t INIT_FLAG_NONE;
 
 bool logger_used();
 bool script_used();
 bool gensys_used();
-bool sched_used();
+bool schedu_used();
 bool winput_used();
+bool resour_used();
 
 void initialize(uint16_t flags = INIT_FLAG_ALL);
 void push_state(std::unique_ptr<App_State>&& state);
@@ -45,6 +47,13 @@ std::unique_ptr<App_State> pop_state();
 std::unique_ptr<App_State> swap_state(std::unique_ptr<App_State>&& state);
 void run();
 void cleanup();
+
+void set_tick_frequency(int32_t hertz);
+
+uint64_t get_tick_id();
+double get_tick_lag();
+
+bool is_main_loop_running();
 
 void on_window_resize(int32_t width, int32_t height);
 void quit();

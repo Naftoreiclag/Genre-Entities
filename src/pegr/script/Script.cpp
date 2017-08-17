@@ -16,15 +16,15 @@
 
 #include "pegr/script/Script.hpp"
 
-#include <stdexcept>
 #include <cassert>
 #include <cstddef>
 #include <fstream>
-#include <string>
 #include <sstream>
+#include <string>
 #include <vector>
 
 #include "pegr/debug/Debug_Macros.hpp"
+#include "pegr/except/Except.hpp"
 #include "pegr/logger/Logger.hpp"
 #include "pegr/script/Script_Util.hpp"
 
@@ -70,10 +70,6 @@ Regref Unique_Regref::get() const {
 
 bool Unique_Regref::is_nil() const {
     return m_reference == LUA_REFNIL;
-}
-    
-Unique_Regref::operator Regref() const {
-    return get();
 }
 
 Regref Unique_Regref::release() {
@@ -368,10 +364,10 @@ void cleanup() {
     m_torndown = true;
 }
 
-Regref load_c_function(lua_CFunction func, int closure_size) {
+Unique_Regref load_c_function(lua_CFunction func, int closure_size) {
     assert(is_initialized());
     lua_pushcclosure(m_l, func, closure_size);
-    return grab_reference();
+    return grab_unique_reference();
 }
 
 const std::streamsize BLOCK_LENGTH = 4096;
@@ -398,7 +394,7 @@ const char* file_reader(lua_State* L, void* data, size_t* size) {
 }
 
 // TODO: check if this file has already been loaded ... ?
-Regref load_lua_function(const char* filename, Regref environment,
+Unique_Regref load_lua_function(const char* filename, Regref environment,
                             const char* chunkname) {
     assert(is_initialized());
     if (!chunkname) { chunkname = filename; }
@@ -410,7 +406,7 @@ Regref load_lua_function(const char* filename, Regref environment,
         std::stringstream ss;
         ss << "Could not open file for " << chunkname;
         lua_pushstring(m_l, ss.str().c_str());
-        throw std::runtime_error(ss.str());
+        throw Except::Runtime(ss.str());
     }
     int peek = file.peek();
     // File is empty
@@ -418,14 +414,14 @@ Regref load_lua_function(const char* filename, Regref environment,
         std::stringstream ss;
         ss << "File for " << chunkname << " is empty";
         lua_pushstring(m_l, ss.str().c_str());
-        throw std::runtime_error(ss.str());
+        throw Except::Runtime(ss.str());
     }
     // Bytecode
     if (peek == 0x1B) {
         std::stringstream ss;
         ss << "File for " << chunkname << " is bytecode";
         lua_pushstring(m_l, ss.str().c_str());
-        throw std::runtime_error(ss.str());
+        throw Except::Runtime(ss.str());
     }
     int status;
     {
@@ -436,7 +432,7 @@ Regref load_lua_function(const char* filename, Regref environment,
         case LUA_ERRSYNTAX:
         case LUA_ERRMEM: {
             const char* errmsg = lua_tostring(m_l, -1);
-            throw std::runtime_error(errmsg);
+            throw Except::Runtime(errmsg);
         }
         default: break;
     }
@@ -444,7 +440,7 @@ Regref load_lua_function(const char* filename, Regref environment,
         push_reference(environment);
         lua_setfenv(m_l, -2);
     }
-    return grab_reference();
+    return grab_unique_reference();
 }
 
 void run_function(int nargs, int nresults) {
@@ -455,22 +451,21 @@ void run_function(int nargs, int nresults) {
         case LUA_ERRERR: {
             size_t strlen;
             const char* luastr = lua_tolstring(m_l, -1, &strlen);
-            throw std::runtime_error(std::string(luastr, strlen));
+            throw Except::Runtime(std::string(luastr, strlen));
         }
     }
 }
 
-Regref new_sandbox() {
+Unique_Regref new_sandbox() {
     assert(is_initialized());
-    // Make a deep copy of the pristine sandbox
     push_reference(m_pristine_sandbox);
+    Script::Pop_Guard pg(1);
+    // Make a deep copy of the pristine sandbox
     Util::simple_deep_copy(-1);
     // Set the "_G" member to itself
     lua_pushvalue(m_l, -1);
     lua_setfield(m_l, -2, "_G");
-    Regref ret_val = grab_reference();
-    lua_pop(m_l, 1); // Pop the pristine sandbox
-    return ret_val;
+    return grab_unique_reference();
 }
 
 void drop_reference(Regref ref) {
@@ -496,6 +491,12 @@ Regref grab_reference() {
     ++n_total_grab_delta;
     Regref retval = luaL_ref(m_l, LUA_REGISTRYINDEX);
     return retval;
+}
+
+Unique_Regref grab_unique_reference() {
+    assert(is_initialized());
+    assert_balance(-1);
+    return Unique_Regref(grab_reference());
 }
 
 lua_State* get_lua_state() {

@@ -18,12 +18,13 @@
 #define PEGR_RENDER_HANDLES_HPP
 
 #include <cassert>
+#include <memory>
 
 #include <bgfx/bgfx.h>
 
 namespace pegr {
 namespace Render {
-
+    
 /**
  * @class Unique_Handle
  * @brief Template for capturing bgfx EtcHandles into unique_ptr-like RAII
@@ -74,7 +75,7 @@ public:
     Unique_Handle& operator=(Unique_Handle<T>&& rhs) {
         // Either the references are different or both are invalid
         assert(!handles_equal(m_handle, rhs.m_handle) || 
-                (!bgfx::isValid(m_handle) && !bgfx::isValid(rhs)));
+                (!bgfx::isValid(m_handle) && !bgfx::isValid(rhs.m_handle)));
         
         reset();
         m_handle = rhs.m_handle;
@@ -161,6 +162,20 @@ typedef Unique_Handle<bgfx::TextureHandle> Unique_Texture;
 typedef Unique_Handle<bgfx::UniformHandle> Unique_Uniform;
 typedef Unique_Handle<bgfx::VertexBufferHandle> Unique_Vertex_Buffer;
 //typedef Unique_Handle<bgfx::VertexDeclHandle> Unique_Vertex_Decl; // unused
+
+typedef std::shared_ptr<const Unique_Dynamic_Index_Buffer> 
+        Shared_Dynamic_Index_Buffer;
+typedef std::shared_ptr<const Unique_Dynamic_Vertex_Buffer> 
+        Shared_Dynamic_Vertex_Buffer;
+typedef std::shared_ptr<const Unique_Frame_Buffer> Shared_Frame_Buffer;
+typedef std::shared_ptr<const Unique_Index_Buffer> Shared_Index_Buffer;
+typedef std::shared_ptr<const Unique_Indirect_Buffer> Shared_Indirect_Buffer;
+typedef std::shared_ptr<const Unique_Occlusion_Query> Shared_Occlusion_Query;
+typedef std::shared_ptr<const Unique_Program> Shared_Program;
+typedef std::shared_ptr<const Unique_Shader> Shared_Shader;
+typedef std::shared_ptr<const Unique_Texture> Shared_Texture;
+typedef std::shared_ptr<const Unique_Uniform> Shared_Uniform;
+typedef std::shared_ptr<const Unique_Vertex_Buffer> Shared_Vertex_Buffer;
 
 } // namespace Render
 } // namespace pegr

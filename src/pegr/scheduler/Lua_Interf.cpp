@@ -19,11 +19,11 @@
 #include <cassert>
 
 #include "pegr/debug/Debug_Macros.hpp"
-#include "pegr/script/Script.hpp"
 #include "pegr/script/Lua_Interf_Util.hpp"
+#include "pegr/script/Script.hpp"
 
 namespace pegr {
-namespace Sched {
+namespace Schedu {
 namespace LI {
 
 Script::Regref n_tasks_table = LUA_REFNIL;
@@ -86,5 +86,5 @@ int li_edit_task(lua_State* l) {
 }
     
 } // namspace LI
-} // namespace Sched
+} // namespace Schedu
 } // namespace pegr

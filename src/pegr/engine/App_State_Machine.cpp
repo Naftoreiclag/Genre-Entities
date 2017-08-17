@@ -21,9 +21,17 @@
 
 namespace pegr {
 namespace Engine {
-    
+
+Dummy_App_State::Dummy_App_State()
+: App_State("dummy") {}
+Dummy_App_State::~Dummy_App_State() {}
+
 App_State_Machine::~App_State_Machine() {
     clear_all();
+}
+
+App_State_Machine::App_State_Machine() {
+    m_dummy = std::make_unique<Dummy_App_State>();
 }
 
 void App_State_Machine::push_state(std::unique_ptr<App_State>&& unique_state) {
@@ -77,11 +85,23 @@ void App_State_Machine::clear_all() {
     }
 }
 
-App_State* App_State_Machine::get_active() {
+App_State* App_State_Machine::get_active() const {
     if (m_state_pushdown.size() == 0) {
-        return nullptr;
+        return m_dummy.get();
     }
     return m_state_pushdown.back().get();
+}
+
+App_State* App_State_Machine::operator ->() const {
+    return get_active();
+}
+
+bool App_State_Machine::has_active() const {
+    return m_state_pushdown.size() > 0;
+}
+
+std::size_t App_State_Machine::count() const {
+    return m_state_pushdown.size();
 }
 
 } // namespace Engine

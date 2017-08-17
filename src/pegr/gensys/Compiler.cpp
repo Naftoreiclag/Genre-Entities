@@ -16,17 +16,17 @@
 
 #include "pegr/gensys/Compiler.hpp"
 
-#include <map>
 #include <algorithm>
 #include <cassert>
+#include <map>
+#include <memory>
 #include <sstream>
 #include <vector>
-#include <memory>
 
 #include "pegr/Script/Script_Util.hpp"
-#include "pegr/logger/Logger.hpp"
 #include "pegr/gensys/Gensys.hpp"
 #include "pegr/gensys/Util.hpp"
+#include "pegr/logger/Logger.hpp"
 
 namespace pegr {
 namespace Gensys {

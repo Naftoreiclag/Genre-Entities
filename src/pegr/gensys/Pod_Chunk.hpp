@@ -17,10 +17,10 @@
 #ifndef PEGR_GENSYS_PODCHUNK_HPP
 #define PEGR_GENSYS_PODCHUNK_HPP
 
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
-#include <cassert>
 
 namespace pegr {
 namespace Gensys {

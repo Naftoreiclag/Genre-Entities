@@ -14,14 +14,13 @@
  *  limitations under the License.
  */
 
-#include <stdexcept>
-
-#include "pegr/script/Script_Util.hpp"
-#include "pegr/script/Script.hpp"
-#include "pegr/logger/Logger.hpp"
+#include "pegr/except/Except.hpp"
 #include "pegr/gensys/Compiler.hpp"
 #include "pegr/gensys/Interm_Types.hpp"
 #include "pegr/gensys/Lua_Interf.hpp"
+#include "pegr/logger/Logger.hpp"
+#include "pegr/script/Script.hpp"
+#include "pegr/script/Script_Util.hpp"
 
 namespace pegr {
 namespace Test {
@@ -34,15 +33,16 @@ void test_0080_00_gensys_primitive() {
     
     Script::Unique_Regref sandbox(Script::new_sandbox());
     Script::Unique_Regref func(
-        Script::load_lua_function("test/common/prim_cstr_table.lua", sandbox));
+        Script::load_lua_function("test/common/prim_cstr_table.lua", 
+                sandbox.get()));
         
-    Script::Util::run_simple_function(func, 1);
+    Script::Util::run_simple_function(func.get(), 1);
     
     prim = Gensys::LI::parse_primitive(-1);
     lua_pop(l, 1);
     
     if (prim.get_type() != Gensys::Interm::Prim::Type::FUNC) {
-        throw std::runtime_error("Expected FUNC!");
+        throw Except::Runtime("Expected FUNC!");
     }
 }
 

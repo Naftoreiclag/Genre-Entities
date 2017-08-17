@@ -14,20 +14,20 @@
  *  limitations under the License.
  */
 
-#include <stdexcept>
-#include <iostream>
-#include <sstream>
 #include <chrono>
+#include <iostream>
 #include <ratio>
+#include <sstream>
 
+#include "pegr/debug/Debug_Macros.hpp"
 #include "pegr/engine/Engine.hpp"
+#include "pegr/except/Except.hpp"
 #include "pegr/gensys/Gensys.hpp"
 #include "pegr/gensys/Lua_Interf.hpp"
+#include "pegr/logger/Logger.hpp"
 #include "pegr/scheduler/Lua_Interf.hpp"
-#include "pegr/debug/Debug_Macros.hpp"
 #include "pegr/script/Script.hpp"
 #include "pegr/script/Script_Util.hpp"
-#include "pegr/logger/Logger.hpp"
 #include "pegr/test/Tests.hpp"
 
 using namespace pegr;
@@ -139,13 +139,13 @@ bool run_test(const Test::NamedTest& test) {
                 lua_pop(l, diff);
             }
             ss << ") Later tests may fail inexplicably!";
-            throw std::runtime_error(ss.str());
+            throw Except::Runtime(ss.str());
         }
         
         Logger::log()->info("%v\t...PASSED!%v", COLOR_GREEN, COLOR_RESET);
         return true;
     }
-    catch (std::runtime_error e) {
+    catch (Except::Runtime& e) {
         Logger::log()->warn("%v\t...FAILED! %v%v", 
                 COLOR_RED, e.what(), COLOR_RESET);
         return false;
@@ -161,12 +161,12 @@ bool run_lua_test(const Test::NamedLuaTest& test) {
         sss << "test/tests/" << test.m_lua_file;
         Script::Unique_Regref func(
                 Script::load_lua_function(
-                        sss.str().c_str(), sandbox, test.m_name));
-        Script::Util::run_simple_function(func, 0);
+                        sss.str().c_str(), sandbox.get(), test.m_name));
+        Script::Util::run_simple_function(func.get(), 0);
         Logger::log()->info("%v\t...PASSED!%v", COLOR_GREEN, COLOR_RESET);
         success = true;
     }
-    catch (std::runtime_error e) {
+    catch (Except::Runtime& e) {
         Logger::log()->warn("%v\t...FAILED! %v%v", 
                 COLOR_RED, e.what(), COLOR_RESET);
         success = false;
@@ -230,8 +230,10 @@ void run_extras() {
             sss << "test/more/" << finput << ".lua";
             Script::Unique_Regref func(
                     Script::load_lua_function(
-                            sss.str().c_str(), sandbox, sss.str().c_str()));
-            Script::Util::run_simple_function(func, 1);
+                            sss.str().c_str(), 
+                            sandbox.get(), 
+                            sss.str().c_str()));
+            Script::Util::run_simple_function(func.get(), 1);
             Script::Pop_Guard pg(1);
             
             if (lua_isfunction(l, -1)) {
@@ -247,7 +249,7 @@ void run_extras() {
             
             Logger::log()->info("%v\t...PASSED!%v", COLOR_GREEN, COLOR_RESET);
         }
-        catch (std::runtime_error e) {
+        catch (Except::Runtime& e) {
             Logger::log()->warn("%v\t...FAILED! %v%v", 
                     COLOR_RED, e.what(), COLOR_RESET);
         }
@@ -325,7 +327,8 @@ int main() {
     Engine::initialize(Engine::INIT_FLAG_LOGGER 
             | Engine::INIT_FLAG_GENSYS 
             | Engine::INIT_FLAG_SCRIPT 
-            | Engine::INIT_FLAG_SCHED);
+            | Engine::INIT_FLAG_SCHEDU
+            | Engine::INIT_FLAG_RESOUR);
     Engine::push_state(std::make_unique<Test_State>());
     Engine::run();
     Engine::cleanup();

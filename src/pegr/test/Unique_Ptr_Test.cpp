@@ -14,9 +14,9 @@
  *  limitations under the License.
  */
 
-#include <vector>
 #include <algorithm>
 #include <memory>
+#include <vector>
 
 #include "pegr/test/Test_Util.hpp"
 

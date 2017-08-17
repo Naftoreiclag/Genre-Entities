@@ -22,13 +22,16 @@
 set(PGLOCAL_SOURCES_LIST "")
 foreach(fname 
 
+"../thirdparty/bgfx_examples/bexam_cubes/cubes.cpp"
 "../thirdparty/easyloggingpp/easylogging++.cc"
+"../thirdparty/jsoncpp/jsoncpp.cpp"
 "Main.cpp"
 "app/Game.cpp"
 "debug/Debug_Assert_Lua_Balance.cpp"
 "engine/App_State.cpp"
 "engine/App_State_Machine.cpp"
 "engine/Engine.cpp"
+"except/Except.cpp"
 "gensys/Compiler.cpp"
 "gensys/Gensys.cpp"
 "gensys/Interm_Types.cpp"
@@ -39,11 +42,14 @@ foreach(fname
 "gensys/Util.cpp"
 "logger/Logger.cpp"
 "render/Shaders.cpp"
+"resource/Json_Util.cpp"
 "resource/Resources.cpp"
 "scheduler/Lua_Interf.cpp"
 "script/Lua_Interf_Util.cpp"
 "script/Script.cpp"
+"script/Script_Resource.cpp"
 "script/Script_Util.cpp"
+"text/Text.cpp"
 "winput/Enum_Utils.cpp"
 "winput/Winput.cpp"
 

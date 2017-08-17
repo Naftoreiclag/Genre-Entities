@@ -22,7 +22,9 @@
 set(PGLOCAL_INCLUDES_LIST "")
 foreach(dir 
 
+"thirdparty/bgfx_examples"
 "thirdparty/easyloggingpp"
+"thirdparty/jsoncpp"
 
 )
 list(APPEND PGLOCAL_INCLUDES_LIST 

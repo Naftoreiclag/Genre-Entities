@@ -16,9 +16,8 @@
 
 #include "pegr/winput/Winput.hpp"
 
-#include <stdexcept>
-#include <sstream>
 #include <cstdint>
+#include <sstream>
 
 #include <SDL.h>
 #include <SDL_syswm.h>
@@ -26,7 +25,9 @@
 #include <bgfx/platform.h>
 
 #include "pegr/engine/Engine.hpp"
+#include "pegr/except/Except.hpp"
 #include "pegr/logger/Logger.hpp"
+#include "pegr/render/Shaders.hpp"
 #include "pegr/winput/Enum_Utils.hpp"
 
 namespace pegr {
@@ -81,7 +82,7 @@ bgfx::PlatformData extract_plat_specific(const SDL_SysWMinfo& syswm_info) {
         sss << "Binding bgfx to "
             << Util::to_string_syswm_type(n_syswm_info.subsystem)
             << " currently unimplemented";
-        throw std::runtime_error(sss.str());
+        throw Except::Runtime(sss.str());
     }
     
     return plat_specific;
@@ -94,7 +95,7 @@ void initialize() {
         std::stringstream sss;
         sss << "Could not initalize SDL: "
             << SDL_GetError();
-        throw std::runtime_error(sss.str());
+        throw Except::Runtime(sss.str());
     }
     
     // Create the window
@@ -110,7 +111,7 @@ void initialize() {
         n_window_height = height;
     }
     if(!n_window) {
-        throw std::runtime_error("Could not create SDL window");
+        throw Except::Runtime("Could not create SDL window");
     }
     
     SDL_version version;
@@ -127,7 +128,7 @@ void initialize() {
         std::stringstream sss;
         sss << "Could not retrieve window info from SDL: "
             << SDL_GetError();
-        throw std::runtime_error(sss.str());
+        throw Except::Runtime(sss.str());
     }
     
     Logger::log()->info("Running SDL on %v", 
@@ -138,9 +139,10 @@ void initialize() {
     bgfx::setPlatformData(pdat);
     
     if (!bgfx::init(bgfx::RendererType::Count, BGFX_PCI_ID_NONE)) {
-        throw std::runtime_error("Failed to init bgfx");
+        throw Except::Runtime("Failed to init bgfx");
     }
-    bgfx::reset(n_window_width, n_window_height, BGFX_RESET_VSYNC);
+    bgfx::reset(n_window_width, n_window_height, 
+            BGFX_RESET_VSYNC | BGFX_RESET_MSAA_X4);
     SDL_ShowWindow(n_window);
     
     Logger::log()->info("bgfx renderer type: %v", 
@@ -152,7 +154,8 @@ void on_sdl_window_resize(const SDL_WindowEvent& window) {
     n_window_height = window.data2;
     Logger::log()->info("Window resized to %vx%v", 
             n_window_width, n_window_height);
-    bgfx::reset(n_window_width, n_window_height, BGFX_RESET_VSYNC);
+    bgfx::reset(n_window_width, n_window_height, 
+            BGFX_RESET_VSYNC | BGFX_RESET_MSAA_X4);
     Engine::on_window_resize(n_window_width, n_window_height);
 }
 
@@ -183,6 +186,10 @@ void pollEvents() {
 }
 void cleanup() {
     Logger::log()->info("Cleaning window and input");
+    
+    Render::clear_cached_programs();
+    Render::clear_cached_shaders();
+    
     bgfx::shutdown();
     
     n_window_width = WINDOW_DEFAULT_WIDTH;
@@ -190,6 +197,11 @@ void cleanup() {
     
     SDL_DestroyWindow(n_window);
     SDL_Quit();
+}
+
+void submit_frame() {
+    bgfx::touch(0);
+    bgfx::frame();
 }
 
 } // namespace Winput

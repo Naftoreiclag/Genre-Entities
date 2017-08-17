@@ -1,5 +1,7 @@
 docs/*
 ide/*
 *__pycache__*
+*__interm__*
 run/ignore/*
 run/logs/*
+run/core/*
