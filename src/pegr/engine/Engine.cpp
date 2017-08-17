@@ -18,6 +18,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <chrono>
 #include <vector>
 
 #include <boost/asio.hpp>
@@ -36,7 +37,14 @@
 namespace pegr {
 namespace Engine {
     
+typedef std::chrono::time_point<std::chrono::steady_clock> Steady_Time_Point;
 boost::asio::io_service n_io;
+Steady_Time_Point n_last_tick_timestamp;
+
+int64_t n_tick_period_ns = 1e6;
+int32_t n_tick_freq = 1;
+uint64_t n_tick_id = 0;
+double n_tick_lag = 0;
 
 const uint16_t INIT_FLAG_LOGGER = 0x0001;
 const uint16_t INIT_FLAG_SCRIPT = 0x0002 | INIT_FLAG_LOGGER;
@@ -156,16 +164,47 @@ void on_window_resize(int32_t width, int32_t height) {
     n_asm->on_window_resize(width, height);
 }
 
-void async_tick(const boost::system::error_code& asio_err,
+void reset_lag_time() {
+    n_last_tick_timestamp = std::chrono::steady_clock::now();
+    n_tick_lag = 0;
+}
+
+void update_lag_time() {
+    std::chrono::duration<double> diff = 
+            std::chrono::steady_clock::now() - n_last_tick_timestamp;
+    double newlag = diff.count() * n_tick_freq;
+    if (newlag < n_tick_lag) return;
+    if (newlag < 0) {
+        newlag = 0;
+    }
+    if (newlag > 1) {
+        newlag = 1;
+    }
+    n_tick_lag = newlag;
+}
+
+void async_max_speed(const boost::system::error_code& asio_err,
         boost::asio::deadline_timer* timer) {
+    update_lag_time();
     if (winput_used()) {
         Winput::pollEvents();
     }
     
+    if (is_main_loop_running()) {
+        timer->async_wait(boost::bind(
+                async_max_speed, boost::asio::placeholders::error,
+                timer));
+    }
+}
+
+void async_tick(const boost::system::error_code& asio_err,
+        boost::asio::deadline_timer* timer) {
+    reset_lag_time();
     n_asm->do_tick();
-    
-    if (n_asm.has_active()) {
-        timer->expires_at(timer->expires_at() + boost::posix_time::seconds(1));
+    ++n_tick_id;
+    if (is_main_loop_running()) {
+        timer->expires_at(timer->expires_at() + 
+                boost::posix_time::microseconds(n_tick_period_ns));
         timer->async_wait(boost::bind(
                 async_tick, boost::asio::placeholders::error,
                 timer));
@@ -174,12 +213,14 @@ void async_tick(const boost::system::error_code& asio_err,
 
 void async_render(const boost::system::error_code& asio_err,
         boost::asio::deadline_timer* timer) {
+    
+    update_lag_time();
     n_asm->do_frame();
     if (winput_used()) {
         Winput::submit_frame();
     }
     
-    if (n_asm.has_active()) {
+    if (is_main_loop_running()) {
         timer->async_wait(boost::bind(
                 async_render, boost::asio::placeholders::error,
                 timer));
@@ -191,17 +232,24 @@ void run() {
             n_io, boost::posix_time::seconds(0));
     boost::asio::deadline_timer render_timer(
             n_io, boost::posix_time::seconds(0));
+    boost::asio::deadline_timer max_speed_timer(
+            n_io, boost::posix_time::seconds(0));
     tick_timer.async_wait(boost::bind(
             async_tick, boost::asio::placeholders::error,
             &tick_timer));
     render_timer.async_wait(boost::bind(
             async_render, boost::asio::placeholders::error,
             &render_timer));
+    max_speed_timer.async_wait(boost::bind(
+            async_max_speed, boost::asio::placeholders::error,
+            &max_speed_timer));
+    n_last_tick_timestamp = std::chrono::steady_clock::now();
     n_io.run();
 }
 
 void cleanup() {
     n_asm.clear_all();
+    n_tick_id = 0;
     
     if (resour_used()) {
         Resour::cleanup();
@@ -229,12 +277,27 @@ void cleanup() {
     }
 }
 
-double get_game_time() {
-    
+void set_tick_frequency(int32_t hertz) {
+    assert(hertz > 0);
+    n_tick_freq = hertz;
+    // TODO: more precision
+    n_tick_period_ns = 1e6d / ((double) hertz);
+}
+
+uint64_t get_tick_id() {
+    return n_tick_id;
+}
+double get_tick_lag() {
+    return n_tick_lag;
+}
+
+bool is_main_loop_running() {
+    return n_asm.has_active();
 }
 
 void quit() {
     n_asm.clear_all();
+    n_io.stop();
 }
 
 } // namespace Engine

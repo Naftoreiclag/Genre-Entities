@@ -21,6 +21,7 @@ using namespace pegr;
 
 int main() {
     Engine::initialize(Engine::INIT_FLAG_ALL);
+    Engine::set_tick_frequency(12);
     Engine::push_state(std::make_unique<App::Game_State>());
     Engine::run();
     Engine::cleanup();

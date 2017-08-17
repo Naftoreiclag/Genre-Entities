@@ -68,7 +68,7 @@ void Game_State::initialize() {
     }
     
     bgfx::setViewClear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH,
-            0x009e79ff, 1.f, 0);
+            0x00000000, 1.f, 0);
     bgfx::setDebug(BGFX_DEBUG_TEXT);
     bgfx::frame();
     bgfx::setViewRect(0, 0, 0, 
@@ -85,13 +85,13 @@ void Game_State::initialize() {
 }
 
 void Game_State::do_tick() {
-    m_time += 1;
+    m_time += 0.1;
 }
 void Game_State::do_frame() {
     bgfx::dbgTextClear();
     bgfx::dbgTextPrintf(0, 0, 0x0f, "Hello world");
 
-    Cubes_Example::pegr_update(m_time, 
+    Cubes_Example::pegr_update(m_time + Engine::get_tick_lag() * 0.1, 
             Winput::get_window_width(),
             Winput::get_window_height(), m_program.get());
 }
