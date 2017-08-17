@@ -25,8 +25,15 @@
 namespace pegr {
 namespace Engine {
 
+class Dummy_App_State : public App_State {
+public:
+    Dummy_App_State();
+    virtual ~Dummy_App_State();
+};
+
 class App_State_Machine {
 public:
+    App_State_Machine();
     ~App_State_Machine();
 
     /**
@@ -48,12 +55,17 @@ public:
      */
     std::unique_ptr<App_State> swap_state(std::unique_ptr<App_State>&& state);
     
-    App_State* get_active();
+    App_State* get_active() const;
+    App_State* operator ->() const;
+    bool has_active() const;
     
     void clear_all();
+    
+    std::size_t count() const;
 
 private:
     std::vector<std::unique_ptr<App_State> > m_state_pushdown;
+    std::unique_ptr<App_State> m_dummy;
 };
 
 } // namespace Engine

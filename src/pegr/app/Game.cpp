@@ -39,7 +39,8 @@ namespace pegr {
 namespace App {
     
 Game_State::Game_State()
-: Engine::App_State("Main") {}
+: Engine::App_State("Main")
+, m_time(0) {}
 Game_State::~Game_State() {}
 
 void Game_State::initialize() {
@@ -83,11 +84,14 @@ void Game_State::initialize() {
             Render::find_shader("basic_color.fs"));
 }
 
+void Game_State::do_tick() {
+    m_time += 1;
+}
 void Game_State::do_frame() {
     bgfx::dbgTextClear();
     bgfx::dbgTextPrintf(0, 0, 0x0f, "Hello world");
 
-    Cubes_Example::pegr_update(0, 
+    Cubes_Example::pegr_update(m_time, 
             Winput::get_window_width(),
             Winput::get_window_height(), m_program.get());
 }

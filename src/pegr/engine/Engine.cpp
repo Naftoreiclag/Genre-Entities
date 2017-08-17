@@ -20,6 +20,9 @@
 #include <cassert>
 #include <vector>
 
+#include <boost/asio.hpp>
+#include <boost/bind.hpp>
+
 #include "pegr/engine/App_State_Machine.hpp"
 #include "pegr/except/Except.hpp"
 #include "pegr/gensys/Gensys.hpp"
@@ -32,6 +35,8 @@
 
 namespace pegr {
 namespace Engine {
+    
+boost::asio::io_service n_io;
 
 const uint16_t INIT_FLAG_LOGGER = 0x0001;
 const uint16_t INIT_FLAG_SCRIPT = 0x0002 | INIT_FLAG_LOGGER;
@@ -63,9 +68,7 @@ bool resour_used() {
     return (n_flags & INIT_FLAG_RESOUR) == INIT_FLAG_RESOUR;
 }
 
-bool n_main_loop_running = false;
-
-App_State_Machine n_app_state_machine;
+App_State_Machine n_asm;
 
 void initialize(uint16_t flags) {
     n_flags = flags;
@@ -138,47 +141,67 @@ void initialize(uint16_t flags) {
 }
 
 void push_state(std::unique_ptr<App_State>&& unique_state) {
-    n_app_state_machine.push_state(std::move(unique_state));
+    n_asm.push_state(std::move(unique_state));
 }
 
 std::unique_ptr<App_State> pop_state() {
-    return n_app_state_machine.pop_state();
+    return n_asm.pop_state();
 }
 
 std::unique_ptr<App_State> swap_state(std::unique_ptr<App_State>&& u_state) {
-    return n_app_state_machine.swap_state(std::move(u_state));
+    return n_asm.swap_state(std::move(u_state));
 }
 
 void on_window_resize(int32_t width, int32_t height) {
-    App_State* app_state = n_app_state_machine.get_active();
-    if (!app_state) return;
-    app_state->on_window_resize(width, height);
+    n_asm->on_window_resize(width, height);
 }
 
-void run() {
-    n_main_loop_running = true;
-    while (n_main_loop_running) {
-        App_State* app_state = n_app_state_machine.get_active();
-        if (!app_state) {
-            quit();
-            break;
-        }
-        if (winput_used()) {
-            Winput::pollEvents();
-        }
-        app_state->do_frame();
-        if (winput_used()) {
-            Winput::submit_frame();
-        }
-        if (!app_state) {
-            quit();
-            break;
-        }
+void async_tick(const boost::system::error_code& asio_err,
+        boost::asio::deadline_timer* timer) {
+    if (winput_used()) {
+        Winput::pollEvents();
+    }
+    
+    n_asm->do_tick();
+    
+    if (n_asm.has_active()) {
+        timer->expires_at(timer->expires_at() + boost::posix_time::seconds(1));
+        timer->async_wait(boost::bind(
+                async_tick, boost::asio::placeholders::error,
+                timer));
     }
 }
 
+void async_render(const boost::system::error_code& asio_err,
+        boost::asio::deadline_timer* timer) {
+    n_asm->do_frame();
+    if (winput_used()) {
+        Winput::submit_frame();
+    }
+    
+    if (n_asm.has_active()) {
+        timer->async_wait(boost::bind(
+                async_render, boost::asio::placeholders::error,
+                timer));
+    }
+}
+
+void run() {
+    boost::asio::deadline_timer tick_timer(
+            n_io, boost::posix_time::seconds(0));
+    boost::asio::deadline_timer render_timer(
+            n_io, boost::posix_time::seconds(0));
+    tick_timer.async_wait(boost::bind(
+            async_tick, boost::asio::placeholders::error,
+            &tick_timer));
+    render_timer.async_wait(boost::bind(
+            async_render, boost::asio::placeholders::error,
+            &render_timer));
+    n_io.run();
+}
+
 void cleanup() {
-    n_app_state_machine.clear_all();
+    n_asm.clear_all();
     
     if (resour_used()) {
         Resour::cleanup();
@@ -206,12 +229,12 @@ void cleanup() {
     }
 }
 
-double get_frame_time() {
+double get_game_time() {
     
 }
 
 void quit() {
-    n_main_loop_running = false;
+    n_asm.clear_all();
 }
 
 } // namespace Engine

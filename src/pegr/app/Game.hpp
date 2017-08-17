@@ -31,6 +31,7 @@ public:
     virtual ~Game_State();
     virtual void initialize() override;
     
+    virtual void do_tick() override;
     virtual void do_frame() override;
     virtual void on_window_resize(int32_t width, int32_t height) override;
     
@@ -38,6 +39,8 @@ private:
     Render::Unique_Vertex_Buffer m_vert_buff;
     Render::Unique_Index_Buffer m_index_buff;
     Render::Unique_Program m_program;
+    
+    double m_time;
 };
 
 } // namespace App

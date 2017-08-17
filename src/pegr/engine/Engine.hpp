@@ -48,7 +48,7 @@ std::unique_ptr<App_State> swap_state(std::unique_ptr<App_State>&& state);
 void run();
 void cleanup();
 
-double get_frame_time();
+double get_game_time();
 
 void on_window_resize(int32_t width, int32_t height);
 void quit();
