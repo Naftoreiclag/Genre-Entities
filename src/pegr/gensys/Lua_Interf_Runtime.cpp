@@ -37,15 +37,18 @@ namespace pegr {
 namespace Gensys {
 namespace LI {
 
-Script::Regref n_comp_metatable = LUA_REFNIL;
-Script::Regref n_arche_metatable = LUA_REFNIL;
-Script::Regref n_genre_metatable = LUA_REFNIL;
-Script::Regref n_entity_metatable = LUA_REFNIL;
-Script::Regref n_cview_metatable = LUA_REFNIL;
-Script::Regref n_genview_metatable = LUA_REFNIL;
+Script::Unique_Regref n_comp_metatable;
+Script::Unique_Regref n_arche_metatable;
+Script::Unique_Regref n_genre_metatable;
+Script::Unique_Regref n_entity_metatable;
+Script::Unique_Regref n_cview_metatable;
+Script::Unique_Regref n_genview_metatable;
 
 /**
- * @param num A 64 bit unsigned value
+ * @param num A 64 bit unsigned value. When passing the entity's unique id to
+ * Lua, we can only rely on the integrity of the least significant 52 bits, 
+ * as Lua only uses doubles. However, as the bottom 52 bits of the entity's
+ * unique id are guaranteed unique, the id's uniqueness is preserved.
  * @return The lower 52 bits
  */
 uint64_t bottom_52(uint64_t num) {
@@ -57,6 +60,14 @@ lua_Number entity_handle_to_lua_number(uint64_t data) {
     return static_cast<lua_Number>(bottom_52(data));
 }
 
+/**
+ * @brief Attempts to convert the Lua value stored at idx on the stack into a
+ * void pointer (userdata), succeeding iff that userdata has the metatable
+ * given by the provided registry index. Returns nullptr on failure.
+ * @param l The Lua state
+ * @param idx The value on the stack to cast into a userdata ptr
+ * @param metatable The metatable the userdata ptr must have
+ */
 void* to_mt_userdata(lua_State* l, int idx, Script::Regref metatable) {
     assert_balance(0);
     void* ptr = lua_touserdata(l, idx);
@@ -74,48 +85,49 @@ void* to_mt_userdata(lua_State* l, int idx, Script::Regref metatable) {
 }
 
 void* arg_require_userdata(lua_State* l, int narg, Script::Regref metatable,
-            const char* tname) {
+            const char* dbg_tname) {
+    assert(narg > 0);
     void* retval = to_mt_userdata(l, narg, metatable);
     if (!retval) {
-        luaL_typerror(l, narg, tname);
+        luaL_typerror(l, narg, dbg_tname);
     }
     return retval;
 }
 
-Runtime::Comp** arg_require_comp(lua_State* l, int idx) {
-    void* lua_mem = arg_require_userdata(l, idx, 
-            n_comp_metatable, "pegr.Component");
+Runtime::Comp** arg_require_comp(lua_State* l, int narg) {
+    void* lua_mem = arg_require_userdata(l, narg, 
+            n_comp_metatable.get(), "pegr.Component");
     return static_cast<Runtime::Comp**>(lua_mem);
 }
-Runtime::Arche** arg_require_arche(lua_State* l, int idx) {
-    void* lua_mem = arg_require_userdata(l, idx, 
-            n_arche_metatable, "pegr.Archetype");
+Runtime::Arche** arg_require_arche(lua_State* l, int narg) {
+    void* lua_mem = arg_require_userdata(l, narg, 
+            n_arche_metatable.get(), "pegr.Archetype");
     return static_cast<Runtime::Arche**>(lua_mem);
 }
-Runtime::Entity_Handle* arg_require_entity(lua_State* l, int idx) {
-    void* lua_mem = arg_require_userdata(l, idx, 
-            n_entity_metatable, "pegr.Entity");
+Runtime::Entity_Handle* arg_require_entity(lua_State* l, int narg) {
+    void* lua_mem = arg_require_userdata(l, narg, 
+            n_entity_metatable.get(), "pegr.Entity");
     return static_cast<Runtime::Entity_Handle*>(lua_mem);
 }
-Cview* arg_require_cview(lua_State* l, int idx) {
-    void* lua_mem = arg_require_userdata(l, idx, 
-            n_cview_metatable, "pegr.Comp_View");
+Cview* arg_require_cview(lua_State* l, int narg) {
+    void* lua_mem = arg_require_userdata(l, narg, 
+            n_cview_metatable.get(), "pegr.Comp_View");
     return static_cast<Cview*>(lua_mem);
 }
-Genview* arg_require_genview(lua_State* l, int idx) {
-    void* lua_mem = arg_require_userdata(l, idx, 
-            n_genview_metatable, "pegr.Genre_View");
+Genview* arg_require_genview(lua_State* l, int narg) {
+    void* lua_mem = arg_require_userdata(l, narg, 
+            n_genview_metatable.get(), "pegr.Genre_View");
     return static_cast<Genview*>(lua_mem);
 }
 
-void initialize_any_udatamt(lua_State* l, Script::Regref& dest, 
-        const luaL_Reg* metatable) {
+Script::Unique_Regref initialize_any_udatamt(lua_State* l, const luaL_Reg* mt) {
     assert_balance(0);
     lua_newtable(l);
-    luaL_register(l, nullptr, metatable);
+    luaL_register(l, nullptr, mt);
     lua_pushvalue(l, -1);
-    dest = Script::grab_reference();
+    Script::Unique_Regref dest = Script::grab_unique_reference();
     lua_pop(l, 1);
+    return dest;
 }
 
 void initialize_udatamt_comp(lua_State* l) {
@@ -128,7 +140,7 @@ void initialize_udatamt_comp(lua_State* l) {
         // End of the list
         {nullptr, nullptr}
     };
-    initialize_any_udatamt(l, n_comp_metatable, metatable);
+    n_comp_metatable = initialize_any_udatamt(l, metatable);
 }
 void initialize_udatamt_arche(lua_State* l) {
     const luaL_Reg metatable[] = {
@@ -140,7 +152,7 @@ void initialize_udatamt_arche(lua_State* l) {
         // End of the list
         {nullptr, nullptr}
     };
-    initialize_any_udatamt(l, n_arche_metatable, metatable);
+    n_arche_metatable = initialize_any_udatamt(l, metatable);
 }
 void initialize_udatamt_genre(lua_State* l) {
     const luaL_Reg metatable[] = {
@@ -152,7 +164,7 @@ void initialize_udatamt_genre(lua_State* l) {
         // End of the list
         {nullptr, nullptr}
     };
-    initialize_any_udatamt(l, n_genre_metatable, metatable);
+    n_genre_metatable = initialize_any_udatamt(l, metatable);
 }
 void initialize_udatamt_entity(lua_State* l) {
     const luaL_Reg metatable[] = {
@@ -163,7 +175,7 @@ void initialize_udatamt_entity(lua_State* l) {
         // End of the list
         {nullptr, nullptr}
     };
-    initialize_any_udatamt(l, n_entity_metatable, metatable);
+    n_entity_metatable = initialize_any_udatamt(l, metatable);
 }
 void initialize_udatamt_cview(lua_State* l) {
     const luaL_Reg metatable[] = {
@@ -176,7 +188,7 @@ void initialize_udatamt_cview(lua_State* l) {
         // End of the list
         {nullptr, nullptr}
     };
-    initialize_any_udatamt(l, n_cview_metatable, metatable);
+    n_cview_metatable = initialize_any_udatamt(l, metatable);
 }
 void initialize_udatamt_genview(lua_State* l) {
     const luaL_Reg metatable[] = {
@@ -189,13 +201,14 @@ void initialize_udatamt_genview(lua_State* l) {
         // End of the list
         {nullptr, nullptr}
     };
-    initialize_any_udatamt(l, n_genview_metatable, metatable);
+    n_genview_metatable = initialize_any_udatamt(l, metatable);
 }
 
 void initialize_userdata_metatables(lua_State* l) {
     assert_balance(0);
     
-    /* add
+    /* All special metatable members, in alphabetical order:
+     * add
      * call
      * concat
      * div
@@ -224,12 +237,12 @@ void initialize_userdata_metatables(lua_State* l) {
 }
 
 void cleanup_userdata_metatables(lua_State* l) {
-    Script::drop_reference(n_comp_metatable);
-    Script::drop_reference(n_arche_metatable);
-    Script::drop_reference(n_genre_metatable);
-    Script::drop_reference(n_entity_metatable);
-    Script::drop_reference(n_cview_metatable);
-    Script::drop_reference(n_genview_metatable);
+    n_comp_metatable.reset();
+    n_arche_metatable.reset();
+    n_genre_metatable.reset();
+    n_entity_metatable.reset();
+    n_cview_metatable.reset();
+    n_genview_metatable.reset();
 }
 
 template <typename Pointer_T>
@@ -256,22 +269,22 @@ void push_any_value(lua_State* l, Value_T val, Script::Regref metatable) {
     *(new (lua_mem) Value_T) = val;
 }
 void push_comp_pointer(lua_State* l, Runtime::Comp* ptr) {
-    push_any_pointer<Runtime::Comp*>(l, ptr, n_comp_metatable);
+    push_any_pointer<Runtime::Comp*>(l, ptr, n_comp_metatable.get());
 }
 void push_arche_pointer(lua_State* l, Runtime::Arche* ptr) {
-    push_any_pointer<Runtime::Arche*>(l, ptr, n_arche_metatable);
+    push_any_pointer<Runtime::Arche*>(l, ptr, n_arche_metatable.get());
 }
 void push_genre_pointer(lua_State* l, Runtime::Genre* ptr) {
-    push_any_pointer<Runtime::Genre*>(l, ptr, n_genre_metatable);
+    push_any_pointer<Runtime::Genre*>(l, ptr, n_genre_metatable.get());
 }
 void push_entity_handle(lua_State* l, Runtime::Entity_Handle ent) {
-    push_any_value<Runtime::Entity_Handle>(l, ent, n_entity_metatable);
+    push_any_value<Runtime::Entity_Handle>(l, ent, n_entity_metatable.get());
 }
 void push_cview(lua_State* l, Cview cview) {
-    push_any_value<Cview>(l, cview, n_cview_metatable);
+    push_any_value<Cview>(l, cview, n_cview_metatable.get());
 }
 void push_genview(lua_State* l, Genview genview) {
-    push_any_value<Genview>(l, genview, n_genview_metatable);
+    push_any_value<Genview>(l, genview, n_genview_metatable.get());
 }
 
 Cview make_cview(Runtime::Comp* comp, Runtime::Entity* ent_unsafe) {

@@ -136,12 +136,30 @@ struct Genview {
     Runtime::Genre::Pattern* m_pattern;
 };
 
-Runtime::Comp** arg_require_comp(lua_State* l, int idx);
-Runtime::Arche** arg_require_arche(lua_State* l, int idx);
-Runtime::Entity_Handle* arg_require_entity(lua_State* l, int idx);
-Cview* arg_require_cview(lua_State* l, int idx);
-Genview* arg_require_genview(lua_State* l, int idx);
+/**
+ * @brief Checks that the argument at narg is a userdata with the provided
+ * metatable. Throws an argument type error with standard formatting if this
+ * is not possible.
+ * @param l The Lua state
+ * @param narg The argument (positive)
+ * @param metatable The metable the userdata ptr must have
+ * @param dbg_tname The name of the type to use in the error message
+ */
+void* arg_require_userdata(lua_State* l, int narg, Script::Regref metatable,
+            const char* dbg_tname);
 
+/* The arg_require_X functions check that the given Lua argument is the correct
+ * type, casting if it is or throwing a standard Lua arg type error otherwise.
+ */
+Runtime::Comp** arg_require_comp(lua_State* l, int narg);
+Runtime::Arche** arg_require_arche(lua_State* l, int narg);
+Runtime::Entity_Handle* arg_require_entity(lua_State* l, int narg);
+Cview* arg_require_cview(lua_State* l, int narg);
+Genview* arg_require_genview(lua_State* l, int narg);
+
+/* The push_X functions push a new userdata ptr for the provided raw ptr,
+ * applying all proper metatables.
+ */
 void push_comp_pointer(lua_State* l, Runtime::Comp* ptr);
 void push_arche_pointer(lua_State* l, Runtime::Arche* ptr);
 void push_genre_pointer(lua_State* l, Runtime::Genre* ptr);
@@ -149,6 +167,9 @@ void push_entity_handle(lua_State* l, Runtime::Entity_Handle ent);
 void push_cview(lua_State* l, Cview ent);
 void push_genview(lua_State* l, Genview ent);
 
+/* The to_string_X convert various objects into human-readable strings. Used
+ * mainly for tostring(...) in Lua
+ */
 std::string to_string_comp(Runtime::Comp* comp);
 std::string to_string_arche(Runtime::Arche* arche);
 std::string to_string_genre(Runtime::Genre* genre);
