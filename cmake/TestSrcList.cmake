@@ -43,6 +43,7 @@ foreach(fname
 "logger/Logger.cpp"
 "render/Shaders.cpp"
 "resource/Json_Util.cpp"
+"resource/Oid.cpp"
 "resource/Resources.cpp"
 "scheduler/Lua_Interf.cpp"
 "script/Lua_Interf_Util.cpp"
