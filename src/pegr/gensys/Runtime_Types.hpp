@@ -218,8 +218,8 @@ class Entity;
  * suddenly point to another Entity.
  * 
  * Note that since we will be passing these ids to Lua (and therefore be 
- * converting them into 64-bit floats), the bottom 52 bits must also guaranteed
- * be unique. (2^53 is the smallest positive value that, when stored in a 
+ * converting them into 64-bit floats), the bottom 52 bits are also guaranteed
+ * to be unique. (2^53 is the smallest positive value that, when stored in a 
  * 64-bit IEEE 754 double, cannot be incremented by one).
  */
 class Entity_Handle {
