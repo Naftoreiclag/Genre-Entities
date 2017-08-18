@@ -109,15 +109,15 @@ Runtime::Entity_Handle* arg_require_entity(lua_State* l, int narg) {
             n_entity_metatable.get(), "pegr.Entity");
     return static_cast<Runtime::Entity_Handle*>(lua_mem);
 }
-Cview* arg_require_cview(lua_State* l, int narg) {
+Runtime::Cview* arg_require_cview(lua_State* l, int narg) {
     void* lua_mem = arg_require_userdata(l, narg, 
             n_cview_metatable.get(), "pegr.Comp_View");
-    return static_cast<Cview*>(lua_mem);
+    return static_cast<Runtime::Cview*>(lua_mem);
 }
-Genview* arg_require_genview(lua_State* l, int narg) {
+Runtime::Genview* arg_require_genview(lua_State* l, int narg) {
     void* lua_mem = arg_require_userdata(l, narg, 
             n_genview_metatable.get(), "pegr.Genre_View");
-    return static_cast<Genview*>(lua_mem);
+    return static_cast<Runtime::Genview*>(lua_mem);
 }
 
 Script::Unique_Regref initialize_any_udatamt(lua_State* l, const luaL_Reg* mt) {
@@ -280,15 +280,15 @@ void push_genre_pointer(lua_State* l, Runtime::Genre* ptr) {
 void push_entity_handle(lua_State* l, Runtime::Entity_Handle ent) {
     push_any_value<Runtime::Entity_Handle>(l, ent, n_entity_metatable.get());
 }
-void push_cview(lua_State* l, Cview cview) {
-    push_any_value<Cview>(l, cview, n_cview_metatable.get());
+void push_cview(lua_State* l, Runtime::Cview cview) {
+    push_any_value<Runtime::Cview>(l, cview, n_cview_metatable.get());
 }
-void push_genview(lua_State* l, Genview genview) {
-    push_any_value<Genview>(l, genview, n_genview_metatable.get());
+void push_genview(lua_State* l, Runtime::Genview genview) {
+    push_any_value<Runtime::Genview>(l, genview, n_genview_metatable.get());
 }
 
-Cview make_cview(Runtime::Comp* comp, Runtime::Entity* ent_unsafe) {
-    Cview retval;
+Runtime::Cview make_cview(Runtime::Comp* comp, Runtime::Entity* ent_unsafe) {
+    Runtime::Cview retval;
     retval.m_comp = comp;
     retval.m_ent = ent_unsafe->get_handle();
     /* Get the component offset (where this component's data begins within the
@@ -341,7 +341,7 @@ void make_cache_push_cview(lua_State* l, Runtime::Entity* ent_unsafe,
         //Logger::log()->info("Creating a cview");
         
         // Make a new cview and push it
-        Cview cview;
+        Runtime::Cview cview;
         cview.m_comp = comp;
         cview.m_ent = ent_unsafe->get_handle();
         cview.m_cached_aggidx = aggidx;
@@ -460,7 +460,7 @@ std::string to_string_entity(Runtime::Entity_Handle ent) {
     sss << ">";
     return sss.str();
 }
-std::string to_string_cview(Cview cview) {
+std::string to_string_cview(Runtime::Cview cview) {
     std::stringstream sss;
     sss << "<Entity #"
         << bottom_52(cview.m_ent.get_id());
@@ -473,7 +473,7 @@ std::string to_string_cview(Cview cview) {
     sss << ">";
     return sss.str();
 }
-std::string to_string_genview(Genview genview) {
+std::string to_string_genview(Runtime::Genview genview) {
     std::stringstream sss;
     sss << "<Entity #"
         << bottom_52(genview.m_ent.get_id());
@@ -667,7 +667,8 @@ bool get_aggidx_and_prim_from_cview(lua_State* l,
         int cview_idx, int member_idx,
         Runtime::Arche::Aggindex& aggidx, Runtime::Prim& prim,
         Runtime::Entity*& ent_ptr) {
-    Cview& cview = *(static_cast<Cview*>(lua_touserdata(l, cview_idx)));
+    Runtime::Cview& cview = 
+            *(static_cast<Runtime::Cview*>(lua_touserdata(l, cview_idx)));
     
     ent_ptr = cview.m_ent.get_volatile_entity_ptr();
     if (!ent_ptr) {
@@ -699,7 +700,8 @@ bool get_aggidx_and_prim_from_genview(lua_State* l,
         Runtime::Arche::Aggindex& aggidx, Runtime::Prim& prim,
         Runtime::Entity*& ent_ptr) {
     // Genview, guaranteed
-    Genview& genview = *(static_cast<Genview*>(lua_touserdata(l, genview_idx)));
+    Runtime::Genview& genview = 
+            *(static_cast<Runtime::Genview*>(lua_touserdata(l, genview_idx)));
     
     // Get pointer to the entity
     ent_ptr = genview.m_ent.get_volatile_entity_ptr();
@@ -817,7 +819,7 @@ int li_genre_mt_call(lua_State* l) {
                 pattern.m_sorted_required_comps_specific, 
                 arche->m_sorted_component_array)) {
             // TODO: caching?
-            Genview genview;
+            Runtime::Genview genview;
             genview.m_ent = ent_h;
             genview.m_pattern = &pattern;
             
@@ -948,8 +950,10 @@ int li_cview_mt_eq(lua_State* l) {
     const int ARG_RHS = 2;
     
     // Both guaranteed: metatables are equal and both are userdata
-    Cview& lhs = *(static_cast<Cview*>(lua_touserdata(l, ARG_LHS)));
-    Cview& rhs = *(static_cast<Cview*>(lua_touserdata(l, ARG_RHS)));
+    Runtime::Cview& lhs = 
+            *(static_cast<Runtime::Cview*>(lua_touserdata(l, ARG_LHS)));
+    Runtime::Cview& rhs = 
+            *(static_cast<Runtime::Cview*>(lua_touserdata(l, ARG_RHS)));
     
     lua_pushboolean(l, 
             lhs.m_comp == rhs.m_comp && lhs.m_ent == rhs.m_ent);
@@ -957,8 +961,9 @@ int li_cview_mt_eq(lua_State* l) {
 }
 int li_cview_mt_gc(lua_State* l) {
     // The first argument is guaranteed to be the right type
-    Cview& cview = *(static_cast<Cview*>(lua_touserdata(l, 1)));
-    cview.Cview::~Cview();
+    Runtime::Cview& cview = 
+            *(static_cast<Runtime::Cview*>(lua_touserdata(l, 1)));
+    cview.Runtime::Cview::~Cview();
     return 0;
 }
 int li_cview_mt_index(lua_State* l) {
@@ -987,7 +992,8 @@ int li_cview_mt_newindex(lua_State* l) {
 }
 int li_cview_mt_tostring(lua_State* l) {
     // The first argument is guaranteed to be the right type
-    Cview& cview = *(static_cast<Cview*>(lua_touserdata(l, 1)));
+    Runtime::Cview& cview = 
+            *(static_cast<Runtime::Cview*>(lua_touserdata(l, 1)));
     lua_pushstring(l, to_string_cview(cview).c_str());
     return 1;
 }
@@ -997,8 +1003,10 @@ int li_genview_mt_eq(lua_State* l) {
     const int ARG_RHS = 2;
     
     // Both guaranteed: metatables are equal and both are userdata
-    Genview& lhs = *(static_cast<Genview*>(lua_touserdata(l, ARG_LHS)));
-    Genview& rhs = *(static_cast<Genview*>(lua_touserdata(l, ARG_RHS)));
+    Runtime::Genview& lhs = 
+            *(static_cast<Runtime::Genview*>(lua_touserdata(l, ARG_LHS)));
+    Runtime::Genview& rhs = 
+            *(static_cast<Runtime::Genview*>(lua_touserdata(l, ARG_RHS)));
     
     lua_pushboolean(l, 
             lhs.m_pattern == rhs.m_pattern && lhs.m_ent == rhs.m_ent);
@@ -1006,8 +1014,9 @@ int li_genview_mt_eq(lua_State* l) {
 }
 int li_genview_mt_gc(lua_State* l) {
     // The first argument is guaranteed to be the right type
-    Genview& genview = *(static_cast<Genview*>(lua_touserdata(l, 1)));
-    genview.Genview::~Genview();
+    Runtime::Genview& genview = 
+            *(static_cast<Runtime::Genview*>(lua_touserdata(l, 1)));
+    genview.Runtime::Genview::~Genview();
     return 0;
 }
 int li_genview_mt_index(lua_State* l) {
@@ -1036,7 +1045,8 @@ int li_genview_mt_newindex(lua_State* l) {
 }
 int li_genview_mt_tostring(lua_State* l) {
     // The first argument is guaranteed to be the right type
-    Genview& genview = *(static_cast<Genview*>(lua_touserdata(l, 1)));
+    Runtime::Genview& genview = 
+            *(static_cast<Runtime::Genview*>(lua_touserdata(l, 1)));
     lua_pushstring(l, to_string_genview(genview).c_str());
     return 1;
 }

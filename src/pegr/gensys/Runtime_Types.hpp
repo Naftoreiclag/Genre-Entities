@@ -538,6 +538,17 @@ private:
     
 };
 
+struct Cview {
+    Entity_Handle m_ent;
+    Arche::Aggindex m_cached_aggidx;
+    Comp* m_comp;
+};
+
+struct Genview {
+    Entity_Handle m_ent;
+    Genre::Pattern* m_pattern;
+};
+
 } // namespace Runtime
 } // namespace Gensys
 } // namespace pegr

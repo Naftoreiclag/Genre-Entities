@@ -125,17 +125,6 @@ int li_add_genre(lua_State* l);
 
 lua_Number entity_handle_to_lua_number(int64_t data);
 
-struct Cview {
-    Runtime::Entity_Handle m_ent;
-    Runtime::Arche::Aggindex m_cached_aggidx;
-    Runtime::Comp* m_comp;
-};
-
-struct Genview {
-    Runtime::Entity_Handle m_ent;
-    Runtime::Genre::Pattern* m_pattern;
-};
-
 /**
  * @brief Checks that the argument at narg is a userdata with the provided
  * metatable. Throws an argument type error with standard formatting if this
@@ -154,8 +143,8 @@ void* arg_require_userdata(lua_State* l, int narg, Script::Regref metatable,
 Runtime::Comp** arg_require_comp(lua_State* l, int narg);
 Runtime::Arche** arg_require_arche(lua_State* l, int narg);
 Runtime::Entity_Handle* arg_require_entity(lua_State* l, int narg);
-Cview* arg_require_cview(lua_State* l, int narg);
-Genview* arg_require_genview(lua_State* l, int narg);
+Runtime::Cview* arg_require_cview(lua_State* l, int narg);
+Runtime::Genview* arg_require_genview(lua_State* l, int narg);
 
 /* The push_X functions push a new userdata ptr for the provided raw ptr,
  * applying all proper metatables.
@@ -164,8 +153,8 @@ void push_comp_pointer(lua_State* l, Runtime::Comp* ptr);
 void push_arche_pointer(lua_State* l, Runtime::Arche* ptr);
 void push_genre_pointer(lua_State* l, Runtime::Genre* ptr);
 void push_entity_handle(lua_State* l, Runtime::Entity_Handle ent);
-void push_cview(lua_State* l, Cview ent);
-void push_genview(lua_State* l, Genview ent);
+void push_cview(lua_State* l, Runtime::Cview ent);
+void push_genview(lua_State* l, Runtime::Genview ent);
 
 /* The to_string_X convert various objects into human-readable strings. Used
  * mainly for tostring(...) in Lua
@@ -174,8 +163,8 @@ std::string to_string_comp(Runtime::Comp* comp);
 std::string to_string_arche(Runtime::Arche* arche);
 std::string to_string_genre(Runtime::Genre* genre);
 std::string to_string_entity(Runtime::Entity_Handle ent);
-std::string to_string_cview(Cview cview);
-std::string to_string_genview(Genview genview);
+std::string to_string_cview(Runtime::Cview cview);
+std::string to_string_genview(Runtime::Genview genview);
 
 /**
  * @brief Attempts to get a component view for the provided entity. If this is
