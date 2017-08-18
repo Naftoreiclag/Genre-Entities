@@ -116,6 +116,7 @@ void initialize(uint16_t flags) {
     
     if (schedu_used()) {
         try {
+            Schedu::initialize();
             Schedu::LI::initialize();
         } catch (Except::Runtime& e) {
             std::stringstream sss;
