@@ -27,11 +27,11 @@ assert(not ent.__killed, 'Entity already killed')
 assert(not ent.__alive, 'Entity already alive')
 assert(not ent.__spawned, 'Entity already spawned')
 
-assert(ent.position.x == 315, 'Expected 315')
+assert(ent.position.x == 315, 'Expected 315, got ' .. tostring(ent.position.x))
 
 ent.position.x = 500
 
-assert(ent.position.x == 500, 'Expected 500')
+assert(ent.position.x == 500, 'Expected 500, got ' .. tostring(ent.position.x))
 
 ent.position.x = 0
 for i = 1,100 do
