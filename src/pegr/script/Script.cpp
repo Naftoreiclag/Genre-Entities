@@ -82,6 +82,10 @@ Shared_Regref make_shared(Regref ref) {
     return std::make_shared<Unique_Regref>(ref);
 }
 
+Shared_Regref make_shared(Unique_Regref&& ref) {
+    return std::make_shared<Unique_Regref>(std::move(ref));
+}
+
 const char* PEGR_MODULE_NAME = "pegr";
 
 bool m_torndown = false;
