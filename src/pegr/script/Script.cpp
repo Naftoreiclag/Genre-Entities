@@ -472,7 +472,7 @@ void drop_reference(Regref ref) {
     // Check before the assertion, since we may drop nils after the Lua state
     // is cleaned, due to Unique_Regref deconstructors.
     if (ref == LUA_REFNIL) return;
-    assert(is_initialized());
+    assert(is_initialized() && "Maybe you forgot some Unique_Regref's?");
     --n_total_grab_delta;
     luaL_unref(m_l, LUA_REGISTRYINDEX, ref);
 }
