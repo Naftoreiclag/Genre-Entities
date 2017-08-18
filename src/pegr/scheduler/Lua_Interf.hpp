@@ -18,19 +18,20 @@
 #define PEGR_SCHEDULER_LUAINTERF_HPP
 
 #include "pegr/script/Script.hpp"
+#include "pegr/scheduler/Sched.hpp"
 
 namespace pegr {
 namespace Schedu {
 namespace LI {
     
-class Scripted_Event : public Event {
+class Scripted_Event : public Schedu::Event {
 public:
     Scripted_Event();
     virtual ~Scripted_Event();
     
     // TODO
 
-    virtual Type get_type() const override;
+    virtual Schedu::Event::Type get_type() const override;
     virtual void trigger() override;
 };
 

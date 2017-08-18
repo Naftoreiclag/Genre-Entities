@@ -31,7 +31,7 @@ namespace LI {
 Scripted_Event::Scripted_Event() {}
 Scripted_Event::~Scripted_Event() {}
 
-Event::Type Scripted_Event::get_type() const {
+Schedu::Event::Type Scripted_Event::get_type() const {
     return Event::Type::SCRIPTED;
 }
 
@@ -92,7 +92,7 @@ int li_add_event(lua_State* l) {
     if (Schedu::get_global_state() != GlobalState::MUTABLE) {
         luaL_error(l, "add_event is only available during setup");
     }
-    Script::Util::generic_li_add_to_res_table(l, n_staged_events);
+    Script::Util::generic_li_add_to_res_table(l, n_staged_events.get());
     return 0;
 }
 
@@ -100,7 +100,7 @@ int li_edit_event(lua_State* l) {
     if (Schedu::get_global_state() != GlobalState::MUTABLE) {
         luaL_error(l, "edit_event is only available during setup");
     }
-    Script::Util::generic_li_edit_from_res_table(l, n_staged_events);
+    Script::Util::generic_li_edit_from_res_table(l, n_staged_events.get());
     return 1;
 }
     
