@@ -24,14 +24,14 @@ namespace pegr {
 namespace Schedu {
 namespace LI {
     
-class Scripted_Event : public Schedu::Event {
+class Scripted_Event : public Event {
 public:
     Scripted_Event();
     virtual ~Scripted_Event();
     
     // TODO
 
-    virtual Schedu::Event::Type get_type() const override;
+    virtual Event::Type get_type() const override;
     virtual void trigger() override;
 };
 

@@ -28,10 +28,11 @@ namespace pegr {
 namespace Schedu {
 namespace LI {
 
-Scripted_Event::Scripted_Event() {}
+Scripted_Event::Scripted_Event()
+: Event() {}
 Scripted_Event::~Scripted_Event() {}
 
-Schedu::Event::Type Scripted_Event::get_type() const {
+Event::Type Scripted_Event::get_type() const {
     return Event::Type::SCRIPTED;
 }
 
