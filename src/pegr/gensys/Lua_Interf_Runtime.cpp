@@ -949,8 +949,7 @@ int li_cview_mt_eq(lua_State* l) {
     Runtime::Cview& rhs = 
             *(static_cast<Runtime::Cview*>(lua_touserdata(l, ARG_RHS)));
     
-    lua_pushboolean(l, 
-            lhs.m_comp == rhs.m_comp && lhs.m_ent == rhs.m_ent);
+    lua_pushboolean(l, lhs == rhs);
     return 1;
 }
 int li_cview_mt_gc(lua_State* l) {
@@ -1002,8 +1001,7 @@ int li_genview_mt_eq(lua_State* l) {
     Runtime::Genview& rhs = 
             *(static_cast<Runtime::Genview*>(lua_touserdata(l, ARG_RHS)));
     
-    lua_pushboolean(l, 
-            lhs.m_pattern == rhs.m_pattern && lhs.m_ent == rhs.m_ent);
+    lua_pushboolean(l, lhs == rhs);
     return 1;
 }
 int li_genview_mt_gc(lua_State* l) {
