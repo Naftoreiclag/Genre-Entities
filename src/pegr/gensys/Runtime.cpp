@@ -345,7 +345,7 @@ void* Cview::get_member_ptr(Symbol member_symb) const {
     return ent_ptr->get_member(member_key);
 }
 
-bool Cview::operator =(const Cview& rhs) const {
+bool Cview::operator ==(const Cview& rhs) const {
     return m_comp == rhs.m_comp && m_ent == rhs.m_ent;
 }
 
@@ -369,7 +369,7 @@ void* Genview::get_member_ptr(Symbol member_symb) const {
     return ent_ptr->get_member(member_key);
 }
 
-bool Genview::operator =(const Genview& rhs) const {
+bool Genview::operator ==(const Genview& rhs) const {
     return m_pattern == rhs.m_pattern && m_ent == rhs.m_ent;
 }
 

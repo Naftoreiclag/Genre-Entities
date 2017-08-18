@@ -575,7 +575,7 @@ public:
     
     void* get_member_ptr(Symbol member_symb) const;
     
-    bool operator =(const Cview& rhs) const;
+    bool operator ==(const Cview& rhs) const;
 };
 
 /**
@@ -590,7 +590,7 @@ public:
 
     void* get_member_ptr(Symbol member_symb) const;
 
-    bool operator =(const Genview& rhs) const;
+    bool operator ==(const Genview& rhs) const;
 };
 
 } // namespace Runtime
