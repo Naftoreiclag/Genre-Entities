@@ -49,6 +49,10 @@ uint64_t n_next_handle = 0;
 std::vector<Entity> n_entities;
 std::unordered_map<uint64_t, std::size_t> n_handle_to_index;
 
+Member_Key::Member_Key(Arche::Aggindex aggidx, Prim prim)
+: m_aggidx(aggidx)
+, m_prim(prim) {}
+
 Entity_Handle::Entity_Handle(uint64_t id)
 : m_entity_id(id) {}
 
@@ -276,6 +280,99 @@ void Entity::set_string(std::size_t idx, std::string str) {
     assert(idx >= 0 && idx < m_strings.size());
     m_strings[idx] = str;
 }
+void* Entity::get_member(const Member_Key& member_key) {
+    /* Depending on the member's type, where we read the data and how we
+     * intepret it changes. For POD types, the data comes from the chunk. Other
+     * types are stored in other arrays. Note that the member signature uses
+     * a union to store the different offsets, and so there is only one defined
+     * way to read the data.
+     */
+    const Prim& prim = member_key.m_prim;
+    const Arche::Aggindex& aggidx = member_key.m_aggidx;
+    switch(prim.m_type) {
+        case Runtime::Prim::Type::I32:
+        case Runtime::Prim::Type::I64:
+        case Runtime::Prim::Type::F32:
+        case Runtime::Prim::Type::F64: {
+            std::size_t pod_offset = Runtime::ENT_HEADER_SIZE
+                                    + aggidx.m_pod_idx 
+                                    + prim.m_refer.m_byte_offset;
+            switch(prim.m_type) {
+                case Runtime::Prim::Type::I32: {
+                    return m_chunk.get().get_aligned<int32_t>(pod_offset);
+                }
+                case Runtime::Prim::Type::I64: {
+                    return m_chunk.get().get_aligned<int64_t>(pod_offset);
+                }
+                case Runtime::Prim::Type::F32: {
+                    return m_chunk.get().get_aligned<float>(pod_offset);
+                }
+                case Runtime::Prim::Type::F64: {
+                    return m_chunk.get().get_aligned<double>(pod_offset);
+                }
+                default: {
+                    assert(false && "Unhandled pod prim type!");
+                }
+            }
+        }
+        case Runtime::Prim::Type::STR: {
+            std::size_t string_idx = aggidx.m_string_idx
+                                    + prim.m_refer.m_index;
+            return &(m_strings[string_idx]);
+        }
+        case Runtime::Prim::Type::FUNC: {
+            std::size_t func_idx = aggidx.m_func_idx
+                                    + prim.m_refer.m_index;
+            return &(m_arche->m_static_funcs[func_idx]);
+        }
+        default: {
+            assert(false && "Unhandled prim type!");
+        }
+    }
+}
+
+void* Cview::get_member_ptr(Symbol member_symb) const {
+    Entity* ent_ptr = m_ent.get_volatile_entity_ptr();
+    if (!ent_ptr) {
+        return nullptr;
+    }
+    // Find where the member is stored within the component
+    auto prim_entry = m_comp->m_member_offsets.find(member_symb);
+    if (prim_entry == m_comp->m_member_offsets.end()) {
+        return nullptr;
+    }
+    Member_Key member_key(m_cached_aggidx, prim_entry->second);
+    return ent_ptr->get_member(member_key);
+}
+
+bool Cview::operator =(const Cview& rhs) const {
+    return m_comp == rhs.m_comp && m_ent == rhs.m_ent;
+}
+
+void* Genview::get_member_ptr(Symbol member_symb) const {
+    Entity* ent_ptr = m_ent.get_volatile_entity_ptr();
+    if (!ent_ptr) {
+        return nullptr;
+    }
+    // Extract the aggidx and primitive
+    auto alias_entry = m_pattern->m_aliases.find(member_symb);
+    if (alias_entry == m_pattern->m_aliases.end()) {
+        return nullptr;
+    }
+    const Runtime::Genre::Pattern::Alias& member_alias = alias_entry->second;
+    Runtime::Arche* arche = ent_ptr->get_arche();
+    assert(arche->m_comp_offsets.find(member_alias.m_comp) !=
+            arche->m_comp_offsets.end());
+    Member_Key member_key(
+            arche->m_comp_offsets.at(member_alias.m_comp),
+            member_alias.m_prim_copy);
+    return ent_ptr->get_member(member_key);
+}
+
+bool Genview::operator =(const Genview& rhs) const {
+    return m_pattern == rhs.m_pattern && m_ent == rhs.m_ent;
+}
+
 void initialize() {
 }
 void cleanup() {

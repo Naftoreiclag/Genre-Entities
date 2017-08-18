@@ -167,6 +167,18 @@ struct Arche {
 };
 
 /**
+ * @class Member_Key
+ * @brief The penultimate step to "unlock" the void pointer for the data
+ * representing an entity's member. See Entity::get_member()
+ */
+struct Member_Key {
+    Member_Key(Arche::Aggindex aggidx, Prim prim);
+    
+    Arche::Aggindex m_aggidx;
+    Prim m_prim;
+};
+
+/**
  * @class Genre
  */
 struct Genre {
@@ -480,12 +492,22 @@ public:
     void set_flag_killed(bool flag);
     
     void set_string(std::size_t idx, std::string str);
+    
+    /**
+     * @brief Get a void pointer referenced by this data. Note that this does
+     * NO SANITY CHECKING WHATSOEVER. This method assumes that you have already
+     * checked that the key is appropriate for this entity.
+     * @param aggidx
+     * @param prim
+     */
+    void* get_member(const Member_Key& key);
 
     /**
      * @brief Constructor. You likely do not want to use this. Use the static
      * factory methods instead.
      */ 
     explicit Entity(Arche* arche);
+    
     
     /**
      * @brief Default constructor for moving to. Use the static factory methods
@@ -548,6 +570,12 @@ struct Cview {
     Entity_Handle m_ent;
     Arche::Aggindex m_cached_aggidx;
     Comp* m_comp;
+
+public:
+    
+    void* get_member_ptr(Symbol member_symb) const;
+    
+    bool operator =(const Cview& rhs) const;
 };
 
 /**
@@ -557,6 +585,12 @@ struct Cview {
 struct Genview {
     Entity_Handle m_ent;
     Genre::Pattern* m_pattern;
+    
+public:
+
+    void* get_member_ptr(Symbol member_symb) const;
+
+    bool operator =(const Genview& rhs) const;
 };
 
 } // namespace Runtime
