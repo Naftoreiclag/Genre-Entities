@@ -121,8 +121,7 @@ void test_0002_app_state_machine_test() {
     std::vector<std::string> msgs;
     
     Engine::App_State_Machine app_sm;
-    Engine::App_State* none = nullptr;
-    verify_equals(none, app_sm.get_active(), "Nothing should be active");
+    verify_equals(0, app_sm.count(), "Nothing should be active");
     
     app_sm.push_state(std::make_unique<ASMT::Weird_State>(msgs));
     app_sm.push_state(std::make_unique<ASMT::Macbeth_State>(msgs));
