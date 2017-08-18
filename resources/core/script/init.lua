@@ -241,15 +241,37 @@ print('added food.g')
 
 -------------------------------------------------------------------------------
 
-pegr.schedule_task('fizz.t', {
+pegr.add_event('custom_event.ev', {
+  action = function(listeners)
+    print('Custom event triggered!')
+  end
+})
+
+local wi_listener = pegr.hook_listener({
+  on = 'world_init.ev',
+  func = function(world) 
+    print('world_init')
+    pegr.call_event('custom_event.ev')
+  end,
+})
+
+local et_listener = pegr.hook_listener({
   
-  -- Describes when this function should be called
-  when = 'world tick',
+  -- On entity ticks
+  on = 'entity_tick.ev',
   
-  -- List of the function's arguments
-  args = {
-    entity = {'ent_view', 'food.g'}
-  },
+  -- Start immediately
+  delay = 0,
+  
+  -- Every time
+  every = 1,
+  
+  --[[ (Everything other than 'on', 'func', and 'every' are extra 
+  arguments, the meaning of which is determined by the choice of 'on')
+  ]]
+  
+  -- Such as this one, which modifies which entities are selected:
+  selector = 'food.g',
   
   -- The actual function to be called
   func = function(entity)
@@ -257,7 +279,6 @@ pegr.schedule_task('fizz.t', {
     -- Update position based on velocity
     entity.pos_x = entity.pos_x + entity.vel_x
     entity.pos_y = entity.pos_y + entity.vel_y
-    
     
   end,
 })
