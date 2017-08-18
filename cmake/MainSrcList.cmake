@@ -33,6 +33,7 @@ foreach(fname
 "engine/Engine.cpp"
 "except/Except.cpp"
 "gensys/Compiler.cpp"
+"gensys/Entity_Tick_Event.cpp"
 "gensys/Gensys.cpp"
 "gensys/Interm_Types.cpp"
 "gensys/Lua_Interf_Runtime.cpp"
