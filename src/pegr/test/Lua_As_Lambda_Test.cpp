@@ -19,6 +19,7 @@
 #include "pegr/except/Except.hpp"
 #include "pegr/script/Script.hpp"
 #include "pegr/test/Test_Util.hpp"
+#include "pegr/debug/Debug_Macros.hpp"
 
 namespace pegr {
 namespace Test {
@@ -30,18 +31,58 @@ std::function<int()> make_counter() {
     };
 }
 
-//@Test Lambda closure
-void test_0003_lambda_closure() {
-    std::function<int()> f = make_counter();
-    
+std::function<int()> make_lua_counter() {
+    assert_balance(0);
+    lua_State* l = Script::get_lua_state();
+    lua_newtable(l);
+    lua_pushinteger(l, 0);
+    lua_setfield(l, -2, "x");
+    Script::Shared_Regref regref = Script::make_shared(
+            Script::grab_unique_reference().release());
+    return [=]() {
+        Script::push_reference(regref->get());
+        lua_getfield(l, -1, "x");
+        int val = lua_tonumber(l, -1);
+        lua_pop(l, 1);
+        ++val;
+        lua_pushinteger(l, val);
+        lua_setfield(l, -2, "x");
+        lua_pop(l, 1);
+        return val;
+    };
+}
+
+void check_counters(std::function<int()> f, std::function<int()> f2) {
     verify_equals(1, f());
     verify_equals(2, f());
     verify_equals(3, f());
     verify_equals(4, f());
+    
+    verify_equals(1, f2());
+    verify_equals(5, f());
+    
+    verify_equals(2, f2());
+    verify_equals(6, f());
+    
+    verify_equals(3, f2());
+    verify_equals(7, f());
+    
+    verify_equals(4, f2());
+    verify_equals(8, f());
 }
 
-// Lua as Lambda Test?
+//@Test Lambda closure
+void test_0003_lambda_closure() {
+    std::function<int()> f = make_counter();
+    std::function<int()> f2 = make_counter();
+    check_counters(f, f2);
+}
+
+//@Test Lua as Lambda Test
 void test_0029_lua_as_lambda() {
+    std::function<int()> f = make_lua_counter();
+    std::function<int()> f2 = make_lua_counter();
+    check_counters(f, f2);
 }
 
 } // namespace Test
