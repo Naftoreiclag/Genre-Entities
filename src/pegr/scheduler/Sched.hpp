@@ -18,6 +18,7 @@
 #define PEGR_SCHEDULER_SCHED_HPP
 
 #include <string>
+#include <cstdint>
 
 #include "pegr/resource/Oid.hpp"
 #include "pegr/script/Script.hpp"
@@ -40,6 +41,23 @@ enum struct GlobalState {
 
 GlobalState get_global_state();
 
+/**
+ * @class Listener_Common
+ * @brief Standard collection of 
+ */
+struct Listener_Common {
+    int32_t m_delay;
+    int32_t m_period;
+    
+    
+    Script::Unique_Regref m_script_func;
+};
+
+/**
+ * @class Event
+ * @brief Superclass for all events. Subclasses of Event define their own
+ * trigger logic and Listener type.
+ */
 class Event {
 public:
     enum Type {
