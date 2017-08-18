@@ -538,12 +538,22 @@ private:
     
 };
 
+/**
+ * @class Cview
+ * @brief Component-based view on an entity. Essentially a cached aggregate
+ * index on an entity. (No need to repeatedly lookup in the Arche's aggidx
+ * table)
+ */
 struct Cview {
     Entity_Handle m_ent;
     Arche::Aggindex m_cached_aggidx;
     Comp* m_comp;
 };
 
+/**
+ * @class Genview
+ * @brief Genre-based view on an entity.
+ */
 struct Genview {
     Entity_Handle m_ent;
     Genre::Pattern* m_pattern;

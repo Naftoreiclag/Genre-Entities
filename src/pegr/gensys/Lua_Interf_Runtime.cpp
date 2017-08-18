@@ -879,7 +879,6 @@ int li_entity_mt_index(lua_State* l) {
     // The first argument is guaranteed to be the right type
     Runtime::Entity_Handle ent = 
             *(static_cast<Runtime::Entity_Handle*>(lua_touserdata(l, ARG_ENT)));
-    Runtime::Entity* ent_unsafe = ent.get_volatile_entity_ptr();
     
     std::size_t keystrlen;
     const char* keystr = luaL_checklstring(l, ARG_MEMBER, &keystrlen);
@@ -889,6 +888,7 @@ int li_entity_mt_index(lua_State* l) {
             lua_pushnumber(l, entity_handle_to_lua_number(ent.get_id()));
             return 1;
         }
+        Runtime::Entity* ent_unsafe = ent.get_volatile_entity_ptr();
         if (std::strcmp(special_key, "exists") == 0) {
             lua_pushboolean(l, ent_unsafe != nullptr);
             return 1;
@@ -913,26 +913,20 @@ int li_entity_mt_index(lua_State* l) {
             return 0;
         }
     } else {
+        Runtime::Entity* ent_unsafe = ent.get_volatile_entity_ptr();
         if (ent_unsafe == nullptr) {
             return 0;
         }
         
         const Runtime::Arche* arche = ent_unsafe->get_arche();
         Runtime::Symbol member_str(keystr, keystrlen);
-        //Logger::log()->info(member_str);
         auto comp_iter = arche->m_components.find(member_str);
-        
-        /*for (auto entry : arche->m_components) {
-            Logger::log()->info("k: %v, v: %v", entry.first, entry.second);
-        }*/
-        
         if (comp_iter == arche->m_components.end()) {
             return 0;
         }
         
         make_cache_push_cview(l, ent_unsafe, ARG_MEMBER, comp_iter->second);
         
-        // Return the cview
         return 1;
     }
     return 0;
