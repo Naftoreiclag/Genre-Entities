@@ -60,6 +60,7 @@ foreach(fname
 "test/Gensys_LI_Test.cpp"
 "test/Gensys_Runtime_Test.cpp"
 "test/Initialization_Sanity_Test.cpp"
+"test/Lua_As_Lambda_Test.cpp"
 "test/Memory_Test.cpp"
 "test/Pod_Chunk_Test.cpp"
 "test/Resources_Test.cpp"
