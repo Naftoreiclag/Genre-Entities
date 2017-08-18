@@ -38,6 +38,9 @@ for headerFname in headerFnames:
         sort_queue = []
         
         def flush_sort_queue():
+            global new_contents
+            global contents_changed
+            global sort_queue
             if len(sort_queue) > 0:
                 sort_queue.sort()
                 new_contents += sort_queue
