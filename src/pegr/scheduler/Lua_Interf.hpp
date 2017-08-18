@@ -22,13 +22,28 @@
 namespace pegr {
 namespace Schedu {
 namespace LI {
+    
+class Scripted_Event : public Event {
+public:
+    Scripted_Event();
+    virtual ~Scripted_Event();
+    
+    // TODO
+
+    virtual Type get_type() const override;
+    virtual void trigger() override;
+};
 
 void initialize();
 void clear();
 void cleanup();
+
+int li_add_event(lua_State* l);
+int li_edit_event(lua_State* l);
     
-int li_schedule_task(lua_State* l);
-    
+int li_call_event(lua_State* l);
+int li_hook_listener(lua_State* l);
+
 } // namspace LI
 } // namespace Schedu
 } // namespace pegr

@@ -46,6 +46,7 @@ foreach(fname
 "resource/Oid.cpp"
 "resource/Resources.cpp"
 "scheduler/Lua_Interf.cpp"
+"scheduler/Sched.cpp"
 "script/Lua_Interf_Util.cpp"
 "script/Script.cpp"
 "script/Script_Resource.cpp"
