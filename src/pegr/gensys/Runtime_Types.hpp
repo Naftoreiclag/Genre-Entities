@@ -345,7 +345,7 @@ extern const uint64_t ENT_FLAGS_DEFAULT;
  * E. Entity despawned, entity has been spawned and is dead, still unspawnable.
  *    Entity is ready to be deleted (go to E).
  * F. Call to delete_entity, entity does not exist anymore. (In some sense, the
- *    entity itself is indestinguishable from state A, but somewhere out there 
+ *    entity itself is indistinguishable from state A, but somewhere out there 
  *    could still be handles with that entity's ID, and all of those handles
  *    must report that the entity is non-existent.)
  * 
@@ -365,6 +365,8 @@ public:
     static Entity_Handle new_entity(Arche* arche);
     static void delete_entity(Entity_Handle handle);
     
+    /* Entities can be moved (within the vector), but not copied.
+     */
     Entity(const Entity& rhs) = delete;
     Entity(Entity&& rhs) = default;
     Entity& operator =(const Entity& rhs) = delete;
@@ -452,9 +454,29 @@ public:
      */
     bool is_lua_owned() const;
     
+    /**
+     * @brief Changes the state of multiple flags at once. Sets all of the flags
+     * specified in "flags" to the state specified in "set". Note that this does
+     * not just simply set the flags to "flags". Instead, only those flags
+     * bitmasked by "flags" are set to the state "set".
+     * @param flags
+     * @param set
+     */
     void set_flags(uint64_t flags, bool set);
+    
+    /**
+     * @brief Flags this entity as having been spawned or not
+     */
     void set_flag_spawned(bool flag);
+    
+    /**
+     * @brief Flags this entity as being lua-owned or not
+     */
     void set_flag_lua_owned(bool flag);
+    
+    /**
+     * @brief Flags this entity as having been killed or not
+     */
     void set_flag_killed(bool flag);
     
     void set_string(std::size_t idx, std::string str);
@@ -475,18 +497,20 @@ private:
     // The archetype used by the entity (maybe add to the chunk?)
     Arche* m_arche;
 
-    /* The POD chunk containing flags, lua reference counts, and instance data
+    /* The POD chunk containing flags, Lua reference counts, and instance data
      * This chunk is aligned for 64-bit values. This guarantees that it is also
      * aligned for 32-bit values. This array is used to store values of small
      * fixed-sized types (float, int, vec3, etc...)
      *
      * The first 64 bit integer (0) stores flags. All of these flags are
      * initially set to zero (unset):
-     * 00   Set if this has ever been spawned.
-     * 01   Set if this entity has been despawned ("dead").
+     * SPAWNED set if this has ever been spawned.
+     * KILLED set if this entity has been despawned ("dead").
      *      If this is set, then this also means that the instance data part of
      *      the chunk is no longer accessible, possibly because it has been
      *      freed.)
+     * LUA_OWNED set if this entity should be deleted when its handle is gc'd
+     *      by Lua
      *
      * The instance data comprises the remainder of the memory block. Only
      * constant-size data is stored here.
