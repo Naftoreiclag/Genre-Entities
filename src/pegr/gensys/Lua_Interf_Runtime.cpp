@@ -487,250 +487,75 @@ std::string to_string_genview(Runtime::Genview genview) {
     return sss.str();
 }
 
-void arg_require_write_compatible_prim_type(lua_State* l, 
-        Runtime::Prim::Type t, int idx) {
-    assert(idx > 0);
-    // Check that the correct type was given
-    bool correct = false;
-    switch (t) {
+int push_member_of_entity(lua_State* l, const Runtime::Member_Ptr& mem_ptr) {
+    switch(mem_ptr.get_type()) {
         case Runtime::Prim::Type::I32:
         case Runtime::Prim::Type::I64:
         case Runtime::Prim::Type::F32:
         case Runtime::Prim::Type::F64: {
-            // (Can't cache the lua type, as this function also conditionally
-            // accepts strings as numbers)
-            if (lua_isnumber(l, idx)) correct = true;
-            break;
+            lua_pushnumber(l, mem_ptr.get_value_any_number());
+            return 1;
         }
         case Runtime::Prim::Type::STR: {
-            if (lua_isstring(l, idx)) correct = true;
-            break;
+            lua_pushstring(l, mem_ptr.get_value_str().c_str());
+            return 1;
         }
         case Runtime::Prim::Type::FUNC: {
-            if (lua_isfunction(l, idx)) correct = true;
-            break;
+            Script::push_reference(mem_ptr.get_value_func());
+            return 1;
+        }
+        case Runtime::Prim::Type::NULLPTR: {
+            return 0;
+        }
+        default: {
+            assert(false && "TODO");
         }
     }
-    if (!correct) {
+}
+
+inline void arg_require_write_compat(lua_State* l, bool compat,
+        int value_idx, Runtime::Prim::Type ty) {
+    if (!compat) {
         std::stringstream sss;
-        sss << lua_typename(l, idx)
+        sss << lua_typename(l, value_idx)
             << " cannot be assigned to "
-            << Runtime::prim_to_dbg_string(t);
-        luaL_argerror(l, idx, sss.str().c_str());
+            << Runtime::prim_to_dbg_string(ty);
+        luaL_argerror(l, value_idx, sss.str().c_str());
     }
 }
 
-int push_member_of_entity(lua_State* l, 
-        Runtime::Entity* ent_ptr, 
-        Runtime::Arche::Aggindex aggidx, 
-        Runtime::Prim prim) {
-    /* Depending on the member's type, where we read the data and how we
-     * intepret it changes. For POD types, the data comes from the chunk. Other
-     * types are stored in other arrays. Note that the member signature uses
-     * a union to store the different offsets, and so there is only one defined
-     * way to read the data.
-     */
-    switch(prim.m_type) {
+int write_to_member_of_entity(lua_State* l, const Runtime::Member_Ptr& mem_ptr,
+        int idx) {
+    Runtime::Prim::Type ty = mem_ptr.get_type();
+    switch(ty) {
         case Runtime::Prim::Type::I32:
         case Runtime::Prim::Type::I64:
         case Runtime::Prim::Type::F32:
         case Runtime::Prim::Type::F64: {
-            std::size_t pod_offset = Runtime::ENT_HEADER_SIZE
-                                    + aggidx.m_pod_idx 
-                                    + prim.m_refer.m_byte_offset;
-            switch(prim.m_type) {
-                case Runtime::Prim::Type::I32: {
-                    int32_t val = ent_ptr->get_chunk()
-                            .get_value<int32_t>(pod_offset);
-                    lua_pushnumber(l, val);
-                    return 1;
-                }
-                case Runtime::Prim::Type::I64: {
-                    int64_t val = ent_ptr->get_chunk()
-                            .get_value<int64_t>(pod_offset);
-                    lua_pushnumber(l, val);
-                    return 1;
-                }
-                case Runtime::Prim::Type::F32: {
-                    float val = ent_ptr->get_chunk()
-                            .get_value<float>(pod_offset);
-                    lua_pushnumber(l, val);
-                    return 1;
-                }
-                case Runtime::Prim::Type::F64: {
-                    double val = ent_ptr->get_chunk()
-                            .get_value<double>(pod_offset);
-                    lua_pushnumber(l, val);
-                    return 1;
-                }
-                default: {
-                    assert(0);
-                }
-            }
-        }
-        case Runtime::Prim::Type::STR: {
-            std::size_t string_idx = aggidx.m_string_idx
-                                    + prim.m_refer.m_index;
-            lua_pushstring(l, ent_ptr->get_string(string_idx).c_str());
-            return 1;
-        }
-        case Runtime::Prim::Type::FUNC: {
-            std::size_t func_idx = aggidx.m_func_idx
-                                    + prim.m_refer.m_index;
-            Script::push_reference(ent_ptr->get_func(func_idx));
-            return 1;
-        }
-        default: {
-            assert(false && "TODO");
-        }
-    }
-}
-
-int write_to_member_of_enttiy(lua_State* l, 
-        Runtime::Entity* ent_ptr, 
-        Runtime::Arche::Aggindex aggidx, 
-        Runtime::Prim prim,
-        int value_idx) {
-    value_idx = Script::absolute_idx(value_idx);
-    /* Depending on the member's type, where we write the data and how we
-     * intepret it changes. For POD types, the data comes from the chunk. Other
-     * types are stored in other arrays. Note that the member signature uses
-     * a union to store the different offsets, and so there is only one defined
-     * way to read the data.
-     */
-    switch(prim.m_type) {
-        case Runtime::Prim::Type::I32:
-        case Runtime::Prim::Type::I64:
-        case Runtime::Prim::Type::F32:
-        case Runtime::Prim::Type::F64: {
-            
-            std::size_t pod_offset = Runtime::ENT_HEADER_SIZE
-                                    + aggidx.m_pod_idx 
-                                    + prim.m_refer.m_byte_offset;
-            switch(prim.m_type) {
-                case Runtime::Prim::Type::I32: {
-                    assert(lua_isnumber(l, value_idx));
-                    int32_t val = lua_tonumber(l, value_idx);
-                    ent_ptr->get_chunk()
-                            .set_value<int32_t>(pod_offset, val);
-                    return 1;
-                }
-                case Runtime::Prim::Type::I64: {
-                    assert(lua_isnumber(l, value_idx));
-                    int64_t val = lua_tonumber(l, value_idx);
-                    ent_ptr->get_chunk()
-                            .set_value<int64_t>(pod_offset, val);
-                    return 1;
-                }
-                case Runtime::Prim::Type::F32: {
-                    assert(lua_isnumber(l, value_idx));
-                    float val = lua_tonumber(l, value_idx);
-                    ent_ptr->get_chunk()
-                            .set_value<float>(pod_offset, val);
-                    return 1;
-                }
-                case Runtime::Prim::Type::F64: {
-                    assert(lua_isnumber(l, value_idx));
-                    double val = lua_tonumber(l, value_idx);
-                    ent_ptr->get_chunk()
-                            .set_value<double>(pod_offset, val);
-                    return 1;
-                }
-                default: {
-                    assert(0);
-                    return 0;
-                }
-            }
-        }
-        case Runtime::Prim::Type::STR: {
-            std::size_t string_idx = aggidx.m_string_idx
-                                    + prim.m_refer.m_index;
-            assert(lua_isstring(l, value_idx));
-            std::size_t string_len;
-            const char* string_data = lua_tolstring(l, value_idx, &string_len);
-            ent_ptr->set_string(string_idx, 
-                    std::string(string_data, string_len));
-            return 1;
-        }
-        case Runtime::Prim::Type::FUNC: {
-            luaL_error(l, "Cannot assign to func (is static type)");
+            arg_require_write_compat(l, lua_isnumber(l, idx), idx, ty);
+            mem_ptr.set_value_any_number(lua_tonumber(l, idx));
             return 0;
         }
-        default: {
-            assert(false && "TODO");
+        case Runtime::Prim::Type::STR: {
+            arg_require_write_compat(l, lua_isstring(l, idx), idx, ty);
+            std::size_t data_strlen;
+            const char* data_str = lua_tolstring(l, idx, &data_strlen);
+            mem_ptr.set_value_str(std::string(data_str, data_strlen));
             return 0;
         }
+        case Runtime::Prim::Type::FUNC: {
+            arg_require_write_compat(l, lua_isfunction(l, idx), idx, ty);
+            mem_ptr.set_value_func(LUA_REFNIL); // Cannot reassign functions
+            // Just you wait, this line will give future me a headache ^
+            return 0;
+        }
+        case Runtime::Prim::Type::NULLPTR: {
+            assert(false && "Cannot write to nullptr, check beforehand!");
+        }
+        default: {
+            assert(false && "Unhandled write");
+        }
     }
-}
-
-bool get_aggidx_and_prim_from_cview(lua_State* l, 
-        int cview_idx, int member_idx,
-        Runtime::Arche::Aggindex& aggidx, Runtime::Prim& prim,
-        Runtime::Entity*& ent_ptr) {
-    Runtime::Cview& cview = 
-            *(static_cast<Runtime::Cview*>(lua_touserdata(l, cview_idx)));
-    
-    ent_ptr = cview.m_ent.get_volatile_entity_ptr();
-    if (!ent_ptr) {
-        return false;
-    }
-    
-    std::size_t keystrlen;
-    const char* keystr = luaL_checklstring(l, member_idx, &keystrlen);
-    if (!keystr) {
-        return false;
-    }
-    
-    // Member symbol argument
-    Runtime::Symbol member_symb(keystr, keystrlen);
-    
-    // Find where the member is stored within the component
-    auto prim_entry = cview.m_comp->m_member_offsets.find(member_symb);
-    if (prim_entry == cview.m_comp->m_member_offsets.end()) {
-        return false;
-    }
-    aggidx = cview.m_cached_aggidx;
-    prim = prim_entry->second;
-    
-    return true;
-}
-
-bool get_aggidx_and_prim_from_genview(lua_State* l, 
-        int genview_idx, int member_idx,
-        Runtime::Arche::Aggindex& aggidx, Runtime::Prim& prim,
-        Runtime::Entity*& ent_ptr) {
-    // Genview, guaranteed
-    Runtime::Genview& genview = 
-            *(static_cast<Runtime::Genview*>(lua_touserdata(l, genview_idx)));
-    
-    // Get pointer to the entity
-    ent_ptr = genview.m_ent.get_volatile_entity_ptr();
-    if (!ent_ptr) {
-        return false;
-    }
-    
-    // Get the member the user is asking for
-    std::size_t keystrlen;
-    const char* keystr = luaL_checklstring(l, member_idx, &keystrlen);
-    if (!keystr) {
-        return false;
-    }
-    
-    // Member symbol argument
-    Runtime::Symbol member_symb(keystr, keystrlen);
-    
-    // Extract the aggidx and primitive
-    auto alias_entry = genview.m_pattern->m_aliases.find(member_symb);
-    if (alias_entry == genview.m_pattern->m_aliases.end()) {
-        return false;
-    }
-    Runtime::Genre::Pattern::Alias member_alias = alias_entry->second;
-    Runtime::Arche* arche = ent_ptr->get_arche();
-    assert(arche->m_comp_offsets.find(member_alias.m_comp) !=
-            arche->m_comp_offsets.end());
-    aggidx = arche->m_comp_offsets.at(member_alias.m_comp);
-    prim = member_alias.m_prim_copy;
-    return true;
 }
 
 int li_comp_mt_call(lua_State* l) {
@@ -962,26 +787,41 @@ int li_cview_mt_gc(lua_State* l) {
 int li_cview_mt_index(lua_State* l) {
     const int ARG_CVIEW = 1;
     const int ARG_MEMBER = 2;
-    Runtime::Arche::Aggindex aggidx;
-    Runtime::Prim prim;
-    Runtime::Entity* ent_ptr;
-    bool success = get_aggidx_and_prim_from_cview(l, 
-            ARG_CVIEW, ARG_MEMBER, aggidx, prim, ent_ptr);
-    if (!success) return 0;
-    return push_member_of_entity(l, ent_ptr, aggidx, prim);
+    Runtime::Cview& cview = 
+            *(static_cast<Runtime::Cview*>(lua_touserdata(l, ARG_CVIEW)));
+    std::size_t keystrlen;
+    const char* keystr = luaL_checklstring(l, ARG_MEMBER, &keystrlen);
+    Runtime::Member_Ptr mem_ptr = 
+            cview.get_member_ptr(Runtime::Symbol(keystr, keystrlen));
+    return push_member_of_entity(l, mem_ptr);
 }
 int li_cview_mt_newindex(lua_State* l) {
     const int ARG_CVIEW = 1;
     const int ARG_MEMBER = 2;
     const int ARG_ASSIGN = 3;
-    Runtime::Arche::Aggindex aggidx;
-    Runtime::Prim prim;
-    Runtime::Entity* ent_ptr;
-    bool success = get_aggidx_and_prim_from_cview(l, 
-            ARG_CVIEW, ARG_MEMBER, aggidx, prim, ent_ptr);
-    if (!success) return 0;
-    arg_require_write_compatible_prim_type(l, prim.m_type, ARG_ASSIGN);
-    return write_to_member_of_enttiy(l, ent_ptr, aggidx, prim, ARG_ASSIGN);
+    Runtime::Cview& cview = 
+            *(static_cast<Runtime::Cview*>(lua_touserdata(l, ARG_CVIEW)));
+    std::size_t keystrlen;
+    const char* keystr = luaL_checklstring(l, ARG_MEMBER, &keystrlen);
+    Runtime::Member_Ptr mem_ptr = 
+            cview.get_member_ptr(Runtime::Symbol(keystr, keystrlen));
+    if (mem_ptr.is_nullptr()) {
+        std::stringstream sss;
+        sss << "Tried to write to nonexistent component member \""
+            << keystr
+            << '"';
+        luaL_error(l, sss.str().c_str());
+    }
+    try {
+        return write_to_member_of_entity(l, mem_ptr, ARG_ASSIGN);
+    } catch (Except::Runtime& e) {
+        std::stringstream sss;
+        sss << "Failed to write to component member \""
+            << keystr
+            << ": "
+            << e.what();
+        luaL_error(l, sss.str().c_str());
+    }
 }
 int li_cview_mt_tostring(lua_State* l) {
     // The first argument is guaranteed to be the right type
@@ -1014,26 +854,41 @@ int li_genview_mt_gc(lua_State* l) {
 int li_genview_mt_index(lua_State* l) {
     const int ARG_GENVIEW = 1;
     const int ARG_MEMBER = 2;
-    Runtime::Arche::Aggindex aggidx;
-    Runtime::Prim prim;
-    Runtime::Entity* ent_ptr;
-    bool success = get_aggidx_and_prim_from_genview(l, 
-            ARG_GENVIEW, ARG_MEMBER, aggidx, prim, ent_ptr);
-    if (!success) return 0;
-    return push_member_of_entity(l, ent_ptr, aggidx, prim);
+    Runtime::Genview& genview = 
+            *(static_cast<Runtime::Genview*>(lua_touserdata(l, ARG_GENVIEW)));
+    std::size_t keystrlen;
+    const char* keystr = luaL_checklstring(l, ARG_MEMBER, &keystrlen);
+    Runtime::Member_Ptr mem_ptr = 
+            genview.get_member_ptr(Runtime::Symbol(keystr, keystrlen));
+    return push_member_of_entity(l, mem_ptr);
 }
 int li_genview_mt_newindex(lua_State* l) {
     const int ARG_GENVIEW = 1;
     const int ARG_MEMBER = 2;
     const int ARG_ASSIGN = 3;
-    Runtime::Arche::Aggindex aggidx;
-    Runtime::Prim prim;
-    Runtime::Entity* ent_ptr;
-    bool success = get_aggidx_and_prim_from_genview(l, 
-            ARG_GENVIEW, ARG_MEMBER, aggidx, prim, ent_ptr);
-    if (!success) return 0;
-    arg_require_write_compatible_prim_type(l, prim.m_type, ARG_ASSIGN);
-    return write_to_member_of_enttiy(l, ent_ptr, aggidx, prim, ARG_ASSIGN);
+    Runtime::Genview& genview = 
+            *(static_cast<Runtime::Genview*>(lua_touserdata(l, ARG_GENVIEW)));
+    std::size_t keystrlen;
+    const char* keystr = luaL_checklstring(l, ARG_MEMBER, &keystrlen);
+    Runtime::Member_Ptr mem_ptr = 
+            genview.get_member_ptr(Runtime::Symbol(keystr, keystrlen));
+    if (mem_ptr.is_nullptr()) {
+        std::stringstream sss;
+        sss << "Tried to write to nonexistent genre member \""
+            << keystr
+            << '"';
+        luaL_error(l, sss.str().c_str());
+    }
+    try {
+        return write_to_member_of_entity(l, mem_ptr, ARG_ASSIGN);
+    } catch (Except::Runtime& e) {
+        std::stringstream sss;
+        sss << "Failed to write to genre member \""
+            << keystr
+            << ": "
+            << e.what();
+        luaL_error(l, sss.str().c_str());
+    }
 }
 int li_genview_mt_tostring(lua_State* l) {
     // The first argument is guaranteed to be the right type
