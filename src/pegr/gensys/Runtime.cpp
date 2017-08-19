@@ -462,6 +462,7 @@ Member_Ptr Entity::get_member(const Member_Key& member_key) {
                     assert(false && "Should not have got here!");
                 }
             }
+            break;
         }
         case Runtime::Prim::Type::STR: {
             std::size_t string_idx = aggidx.m_string_idx
@@ -474,7 +475,7 @@ Member_Ptr Entity::get_member(const Member_Key& member_key) {
         case Runtime::Prim::Type::FUNC: {
             std::size_t func_idx = aggidx.m_func_idx
                                     + prim.m_refer.m_index;
-            assert(func_idx < m_strings.size());
+            assert(func_idx < m_arche->m_static_funcs.size());
             assert(func_idx > 0);
             vptr = &(m_arche->m_static_funcs[func_idx]);
             break;
