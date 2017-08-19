@@ -82,8 +82,6 @@ struct Prim {
     Refer m_refer;
 };
 
-const char* prim_to_dbg_string(Prim::Type ty);
-
 /**
  * @class Comp
  * @brief Maps archetypes to where the component is within the chunk
@@ -181,6 +179,8 @@ public:
     Member_Ptr(Prim::Type typ, void* ptr);
     Member_Ptr(); // nullptr
     
+    Prim::Type get_type() const;
+    
     // (Can't use overloading as some types are actually equivalent)
     
     void set_value_i32(std::int32_t val) const;
@@ -190,15 +190,17 @@ public:
     void set_value_str(const std::string& val) const;
     void set_value_func(Script::Regref val) const;
     
-    void get_value_i32(std::int32_t& val) const;
-    void get_value_i64(std::int64_t& val) const;
-    void get_value_f32(float& val) const;
-    void get_value_f64(double& val) const;
-    void get_value_str(std::string& val) const;
-    void get_value_func(Script::Regref& val) const;
+    std::int32_t get_value_i32() const;
+    std::int64_t get_value_i64() const;
+    float get_value_f32() const;
+    double get_value_f64() const;
+    const std::string& get_value_str() const;
+    Script::Regref get_value_func() const;
     
     void set_value_any_number(double val) const;
-    void get_value_any_number(double& val) const;
+    double get_value_any_number() const;
+    
+    bool is_nullptr() const;
     
 private:
     Prim::Type m_type;

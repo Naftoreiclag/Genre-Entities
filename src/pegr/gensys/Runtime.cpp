@@ -71,6 +71,10 @@ Member_Ptr::Member_Ptr()
 : m_type(Prim::Type::NULLPTR)
 , m_ptr(nullptr) {}
 
+Prim::Type Member_Ptr::get_type() const {
+    return m_type;
+}
+
 void throw_mismatch_error(const char* expected, const char* got) {
     std::stringstream sss;
     sss << "Expected "
@@ -113,29 +117,29 @@ void Member_Ptr::set_value_func(Script::Regref val) const {
     throw Except::Runtime("Cannot assign to static value");
 }
 
-void Member_Ptr::get_value_i32(std::int32_t& val) const {
+std::int32_t Member_Ptr::get_value_i32() const {
     verify_equal_type(Prim::Type::I32, m_type);
-    val = *(static_cast<std::int32_t*>(m_ptr));
+    return *(static_cast<std::int32_t*>(m_ptr));
 }
-void Member_Ptr::get_value_i64(std::int64_t& val) const {
+std::int64_t Member_Ptr::get_value_i64() const {
     verify_equal_type(Prim::Type::I64, m_type);
-    val = *(static_cast<std::int64_t*>(m_ptr));
+    return *(static_cast<std::int64_t*>(m_ptr));
 }
-void Member_Ptr::get_value_f32(float& val) const {
+float Member_Ptr::get_value_f32() const {
     verify_equal_type(Prim::Type::F32, m_type);
-    val = *(static_cast<float*>(m_ptr));
+    return *(static_cast<float*>(m_ptr));
 }
-void Member_Ptr::get_value_f64(double& val) const {
+double Member_Ptr::get_value_f64() const {
     verify_equal_type(Prim::Type::F64, m_type);
-    val = *(static_cast<double*>(m_ptr));
+    return *(static_cast<double*>(m_ptr));
 }
-void Member_Ptr::get_value_str(std::string& val) const {
+const std::string& Member_Ptr::get_value_str() const {
     verify_equal_type(Prim::Type::STR, m_type);
-    val = *(static_cast<std::string*>(m_ptr));
+    return *(static_cast<std::string*>(m_ptr));
 }
-void Member_Ptr::get_value_func(Script::Regref& val) const {
+Script::Regref Member_Ptr::get_value_func() const {
     verify_equal_type(Prim::Type::FUNC, m_type);
-    val = *(static_cast<Script::Regref*>(m_ptr));
+    return *(static_cast<Script::Regref*>(m_ptr));
 }
 
 void Member_Ptr::set_value_any_number(double val) const {
@@ -161,28 +165,29 @@ void Member_Ptr::set_value_any_number(double val) const {
         }
     }
 }
-void Member_Ptr::get_value_any_number(double& val) const {
+double Member_Ptr::get_value_any_number() const {
     switch (m_type) {
         case Prim::Type::I32: {
-            val = *(static_cast<std::int32_t*>(m_ptr));
-            break;
+            return *(static_cast<std::int32_t*>(m_ptr));
         }
         case Prim::Type::I64: {
-            val = *(static_cast<std::int64_t*>(m_ptr));
-            break;
+            return *(static_cast<std::int64_t*>(m_ptr));
         }
         case Prim::Type::F32: {
-            val = *(static_cast<float*>(m_ptr));
-            break;
+            return *(static_cast<float*>(m_ptr));
         }
         case Prim::Type::F64: {
-            val = *(static_cast<double*>(m_ptr));
-            break;
+            return *(static_cast<double*>(m_ptr));
         }
         default: {
             throw_mismatch_error("(any number)", prim_to_dbg_string(m_type));
         }
     }
+}
+
+bool Member_Ptr::is_nullptr() const {
+    assert((m_type == Prim::Type::NULLPTR) == (m_ptr == nullptr));
+    return m_type == Prim::Type::NULLPTR;
 }
 
 Member_Key::Member_Key(Arche::Aggindex aggidx, Prim prim)
@@ -552,18 +557,6 @@ Runtime::Arche* find_archetype(std::string id_str) {
 Runtime::Genre* find_genre(std::string id_str) {
     return Util::find_something(n_runtime_genres, id_str, 
             "Could not find genre: %v");
-}
-
-const char* prim_typename(Runtime::Prim::Type t) {
-    switch (t) {
-        case Prim::Type::F32: return "f32";
-        case Prim::Type::F64: return "f64";
-        case Prim::Type::I32: return "i32";
-        case Prim::Type::I64: return "i64";
-        case Prim::Type::STR: return "str";
-        case Prim::Type::FUNC: return "func";
-        default: assert(0); return "unknown_type";
-    }
 }
 
 } // namespace Runtime

@@ -28,11 +28,11 @@ void cleanup();
 
 Entity_Handle reserve_new_handle();
 
-Runtime::Comp* find_component(std::string id);
-Runtime::Arche* find_archetype(std::string id);
-Runtime::Genre* find_genre(std::string id);
+Comp* find_component(std::string id);
+Arche* find_archetype(std::string id);
+Genre* find_genre(std::string id);
 
-const char* prim_typename(Runtime::Prim::Type t);
+const char* prim_to_dbg_string(Prim::Type ty);
 
 } // namespace Runtime
 } // namespace Gensys
