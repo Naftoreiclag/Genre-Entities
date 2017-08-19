@@ -515,7 +515,7 @@ void arg_require_write_compatible_prim_type(lua_State* l,
         std::stringstream sss;
         sss << lua_typename(l, idx)
             << " cannot be assigned to "
-            << Runtime::prim_typename(t);
+            << Runtime::prim_to_dbg_string(t);
         luaL_argerror(l, idx, sss.str().c_str());
     }
 }
