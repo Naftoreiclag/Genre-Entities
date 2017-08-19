@@ -93,71 +93,84 @@ void verify_equal_type(Prim::Type expected, Prim::Type got) {
 }
 
 void Member_Ptr::set_value_i32(std::int32_t val) const {
+    //Logger::log()->info("Set i32 %v", val);
     verify_equal_type(Prim::Type::I32, m_type);
-    *(static_cast<std::int32_t*>(m_ptr)) == val;
+    *(static_cast<std::int32_t*>(m_ptr)) = val;
 }
 void Member_Ptr::set_value_i64(std::int64_t val) const {
+    //Logger::log()->info("Set i64 %v", val);
     verify_equal_type(Prim::Type::I64, m_type);
-    *(static_cast<std::int64_t*>(m_ptr)) == val;
+    *(static_cast<std::int64_t*>(m_ptr)) = val;
 }
 void Member_Ptr::set_value_f32(float val) const {
+    //Logger::log()->info("Set f32 %v", val);
     verify_equal_type(Prim::Type::F32, m_type);
-    *(static_cast<float*>(m_ptr)) == val;
+    *(static_cast<float*>(m_ptr)) = val;
 }
 void Member_Ptr::set_value_f64(double val) const {
+    //Logger::log()->info("Set f64 %v", val);
     verify_equal_type(Prim::Type::F64, m_type);
-    *(static_cast<double*>(m_ptr)) == val;
+    *(static_cast<double*>(m_ptr)) = val;
 }
 void Member_Ptr::set_value_str(const std::string& val) const {
+    //Logger::log()->info("Set str %v", val);
     verify_equal_type(Prim::Type::STR, m_type);
-    *(static_cast<std::string*>(m_ptr)) == val;
+    *(static_cast<std::string*>(m_ptr)) = val;
 }
 void Member_Ptr::set_value_func(Script::Regref val) const {
+    //Logger::log()->info("Set func %v", val);
     verify_equal_type(Prim::Type::FUNC, m_type);
     throw Except::Runtime("Cannot assign to static value");
 }
 
 std::int32_t Member_Ptr::get_value_i32() const {
+    //Logger::log()->info("Get i32");
     verify_equal_type(Prim::Type::I32, m_type);
     return *(static_cast<std::int32_t*>(m_ptr));
 }
 std::int64_t Member_Ptr::get_value_i64() const {
+    //Logger::log()->info("Get i64");
     verify_equal_type(Prim::Type::I64, m_type);
     return *(static_cast<std::int64_t*>(m_ptr));
 }
 float Member_Ptr::get_value_f32() const {
+    //Logger::log()->info("Get f32");
     verify_equal_type(Prim::Type::F32, m_type);
     return *(static_cast<float*>(m_ptr));
 }
 double Member_Ptr::get_value_f64() const {
+    //Logger::log()->info("Get f64");
     verify_equal_type(Prim::Type::F64, m_type);
     return *(static_cast<double*>(m_ptr));
 }
 const std::string& Member_Ptr::get_value_str() const {
+    //Logger::log()->info("Get str");
     verify_equal_type(Prim::Type::STR, m_type);
     return *(static_cast<std::string*>(m_ptr));
 }
 Script::Regref Member_Ptr::get_value_func() const {
+    //Logger::log()->info("Get func");
     verify_equal_type(Prim::Type::FUNC, m_type);
     return *(static_cast<Script::Regref*>(m_ptr));
 }
 
 void Member_Ptr::set_value_any_number(double val) const {
+    //Logger::log()->info("Set any num %v", val);
     switch (m_type) {
         case Prim::Type::I32: {
-            *(static_cast<std::int32_t*>(m_ptr)) == val;
+            *(static_cast<std::int32_t*>(m_ptr)) = val;
             break;
         }
         case Prim::Type::I64: {
-            *(static_cast<std::int64_t*>(m_ptr)) == val;
+            *(static_cast<std::int64_t*>(m_ptr)) = val;
             break;
         }
         case Prim::Type::F32: {
-            *(static_cast<float*>(m_ptr)) == val;
+            *(static_cast<float*>(m_ptr)) = val;
             break;
         }
         case Prim::Type::F64: {
-            *(static_cast<double*>(m_ptr)) == val;
+            *(static_cast<double*>(m_ptr)) = val;
             break;
         }
         default: {
@@ -166,6 +179,7 @@ void Member_Ptr::set_value_any_number(double val) const {
     }
 }
 double Member_Ptr::get_value_any_number() const {
+    //Logger::log()->info("Get any num");
     switch (m_type) {
         case Prim::Type::I32: {
             return *(static_cast<std::int32_t*>(m_ptr));
@@ -439,22 +453,27 @@ Member_Ptr Entity::get_member(const Member_Key& member_key) {
             std::size_t pod_offset = Runtime::ENT_HEADER_SIZE
                                     + aggidx.m_pod_idx 
                                     + prim.m_refer.m_byte_offset;
+            //Logger::log()->info("Access pod");
             assert(pod_offset < m_chunk.get().get_size());
             assert(pod_offset >= 0);
             switch(prim.m_type) {
                 case Runtime::Prim::Type::I32: {
+                    //Logger::log()->info("i32");
                     vptr = m_chunk.get().get_aligned<int32_t>(pod_offset);
                     break;
                 }
                 case Runtime::Prim::Type::I64: {
+                    //Logger::log()->info("i64");
                     vptr = m_chunk.get().get_aligned<int64_t>(pod_offset);
                     break;
                 }
                 case Runtime::Prim::Type::F32: {
+                    //Logger::log()->info("f32");
                     vptr = m_chunk.get().get_aligned<float>(pod_offset);
                     break;
                 }
                 case Runtime::Prim::Type::F64: {
+                    //Logger::log()->info("f64");
                     vptr = m_chunk.get().get_aligned<double>(pod_offset);
                     break;
                 }
@@ -467,16 +486,18 @@ Member_Ptr Entity::get_member(const Member_Key& member_key) {
         case Runtime::Prim::Type::STR: {
             std::size_t string_idx = aggidx.m_string_idx
                                     + prim.m_refer.m_index;
+            //Logger::log()->info("Access str %v", string_idx);
             assert(string_idx < m_strings.size());
-            assert(string_idx > 0);
+            assert(string_idx >= 0);
             vptr = &(m_strings[string_idx]);
             break;
         }
         case Runtime::Prim::Type::FUNC: {
             std::size_t func_idx = aggidx.m_func_idx
                                     + prim.m_refer.m_index;
+            //Logger::log()->info("Access func %v", func_idx);
             assert(func_idx < m_arche->m_static_funcs.size());
-            assert(func_idx > 0);
+            assert(func_idx >= 0);
             vptr = &(m_arche->m_static_funcs[func_idx]);
             break;
         }
@@ -488,6 +509,7 @@ Member_Ptr Entity::get_member(const Member_Key& member_key) {
 }
 
 Member_Ptr Cview::get_member_ptr(const Symbol& member_symb) const {
+    //Logger::log()->info("Access %v thru cview", member_symb);
     Entity* ent_ptr = m_ent.get_volatile_entity_ptr();
     if (!ent_ptr) {
         return Member_Ptr();
@@ -498,6 +520,10 @@ Member_Ptr Cview::get_member_ptr(const Symbol& member_symb) const {
         return Member_Ptr();
     }
     Member_Key member_key(m_cached_aggidx, prim_entry->second);
+    //Logger::log()->info("Aggidx %v %v %v", 
+    //      member_key.m_aggidx.m_func_idx, 
+    //      member_key.m_aggidx.m_pod_idx, 
+    //      member_key.m_aggidx.m_string_idx);
     return ent_ptr->get_member(member_key);
 }
 
