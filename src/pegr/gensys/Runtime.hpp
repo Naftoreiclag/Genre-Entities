@@ -28,11 +28,30 @@ void cleanup();
 
 Entity_Handle reserve_new_handle();
 
+/**
+ * @param num A 64 bit unsigned value. When passing the entity's unique id to
+ * Lua, we can only rely on the integrity of the least significant 52 bits, 
+ * as Lua only uses doubles. However, as the bottom 52 bits of the entity's
+ * unique id are guaranteed unique, the id's uniqueness is preserved.
+ * @return The lower 52 bits
+ */
+uint64_t bottom_52(uint64_t num);
+
 Comp* find_component(std::string id);
 Arche* find_archetype(std::string id);
 Genre* find_genre(std::string id);
 
 const char* prim_to_dbg_string(Prim::Type ty);
+
+/* The to_string_X convert various objects into human-readable strings. Used
+ * mainly for tostring(...) in Lua
+ */
+std::string to_string_comp(Runtime::Comp* comp);
+std::string to_string_arche(Runtime::Arche* arche);
+std::string to_string_genre(Runtime::Genre* genre);
+std::string to_string_entity(Runtime::Entity_Handle ent);
+std::string to_string_cview(Runtime::Cview cview);
+std::string to_string_genview(Runtime::Genview genview);
 
 } // namespace Runtime
 } // namespace Gensys

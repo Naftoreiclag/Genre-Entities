@@ -44,20 +44,9 @@ Script::Unique_Regref n_entity_metatable;
 Script::Unique_Regref n_cview_metatable;
 Script::Unique_Regref n_genview_metatable;
 
-/**
- * @param num A 64 bit unsigned value. When passing the entity's unique id to
- * Lua, we can only rely on the integrity of the least significant 52 bits, 
- * as Lua only uses doubles. However, as the bottom 52 bits of the entity's
- * unique id are guaranteed unique, the id's uniqueness is preserved.
- * @return The lower 52 bits
- */
-uint64_t bottom_52(uint64_t num) {
-    //             0123456789abcdef
-    return num & 0x001FFFFFFFFFFFFF;
-}
 lua_Number entity_handle_to_lua_number(uint64_t data) {
     // Shave off the bottom 52 bits and cast to number
-    return static_cast<lua_Number>(bottom_52(data));
+    return static_cast<lua_Number>(Runtime::bottom_52(data));
 }
 
 /**
@@ -424,67 +413,6 @@ void make_cache_push_cview(lua_State* l, Runtime::Entity* ent_unsafe,
     lua_remove(l, -2); // -1
     
     assert(lua_isuserdata(l, -1));
-}
-
-std::string to_string_comp(Runtime::Comp* comp) {
-    std::stringstream sss;
-    sss << "<Component @"
-        << comp
-        << ">";
-    return sss.str();
-}
-std::string to_string_arche(Runtime::Arche* arche) {
-    std::stringstream sss;
-    sss << "<Archetype @"
-        << arche
-        << ">";
-    return sss.str();
-}
-std::string to_string_genre(Runtime::Genre* genre) {
-    std::stringstream sss;
-    sss << "<Genre @"
-        << genre
-        << ">";
-    return sss.str();
-}
-std::string to_string_entity(Runtime::Entity_Handle ent) {
-    std::stringstream sss;
-    sss << "<Entity #"
-        << bottom_52(ent.get_id());
-    if (ent.does_exist()) {
-        sss << " thru Arche @"
-            << ent->get_arche();
-    } else {
-        sss << " (deleted)";
-    }
-    sss << ">";
-    return sss.str();
-}
-std::string to_string_cview(Runtime::Cview cview) {
-    std::stringstream sss;
-    sss << "<Entity #"
-        << bottom_52(cview.m_ent.get_id());
-    if (cview.m_ent.does_exist()) {
-        sss << " thru Comp @"
-            << cview.m_comp;
-    } else {
-        sss << " (deleted)";
-    }
-    sss << ">";
-    return sss.str();
-}
-std::string to_string_genview(Runtime::Genview genview) {
-    std::stringstream sss;
-    sss << "<Entity #"
-        << bottom_52(genview.m_ent.get_id());
-    if (genview.m_ent.does_exist()) {
-        sss << " thru G-Pattern @"
-            << genview.m_pattern;
-    } else {
-        sss << " (deleted)";
-    }
-    sss << ">";
-    return sss.str();
 }
 
 int push_member_of_entity(lua_State* l, const Runtime::Member_Ptr& mem_ptr) {

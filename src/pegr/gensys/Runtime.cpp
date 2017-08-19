@@ -63,6 +63,67 @@ const char* prim_to_dbg_string(Prim::Type ty) {
     }
 }
 
+std::string to_string_comp(Runtime::Comp* comp) {
+    std::stringstream sss;
+    sss << "<Component @"
+        << comp
+        << ">";
+    return sss.str();
+}
+std::string to_string_arche(Runtime::Arche* arche) {
+    std::stringstream sss;
+    sss << "<Archetype @"
+        << arche
+        << ">";
+    return sss.str();
+}
+std::string to_string_genre(Runtime::Genre* genre) {
+    std::stringstream sss;
+    sss << "<Genre @"
+        << genre
+        << ">";
+    return sss.str();
+}
+std::string to_string_entity(Runtime::Entity_Handle ent) {
+    std::stringstream sss;
+    sss << "<Entity #"
+        << bottom_52(ent.get_id());
+    if (ent.does_exist()) {
+        sss << " thru Arche @"
+            << ent->get_arche();
+    } else {
+        sss << " (deleted)";
+    }
+    sss << ">";
+    return sss.str();
+}
+std::string to_string_cview(Runtime::Cview cview) {
+    std::stringstream sss;
+    sss << "<Entity #"
+        << bottom_52(cview.m_ent.get_id());
+    if (cview.m_ent.does_exist()) {
+        sss << " thru Comp @"
+            << cview.m_comp;
+    } else {
+        sss << " (deleted)";
+    }
+    sss << ">";
+    return sss.str();
+}
+std::string to_string_genview(Runtime::Genview genview) {
+    std::stringstream sss;
+    sss << "<Entity #"
+        << bottom_52(genview.m_ent.get_id());
+    if (genview.m_ent.does_exist()) {
+        sss << " thru G-Pattern @"
+            << genview.m_pattern;
+    } else {
+        sss << " (deleted)";
+    }
+    sss << ">";
+    return sss.str();
+}
+
 Member_Ptr::Member_Ptr(Prim::Type typ, void* ptr)
 : m_type(typ)
 , m_ptr(ptr) {}
@@ -571,6 +632,11 @@ void cleanup() {
 
 Entity_Handle reserve_new_handle() {
     return Entity_Handle(n_next_handle++);
+}
+
+uint64_t bottom_52(uint64_t num) {
+    //             0123456789abcdef
+    return num & 0x001FFFFFFFFFFFFF;
 }
 
 Runtime::Comp* find_component(std::string id_str) {

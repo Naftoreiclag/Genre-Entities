@@ -156,16 +156,6 @@ void push_entity_handle(lua_State* l, Runtime::Entity_Handle ent);
 void push_cview(lua_State* l, Runtime::Cview ent);
 void push_genview(lua_State* l, Runtime::Genview ent);
 
-/* The to_string_X convert various objects into human-readable strings. Used
- * mainly for tostring(...) in Lua
- */
-std::string to_string_comp(Runtime::Comp* comp);
-std::string to_string_arche(Runtime::Arche* arche);
-std::string to_string_genre(Runtime::Genre* genre);
-std::string to_string_entity(Runtime::Entity_Handle ent);
-std::string to_string_cview(Runtime::Cview cview);
-std::string to_string_genview(Runtime::Genview genview);
-
 /**
  * @brief Attempts to get a component view for the provided entity. If this is
  * impossible, return nil.
