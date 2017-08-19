@@ -27,6 +27,7 @@
 #include "pegr/gensys/Util.hpp"
 #include "pegr/logger/Logger.hpp"
 #include "pegr/script/Script_Util.hpp"
+#include "pegr/except/Except.hpp"
 
 namespace pegr {
 namespace Gensys {
@@ -48,6 +49,141 @@ const uint64_t ENT_FLAGS_DEFAULT =          0;
 uint64_t n_next_handle = 0;
 std::vector<Entity> n_entities;
 std::unordered_map<uint64_t, std::size_t> n_handle_to_index;
+
+const char* prim_to_dbg_string(Prim::Type ty) {
+    switch (ty) {
+        case Prim::Type::I32: return "i32";
+        case Prim::Type::I64: return "i64";
+        case Prim::Type::F32: return "f32";
+        case Prim::Type::F64: return "f64";
+        case Prim::Type::FUNC: return "func";
+        case Prim::Type::STR: return "str";
+        case Prim::Type::NULLPTR: return "nullptr";
+        default: return "unknown";
+    }
+}
+
+Member_Ptr::Member_Ptr(Prim::Type typ, void* ptr)
+: m_type(typ)
+, m_ptr(ptr) {}
+
+Member_Ptr::Member_Ptr()
+: m_type(Prim::Type::NULLPTR)
+, m_ptr(nullptr) {}
+
+void throw_mismatch_error(const char* expected, const char* got) {
+    std::stringstream sss;
+    sss << "Expected "
+        << expected
+        << ", got "
+        << got;
+    throw Except::Runtime(sss.str());
+}
+
+void verify_equal_type(Prim::Type expected, Prim::Type got) {
+    if (got != expected) {
+        throw_mismatch_error(
+                prim_to_dbg_string(expected),
+                prim_to_dbg_string(got));
+    }
+}
+
+void Member_Ptr::set_value_i32(std::int32_t val) const {
+    verify_equal_type(Prim::Type::I32, m_type);
+    *(static_cast<std::int32_t*>(m_ptr)) == val;
+}
+void Member_Ptr::set_value_i64(std::int64_t val) const {
+    verify_equal_type(Prim::Type::I64, m_type);
+    *(static_cast<std::int64_t*>(m_ptr)) == val;
+}
+void Member_Ptr::set_value_f32(float val) const {
+    verify_equal_type(Prim::Type::F32, m_type);
+    *(static_cast<float*>(m_ptr)) == val;
+}
+void Member_Ptr::set_value_f64(double val) const {
+    verify_equal_type(Prim::Type::F64, m_type);
+    *(static_cast<double*>(m_ptr)) == val;
+}
+void Member_Ptr::set_value_str(const std::string& val) const {
+    verify_equal_type(Prim::Type::STR, m_type);
+    *(static_cast<std::string*>(m_ptr)) == val;
+}
+void Member_Ptr::set_value_func(Script::Regref val) const {
+    verify_equal_type(Prim::Type::FUNC, m_type);
+    throw Except::Runtime("Cannot assign to static value");
+}
+
+void Member_Ptr::get_value_i32(std::int32_t& val) const {
+    verify_equal_type(Prim::Type::I32, m_type);
+    val = *(static_cast<std::int32_t*>(m_ptr));
+}
+void Member_Ptr::get_value_i64(std::int64_t& val) const {
+    verify_equal_type(Prim::Type::I64, m_type);
+    val = *(static_cast<std::int64_t*>(m_ptr));
+}
+void Member_Ptr::get_value_f32(float& val) const {
+    verify_equal_type(Prim::Type::F32, m_type);
+    val = *(static_cast<float*>(m_ptr));
+}
+void Member_Ptr::get_value_f64(double& val) const {
+    verify_equal_type(Prim::Type::F64, m_type);
+    val = *(static_cast<double*>(m_ptr));
+}
+void Member_Ptr::get_value_str(std::string& val) const {
+    verify_equal_type(Prim::Type::STR, m_type);
+    val = *(static_cast<std::string*>(m_ptr));
+}
+void Member_Ptr::get_value_func(Script::Regref& val) const {
+    verify_equal_type(Prim::Type::FUNC, m_type);
+    val = *(static_cast<Script::Regref*>(m_ptr));
+}
+
+void Member_Ptr::set_value_any_number(double val) const {
+    switch (m_type) {
+        case Prim::Type::I32: {
+            *(static_cast<std::int32_t*>(m_ptr)) == val;
+            break;
+        }
+        case Prim::Type::I64: {
+            *(static_cast<std::int64_t*>(m_ptr)) == val;
+            break;
+        }
+        case Prim::Type::F32: {
+            *(static_cast<float*>(m_ptr)) == val;
+            break;
+        }
+        case Prim::Type::F64: {
+            *(static_cast<double*>(m_ptr)) == val;
+            break;
+        }
+        default: {
+            throw_mismatch_error("(any number)", prim_to_dbg_string(m_type));
+        }
+    }
+}
+void Member_Ptr::get_value_any_number(double& val) const {
+    switch (m_type) {
+        case Prim::Type::I32: {
+            val = *(static_cast<std::int32_t*>(m_ptr));
+            break;
+        }
+        case Prim::Type::I64: {
+            val = *(static_cast<std::int64_t*>(m_ptr));
+            break;
+        }
+        case Prim::Type::F32: {
+            val = *(static_cast<float*>(m_ptr));
+            break;
+        }
+        case Prim::Type::F64: {
+            val = *(static_cast<double*>(m_ptr));
+            break;
+        }
+        default: {
+            throw_mismatch_error("(any number)", prim_to_dbg_string(m_type));
+        }
+    }
+}
 
 Member_Key::Member_Key(Arche::Aggindex aggidx, Prim prim)
 : m_aggidx(aggidx)
@@ -280,7 +416,7 @@ void Entity::set_string(std::size_t idx, std::string str) {
     assert(idx >= 0 && idx < m_strings.size());
     m_strings[idx] = str;
 }
-void* Entity::get_member(const Member_Key& member_key) {
+Member_Ptr Entity::get_member(const Member_Key& member_key) {
     /* Depending on the member's type, where we read the data and how we
      * intepret it changes. For POD types, the data comes from the chunk. Other
      * types are stored in other arrays. Note that the member signature uses
@@ -289,6 +425,7 @@ void* Entity::get_member(const Member_Key& member_key) {
      */
     const Prim& prim = member_key.m_prim;
     const Arche::Aggindex& aggidx = member_key.m_aggidx;
+    void* vptr;
     switch(prim.m_type) {
         case Runtime::Prim::Type::I32:
         case Runtime::Prim::Type::I64:
@@ -297,49 +434,62 @@ void* Entity::get_member(const Member_Key& member_key) {
             std::size_t pod_offset = Runtime::ENT_HEADER_SIZE
                                     + aggidx.m_pod_idx 
                                     + prim.m_refer.m_byte_offset;
+            assert(pod_offset < m_chunk.get().get_size());
+            assert(pod_offset >= 0);
             switch(prim.m_type) {
                 case Runtime::Prim::Type::I32: {
-                    return m_chunk.get().get_aligned<int32_t>(pod_offset);
+                    vptr = m_chunk.get().get_aligned<int32_t>(pod_offset);
+                    break;
                 }
                 case Runtime::Prim::Type::I64: {
-                    return m_chunk.get().get_aligned<int64_t>(pod_offset);
+                    vptr = m_chunk.get().get_aligned<int64_t>(pod_offset);
+                    break;
                 }
                 case Runtime::Prim::Type::F32: {
-                    return m_chunk.get().get_aligned<float>(pod_offset);
+                    vptr = m_chunk.get().get_aligned<float>(pod_offset);
+                    break;
                 }
                 case Runtime::Prim::Type::F64: {
-                    return m_chunk.get().get_aligned<double>(pod_offset);
+                    vptr = m_chunk.get().get_aligned<double>(pod_offset);
+                    break;
                 }
                 default: {
-                    assert(false && "Unhandled pod prim type!");
+                    assert(false && "Should not have got here!");
                 }
             }
         }
         case Runtime::Prim::Type::STR: {
             std::size_t string_idx = aggidx.m_string_idx
                                     + prim.m_refer.m_index;
-            return &(m_strings[string_idx]);
+            assert(string_idx < m_strings.size());
+            assert(string_idx > 0);
+            vptr = &(m_strings[string_idx]);
+            break;
         }
         case Runtime::Prim::Type::FUNC: {
             std::size_t func_idx = aggidx.m_func_idx
                                     + prim.m_refer.m_index;
-            return &(m_arche->m_static_funcs[func_idx]);
+            assert(func_idx < m_strings.size());
+            assert(func_idx > 0);
+            vptr = &(m_arche->m_static_funcs[func_idx]);
+            break;
         }
         default: {
             assert(false && "Unhandled prim type!");
         }
     }
+    return Member_Ptr(prim.m_type, vptr);
 }
 
-void* Cview::get_member_ptr(Symbol member_symb) const {
+Member_Ptr Cview::get_member_ptr(const Symbol& member_symb) const {
     Entity* ent_ptr = m_ent.get_volatile_entity_ptr();
     if (!ent_ptr) {
-        return nullptr;
+        return Member_Ptr();
     }
     // Find where the member is stored within the component
     auto prim_entry = m_comp->m_member_offsets.find(member_symb);
     if (prim_entry == m_comp->m_member_offsets.end()) {
-        return nullptr;
+        return Member_Ptr();
     }
     Member_Key member_key(m_cached_aggidx, prim_entry->second);
     return ent_ptr->get_member(member_key);
@@ -349,15 +499,15 @@ bool Cview::operator ==(const Cview& rhs) const {
     return m_comp == rhs.m_comp && m_ent == rhs.m_ent;
 }
 
-void* Genview::get_member_ptr(Symbol member_symb) const {
+Member_Ptr Genview::get_member_ptr(const Symbol& member_symb) const {
     Entity* ent_ptr = m_ent.get_volatile_entity_ptr();
     if (!ent_ptr) {
-        return nullptr;
+        return Member_Ptr();
     }
     // Extract the aggidx and primitive
     auto alias_entry = m_pattern->m_aliases.find(member_symb);
     if (alias_entry == m_pattern->m_aliases.end()) {
-        return nullptr;
+        return Member_Ptr();
     }
     const Runtime::Genre::Pattern::Alias& member_alias = alias_entry->second;
     Runtime::Arche* arche = ent_ptr->get_arche();

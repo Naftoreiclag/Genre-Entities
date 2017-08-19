@@ -50,6 +50,9 @@ struct Prim {
 
         // Uses Arridx, goes into the Gensys table
         FUNC,
+        
+        // Used only for nullptr Member_Ptr
+        NULLPTR,
 
         // Enum size
         ENUM_SIZE
@@ -78,6 +81,8 @@ struct Prim {
     
     Refer m_refer;
 };
+
+const char* prim_to_dbg_string(Prim::Type ty);
 
 /**
  * @class Comp
@@ -164,6 +169,40 @@ struct Arche {
      * created and handed to the Arche upon the first access.
      */
     Script::Unique_Regref m_lua_userdata;
+};
+
+/**
+ * @class Member_Ptr
+ * @brief Rather than return a bare void ptr, we return a Member_Ptr to make
+ * runtime read/write checks easier.
+ */
+class Member_Ptr {
+public:
+    Member_Ptr(Prim::Type typ, void* ptr);
+    Member_Ptr(); // nullptr
+    
+    // (Can't use overloading as some types are actually equivalent)
+    
+    void set_value_i32(std::int32_t val) const;
+    void set_value_i64(std::int64_t val) const;
+    void set_value_f32(float val) const;
+    void set_value_f64(double val) const;
+    void set_value_str(const std::string& val) const;
+    void set_value_func(Script::Regref val) const;
+    
+    void get_value_i32(std::int32_t& val) const;
+    void get_value_i64(std::int64_t& val) const;
+    void get_value_f32(float& val) const;
+    void get_value_f64(double& val) const;
+    void get_value_str(std::string& val) const;
+    void get_value_func(Script::Regref& val) const;
+    
+    void set_value_any_number(double val) const;
+    void get_value_any_number(double& val) const;
+    
+private:
+    Prim::Type m_type;
+    void* m_ptr;
 };
 
 /**
@@ -500,7 +539,7 @@ public:
      * @param aggidx
      * @param prim
      */
-    void* get_member(const Member_Key& key);
+    Member_Ptr get_member(const Member_Key& key);
 
     /**
      * @brief Constructor. You likely do not want to use this. Use the static
@@ -572,9 +611,7 @@ struct Cview {
     Comp* m_comp;
 
 public:
-    
-    void* get_member_ptr(Symbol member_symb) const;
-    
+    Member_Ptr get_member_ptr(const Symbol& member_symb) const;
     bool operator ==(const Cview& rhs) const;
 };
 
@@ -587,9 +624,7 @@ struct Genview {
     Genre::Pattern* m_pattern;
     
 public:
-
-    void* get_member_ptr(Symbol member_symb) const;
-
+    Member_Ptr get_member_ptr(const Symbol& member_symb) const;
     bool operator ==(const Genview& rhs) const;
 };
 
