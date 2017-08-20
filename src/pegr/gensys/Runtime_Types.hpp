@@ -50,6 +50,9 @@ struct Prim {
 
         // Uses Arridx, goes into the Gensys table
         FUNC,
+        
+        // Used only for nullptr Member_Ptr
+        NULLPTR,
 
         // Enum size
         ENUM_SIZE
@@ -80,24 +83,138 @@ struct Prim {
 };
 
 /**
- * @class Comp
- * @brief Maps archetypes to where the component is within the chunk
+ * @class Member_Ptr
+ * @brief Rather than return a bare void ptr, we return a Member_Ptr to make
+ * runtime read/write checks easier.
  */
-struct Comp {
-    /**
-     * @brief Maps a symbol to the primitive. When read/writing from an entity
-     * instance, we must first look into this map to find where within a
-     * component the data lives, and then add this offset to the corresponding
-     * "component offset" as given by the entity's archetype.
-     */
-    std::map<Symbol, Prim> m_member_offsets;
+class Member_Ptr {
+public:
+    Member_Ptr(Prim::Type typ, void* ptr);
+    Member_Ptr(); // nullptr
     
-    /* Cached Lua value to provide when accessed in a Lua script. The compiler
-     * does not populate this field automatically. A Lua userdata value is
-     * created and handed to the Comp upon the first access.
-     */
-    Script::Unique_Regref m_lua_userdata;
+    Prim::Type get_type() const;
+    
+    // (Can't use overloading as some types are actually equivalent)
+    
+    void set_value_i32(std::int32_t val) const;
+    void set_value_i64(std::int64_t val) const;
+    void set_value_f32(float val) const;
+    void set_value_f64(double val) const;
+    void set_value_str(const std::string& val) const;
+    void set_value_func(Script::Regref val) const;
+    
+    std::int32_t get_value_i32() const;
+    std::int64_t get_value_i64() const;
+    float get_value_f32() const;
+    double get_value_f64() const;
+    const std::string& get_value_str() const;
+    Script::Regref get_value_func() const;
+    
+    void set_value_any_number(double val) const;
+    double get_value_any_number() const;
+    
+    bool is_nullptr() const;
+    
+private:
+    Prim::Type m_type;
+    void* m_ptr;
 };
+
+class Entity;
+
+/**
+ * @class Entity_Handle
+ * @brief Since Lua may have holds on Entity instances, rather than pass around
+ * pointers, we use 64-bit handles. Note: we used raw pointers to Comp, Arche, 
+ * etc. earlier because those objects are guaranteed to exist during the
+ * lifetime of a gensys ecosystem. This is not true for Entity, and so we
+ * cannot use raw pointers because those can 1) become invalidated and 2)
+ * suddenly point to another Entity.
+ * 
+ * Note that since we will be passing these ids to Lua (and therefore be 
+ * converting them into 64-bit floats), the bottom 52 bits are also guaranteed
+ * to be unique. (2^53 is the smallest positive value that, when stored in a 
+ * 64-bit IEEE 754 double, cannot be incremented by one).
+ */
+class Entity_Handle {
+public:
+    Entity_Handle();
+    explicit Entity_Handle(uint64_t id);
+    
+    uint64_t get_id() const;
+    
+    /**
+     * @brief Returns false if any of the following conditions are true:
+     *  -   This handle has no entity associated with it at all, such as
+     *      immediately after using the default constructor
+     *  -   The entity that this handle once referred to was deleted (and
+     *      therefore there is absolutely no data that this handle can
+     *      return.)
+     * This function returns false iff operator-> returns nullptr
+     * Note that existence implies that the entity has been despawned, but
+     * being despawned does not imply non-existence.
+     * 
+     * Existence indicates whether or not any data is retrievable from the 
+     * entity instance.
+     * 
+     * @return Whether an entity "exists"
+     */
+    bool does_exist() const;
+    
+    /**
+     * @brief Rather than expose the get_entity() method, we use an arrow
+     * operator. This also allows Entity members to be accessed directly.
+     * Users should check does_exist() before using.
+     * 
+     * Note that it might be beneficial to use get_volatile_entity_ptr(), but
+     * doing so can be unsafe. The arrow operator is guaranteed to always return
+     * a valid single-use pointer to the entity, provided does_exist() returns
+     * true.
+     */
+    Entity* operator ->() const;
+    
+    explicit operator bool() const;
+    operator uint64_t() const;
+    
+    /**
+     * @brief WARNING! THIS POINTER STAYS VALID ONLY UNDER VERY SPECIFIC 
+     * CONDITIONS! Segfaults ahoy!
+     * 
+     * This is only used when there are many calls to -> that are guaranteed
+     * to have the same return value over time. This should happen so long as
+     * no other entities are created or destroyed during that time.
+     * 
+     * On destruction:
+     *      It's possible that the soon-to-be-deleted entity swaps places with 
+     *      this one, causing the memory address for the entity to change.
+     * On creation:
+     *      Following vector iterator invalidation rules, if a resize occurs,
+     *      then all pointers are invalidated. A resize may occur when adding
+     *      an Entity (i.e. during creation)
+     * 
+     * In general, use this pointer only within the scope of single function,
+     * don't store this value in any long-term container, and do not use this
+     * value if there is any chance of entity creation or deletion during its
+     * usage. For example, don't use this if you are also calling an addon's
+     * function, which could create an entity.
+     */
+    Entity* get_volatile_entity_ptr() const;
+    
+private:
+    uint64_t m_entity_id;
+    
+    /**
+     * @brief Returns the memory address of the enclosed entity. Note that there
+     * is no guarantee that the return of this value will be consistent over
+     * the lifetime of the handle, and therefore it cannot be cached and must
+     * be re-fetched at the beginning of each method call.
+     * @return "volatile" memory address or nullptr if the handle points to
+     * nothing or the entity has been deleted.
+     */
+    Entity* get_entity() const;
+};
+
+struct Comp;
 
 /**
  * @class Arche
@@ -164,28 +281,104 @@ struct Arche {
      * created and handed to the Arche upon the first access.
      */
     Script::Unique_Regref m_lua_userdata;
+    
+    bool matches(Entity* ent_unsafe);
+};
+
+/**
+ * @class Cview
+ * @brief Component-based view on an entity. Essentially a cached aggregate
+ * index on an entity. (No need to repeatedly lookup in the Arche's aggidx
+ * table)
+ */
+struct Cview {
+    Entity_Handle m_ent;
+    Arche::Aggindex m_cached_aggidx;
+    Comp* m_comp;
+    
+    bool is_nullptr() const;
+    
+public:
+    Member_Ptr get_member_ptr(const Symbol& member_symb) const;
+    bool operator ==(const Cview& rhs) const;
+};
+
+/**
+ * @class Comp
+ * @brief Maps archetypes to where the component is within the chunk
+ */
+struct Comp {
+    /**
+     * @brief Maps a symbol to the primitive. When read/writing from an entity
+     * instance, we must first look into this map to find where within a
+     * component the data lives, and then add this offset to the corresponding
+     * "component offset" as given by the entity's archetype.
+     */
+    std::map<Symbol, Prim> m_member_offsets;
+    
+    /* Cached Lua value to provide when accessed in a Lua script. The compiler
+     * does not populate this field automatically. A Lua userdata value is
+     * created and handed to the Comp upon the first access.
+     */
+    Script::Unique_Regref m_lua_userdata;
+    
+    Cview match(Entity* ent_unsafe);
+};
+
+/**
+ * @class Member_Key
+ * @brief The penultimate step to "unlock" the void pointer for the data
+ * representing an entity's member. See Entity::get_member()
+ */
+struct Member_Key {
+    Member_Key(Arche::Aggindex aggidx, Prim prim);
+    
+    Arche::Aggindex m_aggidx;
+    Prim m_prim;
+
+public:
+    Member_Ptr get_member_ptr(const Symbol& member_symb) const;
+    bool operator ==(const Cview& rhs) const;
+};
+
+struct Pattern;
+
+/**
+ * @class Genview
+ * @brief Genre-based view on an entity.
+ */
+struct Genview {
+    Entity_Handle m_ent;
+    Pattern* m_pattern;
+    
+    bool is_nullptr() const;
+    
+public:
+    Member_Ptr get_member_ptr(const Symbol& member_symb) const;
+    bool operator ==(const Genview& rhs) const;
+};
+
+struct Pattern {
+    // Used when trying to see if an archetype matches the pattern
+    std::vector<Comp*> m_sorted_required_comps_specific;
+    
+    struct Alias {
+        // Used to find the position in the archetype
+        Comp* m_comp;
+        
+        // Rather than copy the symbol names and then constantly lookup
+        // in m_comp's member_offsets map, just cache the value here.
+        Prim m_prim_copy;
+    };
+    std::map<Symbol, Alias> m_aliases;
+    
+    // TODO: static values
 };
 
 /**
  * @class Genre
  */
 struct Genre {
-    struct Pattern {
-        // Used when trying to see if an archetype matches the pattern
-        std::vector<Comp*> m_sorted_required_comps_specific;
-        
-        struct Alias {
-            // Used to find the position in the archetype
-            Comp* m_comp;
-            
-            // Rather than copy the symbol names and then constantly lookup
-            // in m_comp's member_offsets map, just cache the value here.
-            Prim m_prim_copy;
-        };
-        std::map<Symbol, Alias> m_aliases;
-        
-        // TODO: static values
-    };
     
     /* This is a sorted list of all of the components that is used in every
      * pattern. Essentially, if a component is lacking at least one of these
@@ -204,99 +397,8 @@ struct Genre {
      * created and handed to the Genre upon the first access.
      */
     Script::Unique_Regref m_lua_userdata;
-};
-
-class Entity;
-
-/**
- * @class Entity_Handle
- * @brief Since Lua may have holds on Entity instances, rather than pass around
- * pointers, we use 64-bit handles. Note: we used raw pointers to Comp, Arche, 
- * etc. earlier because those objects are guaranteed to exist during the
- * lifetime of a gensys ecosystem. This is not true for Entity, and so we
- * cannot use raw pointers because those can 1) become invalidated and 2)
- * suddenly point to another Entity.
- * 
- * Note that since we will be passing these ids to Lua (and therefore be 
- * converting them into 64-bit floats), the bottom 52 bits are also guaranteed
- * to be unique. (2^53 is the smallest positive value that, when stored in a 
- * 64-bit IEEE 754 double, cannot be incremented by one).
- */
-class Entity_Handle {
-public:
-    Entity_Handle();
-    explicit Entity_Handle(uint64_t id);
     
-    uint64_t get_id() const;
-    
-    /**
-     * @brief Returns false if any of the following conditions are true:
-     *  -   This handle has no entity associated with it at all, such as
-     *      immediately after using the default constructor
-     *  -   The entity that this handle once referred to was deleted (and
-     *      therefore there is absolutely no data that this handle can
-     *      return.)
-     * This function returns false iff operator-> returns nullptr
-     * Note that existence implies that the entity has been despawned, but
-     * being despawned does not imply non-existence.
-     * 
-     * Existence indicates whether or not any data is retrievable from the 
-     * entity instance.
-     * 
-     * @return Whether an entity "exists"
-     */
-    bool does_exist() const;
-    
-    /**
-     * @brief Rather than expose the get_entity() method, we use an arrow
-     * operator. This also allows Entity members to be accessed directly.
-     * Users should check does_exist() before using.
-     * 
-     * Note that it might be beneficial to use get_volatile_entity_ptr(), but
-     * doing so can be unsafe. The arrow operator is guaranteed to always return
-     * a valid single-use pointer to the entity.
-     */
-    Entity* operator ->() const;
-    
-    explicit operator bool() const;
-    operator uint64_t() const;
-    
-    /**
-     * @brief WARNING! THIS POINTER STAYS VALID ONLY UNDER VERY SPECIFIC 
-     * CONDITIONS! Segfaults ahoy!
-     * 
-     * This is only used when there are many calls to -> that are guaranteed
-     * to have the same return value over time. This should happen so long as
-     * no other entities are created or destroyed during that time.
-     * 
-     * On destruction:
-     *      It's possible that the soon-to-be-deleted entity swaps places with 
-     *      this one, causing the memory address for the entity to change.
-     * On creation:
-     *      Following vector iterator invalidation rules, if a resize occurs,
-     *      then all pointers are invalidated. A resize may occur when adding
-     *      an Entity (i.e. during creation)
-     * 
-     * In general, use this pointer only within the scope of single function,
-     * don't store this value in any long-term container, and do not use this
-     * value if there is any chance of entity creation or deletion during its
-     * usage. For example, don't use this if you are also calling an addon's
-     * function, which could create an entity.
-     */
-    Entity* get_volatile_entity_ptr() const;
-    
-private:
-    uint64_t m_entity_id;
-    
-    /**
-     * @brief Returns the memory address of the enclosed entity. Note that there
-     * is no guarantee that the return of this value will be consistent over
-     * the lifetime of the handle, and therefore it cannot be cached and must
-     * be re-fetched at the beginning of each method call.
-     * @return "volatile" memory address or nullptr if the handle points to
-     * nothing or the entity has been deleted.
-     */
-    Entity* get_entity() const;
+    Genview match(Entity* ent_unsafe);
 };
 
 extern const uint64_t ENT_HEADER_FLAGS;
@@ -345,7 +447,7 @@ extern const uint64_t ENT_FLAGS_DEFAULT;
  * E. Entity despawned, entity has been spawned and is dead, still unspawnable.
  *    Entity is ready to be deleted (go to E).
  * F. Call to delete_entity, entity does not exist anymore. (In some sense, the
- *    entity itself is indestinguishable from state A, but somewhere out there 
+ *    entity itself is indistinguishable from state A, but somewhere out there 
  *    could still be handles with that entity's ID, and all of those handles
  *    must report that the entity is non-existent.)
  * 
@@ -365,6 +467,8 @@ public:
     static Entity_Handle new_entity(Arche* arche);
     static void delete_entity(Entity_Handle handle);
     
+    /* Entities can be moved (within the vector), but not copied.
+     */
     Entity(const Entity& rhs) = delete;
     Entity(Entity&& rhs) = default;
     Entity& operator =(const Entity& rhs) = delete;
@@ -452,18 +556,54 @@ public:
      */
     bool is_lua_owned() const;
     
+    /**
+     * @brief Changes the state of multiple flags at once. Sets all of the flags
+     * specified in "flags" to the state specified in "set". Note that this does
+     * not just simply set the flags to "flags". Instead, only those flags
+     * bitmasked by "flags" are set to the state "set".
+     * @param flags
+     * @param set
+     */
     void set_flags(uint64_t flags, bool set);
+    
+    /**
+     * @brief Flags this entity as having been spawned or not
+     */
     void set_flag_spawned(bool flag);
+    
+    /**
+     * @brief Flags this entity as being lua-owned or not
+     */
     void set_flag_lua_owned(bool flag);
+    
+    /**
+     * @brief Flags this entity as having been killed or not
+     */
     void set_flag_killed(bool flag);
     
-    void set_string(std::size_t idx, std::string str);
+    /**
+     * @brief Get a void pointer referenced by this data. Note that this does
+     * NO SANITY CHECKING WHATSOEVER. This method assumes that you have already
+     * checked that the key is appropriate for this entity.
+     * @param aggidx
+     * @param prim
+     */
+    Member_Ptr get_member(const Member_Key& key);
+    
+    /**
+     * @brief Tries to make a Cview from the given symbol. If this is not
+     * possible, then return a dummy Cview.
+     * @param comp_symb The symbol for the component
+     * @return Cview
+     */
+    Cview make_cview(const Symbol& comp_symb);
 
     /**
      * @brief Constructor. You likely do not want to use this. Use the static
      * factory methods instead.
      */ 
     explicit Entity(Arche* arche);
+    
     
     /**
      * @brief Default constructor for moving to. Use the static factory methods
@@ -475,18 +615,20 @@ private:
     // The archetype used by the entity (maybe add to the chunk?)
     Arche* m_arche;
 
-    /* The POD chunk containing flags, lua reference counts, and instance data
+    /* The POD chunk containing flags, Lua reference counts, and instance data
      * This chunk is aligned for 64-bit values. This guarantees that it is also
      * aligned for 32-bit values. This array is used to store values of small
      * fixed-sized types (float, int, vec3, etc...)
      *
      * The first 64 bit integer (0) stores flags. All of these flags are
      * initially set to zero (unset):
-     * 00   Set if this has ever been spawned.
-     * 01   Set if this entity has been despawned ("dead").
+     * SPAWNED set if this has ever been spawned.
+     * KILLED set if this entity has been despawned ("dead").
      *      If this is set, then this also means that the instance data part of
      *      the chunk is no longer accessible, possibly because it has been
      *      freed.)
+     * LUA_OWNED set if this entity should be deleted when its handle is gc'd
+     *      by Lua
      *
      * The instance data comprises the remainder of the memory block. Only
      * constant-size data is stored here.

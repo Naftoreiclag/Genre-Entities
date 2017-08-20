@@ -23,7 +23,7 @@
 #include <vector>
 
 namespace pegr {
-namespace Util {
+namespace Algs {
 
 /**
  * @brief Like std::sort, except it returns a sorted copy rather than sorting

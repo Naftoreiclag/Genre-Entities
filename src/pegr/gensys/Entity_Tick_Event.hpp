@@ -14,39 +14,44 @@
  *  limitations under the License.
  */
 
-#ifndef PEGR_SCHEDULER_LUAINTERF_HPP
-#define PEGR_SCHEDULER_LUAINTERF_HPP
+#ifndef PEGR_GENSYS_ENTITYTICKEVENT_HPP
+#define PEGR_GENSYS_ENTITYTICKEVENT_HPP
 
-#include "pegr/script/Script.hpp"
 #include "pegr/scheduler/Sched.hpp"
+#include "pegr/gensys/Runtime_Types.hpp"
 
 namespace pegr {
-namespace Schedu {
-namespace LI {
+namespace Gensys {
     
-class Scripted_Event : public Event {
+class Ete_Listener {
+    enum Selector_Type {
+        COMP,
+        ARCHE,
+        GENRE
+    };
+    
+    union Selector {
+        Runtime::Comp m_comp;
+        Runtime::Arche m_arche;
+        Runtime::Genre m_genre;
+    };
+    
+    Selector_Type m_selector;
+    Selector m_selector_union;
+};
+    
+class Entity_Tick_Event : public Schedu::Event {
 public:
-    Scripted_Event();
-    virtual ~Scripted_Event();
+    Entity_Tick_Event();
+    virtual ~Entity_Tick_Event();
     
-    // TODO
+    void add_listener(Ete_Listener listener);
 
-    virtual Event::Type get_type() const override;
+    virtual Schedu::Event::Type get_type() const override;
     virtual void trigger() override;
 };
 
-void initialize();
-void clear();
-void cleanup();
-
-int li_add_event(lua_State* l);
-int li_edit_event(lua_State* l);
-    
-int li_call_event(lua_State* l);
-int li_hook_listener(lua_State* l);
-
-} // namspace LI
-} // namespace Schedu
+} // namespace Gensys
 } // namespace pegr
 
-#endif // PEGR_SCHEDULER_LUAINTERF_HPP
+#endif // PEGR_GENSYS_ENTITYTICKEVENT_HPP

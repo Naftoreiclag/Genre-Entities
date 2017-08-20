@@ -24,60 +24,10 @@
 #include "pegr/except/Except.hpp"
 #include "pegr/logger/Logger.hpp"
 #include "pegr/resource/Json_Util.hpp"
+#include "pegr/resource/Oid.hpp"
 
 namespace pegr {
 namespace Resour {
-
-Oid::Oid(std::string repr, std::string def_pack) {
-    std::size_t delim_idx = repr.find(':');
-    if (delim_idx == std::string::npos) {
-        m_package = def_pack;
-        m_resource = repr;
-    } else {
-        m_package = repr.substr(0, delim_idx);
-        m_resource = repr.substr(delim_idx + 1);
-    }
-}
-Oid::Oid(const char* core_res) {
-    assert(std::string(core_res).find(':') == std::string::npos);
-    m_package = "";
-    m_resource = core_res;
-}
-
-Oid Oid::get_subtype(std::string subtype) const {
-    Oid retval;
-    retval.m_package = m_package;
-    retval.m_resource.reserve(1 + m_resource.size() + subtype.size());
-    retval.m_resource.append(m_resource);
-    retval.m_resource.append(1, '#');
-    retval.m_resource.append(subtype);
-    
-    return retval;
-}
-
-const std::string& Oid::get_package() const {
-    return m_package;
-}
-
-const std::string& Oid::get_resource() const {
-    return m_resource;
-}
-
-std::string Oid::get_dbg_string() const {
-    std::string retval;
-    retval.reserve(3 + m_package.size() + m_resource.size());
-    retval.append(1, '[');
-    retval.append(m_package);
-    retval.append(1, ':');
-    retval.append(m_resource);
-    retval.append(1, ']');
-    return retval;
-}
-    
-bool Oid::operator <(const Oid& rhs) const {
-    return m_package < rhs.m_package || 
-            (m_package == rhs.m_package && m_resource < rhs.m_resource);
-}
 
 Package n_core_package;
 std::map<std::string, Package> n_named_packages;

@@ -776,7 +776,7 @@ Interm::Genre::Pattern parse_genre_pattern(int value_idx,
         
         // Verify that there is no overlap between static and alias lists
         {
-            std::vector<Interm::Symbol> intersect = Util::map_key_intersect(
+            std::vector<Interm::Symbol> intersect = Algs::map_key_intersect(
                     pattern.m_aliases, pattern.m_static_redefine);
             if (intersect.size() > 0) {
                 std::stringstream sss;

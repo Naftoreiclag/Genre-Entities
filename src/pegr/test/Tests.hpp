@@ -36,6 +36,7 @@ void test_0001_flags();
 void test_0001_init_sanity();
 void test_0002_app_state_machine_test();
 void test_0002_unique_ptr_test();
+void test_0003_lambda_closure();
 void test_0005_assertion_test();
 void test_0010_check_guard_memory_leaks();
 void test_0010_check_guard_memory_leaks_shared();
@@ -50,6 +51,7 @@ void test_0028_simple_deep_copy_recursive();
 void test_0028_to_number_safe();
 void test_0028_to_string();
 void test_0028_unique_regref_manager();
+void test_0029_lua_as_lambda();
 void test_0030_gensys_primitive();
 void test_0030_gensys_primitive_multiple();
 void test_0080_00_gensys_primitive();
@@ -75,6 +77,7 @@ const NamedTest n_tests[] = {
     {"Initialization Sanity Test", test_0001_init_sanity},
     {"App State Machine Test", test_0002_app_state_machine_test},
     {"Unique Ptr Test", test_0002_unique_ptr_test},
+    {"Lambda closure", test_0003_lambda_closure},
     {"Assertion test", test_0005_assertion_test},
     {"Script Unique_Regref memory leaks", test_0010_check_guard_memory_leaks},
     {"Script Shared_Regref memory leaks", test_0010_check_guard_memory_leaks_shared},
@@ -89,6 +92,7 @@ const NamedTest n_tests[] = {
     {"Script to_number_safe", test_0028_to_number_safe},
     {"Script Helper to_string", test_0028_to_string},
     {"Script Helper unique regref manager", test_0028_unique_regref_manager},
+    {"Lua as Lambda Test", test_0029_lua_as_lambda},
     {"Single gensys primitive", test_0030_gensys_primitive},
     {"Reassignment of gensys primitives", test_0030_gensys_primitive_multiple},
     {"Gensys primitive from Lua values", test_0080_00_gensys_primitive},

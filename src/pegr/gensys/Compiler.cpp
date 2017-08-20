@@ -536,7 +536,7 @@ std::unique_ptr<Work::Genre> compile_genre(Work::Space& workspace,
             genre->m_interm->m_patterns) {
         
         // Note that we may require components that are not read from.
-        Runtime::Genre::Pattern runtime_pattern;
+        Runtime::Pattern runtime_pattern;
         for (auto locally_named_comp_iter : interm_pattern.m_matching) {
             Interm::Comp* interm_comp = locally_named_comp_iter.second;
             const auto& comp_iter = 
@@ -560,7 +560,7 @@ std::unique_ptr<Work::Genre> compile_genre(Work::Space& workspace,
             assert(comp_iter != workspace.get_comps_by_interm().end());
             const Work::Comp* comp = comp_iter->second;
             
-            Runtime::Genre::Pattern::Alias runtime_alias;
+            Runtime::Pattern::Alias runtime_alias;
             runtime_alias.m_comp = comp->m_runtime.get();
             
             /*

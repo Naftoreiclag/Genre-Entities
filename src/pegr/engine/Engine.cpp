@@ -31,6 +31,7 @@
 #include "pegr/logger/Logger.hpp"
 #include "pegr/resource/Resources.hpp"
 #include "pegr/scheduler/Lua_Interf.hpp"
+#include "pegr/scheduler/Sched.hpp"
 #include "pegr/script/Script.hpp"
 #include "pegr/winput/Winput.hpp"
 
@@ -116,6 +117,7 @@ void initialize(uint16_t flags) {
     
     if (schedu_used()) {
         try {
+            Schedu::initialize();
             Schedu::LI::initialize();
         } catch (Except::Runtime& e) {
             std::stringstream sss;

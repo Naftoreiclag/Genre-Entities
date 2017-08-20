@@ -22,33 +22,10 @@
 
 #include <boost/filesystem.hpp>
 
+#include "pegr/resource/Oid.hpp"
+
 namespace pegr {
 namespace Resour {
-    
-/**
- * @class Oid
- * @brief Object id. Consists of a package to draw from, and the internal name
- * of the resource.
- */
-class Oid {
-public:
-    Oid() = default;
-    Oid(std::string repr, std::string def_pack = "");
-    Oid(const char* core_res);
-
-    const std::string& get_package() const;
-    const std::string& get_resource() const;
-    
-    Oid get_subtype(std::string subtype) const;
-    
-    std::string get_dbg_string() const;
-    
-    bool operator <(const Oid& rhs) const;
-    
-private:
-    std::string m_package;
-    std::string m_resource;
-};
 
 /**
  * @class Object

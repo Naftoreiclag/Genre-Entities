@@ -82,6 +82,10 @@ Shared_Regref make_shared(Regref ref) {
     return std::make_shared<Unique_Regref>(ref);
 }
 
+Shared_Regref make_shared(Unique_Regref&& ref) {
+    return std::make_shared<Unique_Regref>(std::move(ref));
+}
+
 const char* PEGR_MODULE_NAME = "pegr";
 
 bool m_torndown = false;
@@ -469,8 +473,10 @@ Unique_Regref new_sandbox() {
 }
 
 void drop_reference(Regref ref) {
-    assert(is_initialized());
+    // Check before the assertion, since we may drop nils after the Lua state
+    // is cleaned, due to Unique_Regref deconstructors.
     if (ref == LUA_REFNIL) return;
+    assert(is_initialized() && "Maybe you forgot some Unique_Regref's?");
     --n_total_grab_delta;
     luaL_unref(m_l, LUA_REGISTRYINDEX, ref);
 }

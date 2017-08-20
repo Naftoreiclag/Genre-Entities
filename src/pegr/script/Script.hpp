@@ -123,6 +123,13 @@ typedef std::shared_ptr<Unique_Regref> Shared_Regref;
  */
 Shared_Regref make_shared(Regref ref);
 
+/**
+ * @brief Make a referenced Lua value into a shared RAII object
+ * @param ref The Lua reference to make shared
+ * @return A shared RAII object for the provided reference
+ */
+Shared_Regref make_shared(Unique_Regref&& ref);
+
 extern const char* PEGR_MODULE_NAME;
 
 extern const Regref NO_SANDBOX;
