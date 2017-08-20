@@ -17,6 +17,8 @@
 #ifndef PEGR_GENSYS_ENTITYTICKEVENT_HPP
 #define PEGR_GENSYS_ENTITYTICKEVENT_HPP
 
+#include <functional>
+
 #include "pegr/scheduler/Sched.hpp"
 #include "pegr/gensys/Runtime_Types.hpp"
 
@@ -24,6 +26,7 @@ namespace pegr {
 namespace Gensys {
     
 class Ete_Listener {
+public:
     enum Selector_Type {
         COMP,
         ARCHE,
@@ -31,17 +34,21 @@ class Ete_Listener {
     };
     
     union Selector {
-        Runtime::Comp m_comp;
-        Runtime::Arche m_arche;
-        Runtime::Genre m_genre;
+        Runtime::Comp* m_comp;
+        Runtime::Arche* m_arche;
+        Runtime::Genre* m_genre;
     };
     
+private:
     Selector_Type m_selector;
     Selector m_selector_union;
+    
+    friend class Entity_Tick_Event;
 };
     
 class Entity_Tick_Event : public Schedu::Event {
 public:
+
     Entity_Tick_Event();
     virtual ~Entity_Tick_Event();
     
@@ -49,6 +56,10 @@ public:
 
     virtual Schedu::Event::Type get_type() const override;
     virtual void trigger() override;
+    
+private:
+
+    std::vector<Ete_Listener> m_listeners;
 };
 
 } // namespace Gensys
