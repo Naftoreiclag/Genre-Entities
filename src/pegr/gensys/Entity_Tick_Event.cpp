@@ -18,6 +18,13 @@
 
 namespace pegr {
 namespace Gensys {
+/*
+namespace Runtime {
+
+extern std::vector<Entity> n_entities;
+
+} // namespace Runtime
+*/
 
 Entity_Tick_Event::Entity_Tick_Event()
 : Schedu::Event() {}
@@ -27,7 +34,17 @@ Schedu::Event::Type Entity_Tick_Event::get_type() const {
     return Schedu::Event::Type::ENTITY_TICK;
 }
 void Entity_Tick_Event::trigger() {
-    
+    /*
+    for (Runtime::Entity& ent : Runtime::n_entities) {
+        for (Ete_Listener& listener : m_listeners) {
+            switch (listener.m_selector) {
+                case Ete_Listener::Selector_Type::COMP: {
+                    Runtime::Comp* comp = listener.m_selector_union.m_comp;
+                    Cview cview = comp->match()
+                }
+            }
+        }
+    }*/
 }
 
 } // namespace Gensys

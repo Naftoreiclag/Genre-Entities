@@ -17,6 +17,8 @@
 #ifndef PEGR_GENSYS_RUNTIME_HPP
 #define PEGR_GENSYS_RUNTIME_HPP
 
+#include <functional>
+
 #include "pegr/gensys/Runtime_Types.hpp"
 
 namespace pegr {
@@ -25,6 +27,18 @@ namespace Runtime {
 
 void initialize();
 void cleanup();
+
+/**
+ * @brief Execute a function for every entity that does_exist, in some 
+ * unspecified order. Concurrent modification is allowed (adding/removing 
+ * new entities) by deferring removal and addition until after all entities
+ * that existed before this function was called have been iterated over. If any
+ * entities are added during an iteration, those entities are then iterated over
+ * seamlessly. This process repeats until no new entities are added during an
+ * iteration.
+ * @param for_body The function to run on every entity, as described above.
+ */
+void for_each_entity(std::function<void(Entity*)> for_body);
 
 Entity_Handle reserve_new_handle();
 

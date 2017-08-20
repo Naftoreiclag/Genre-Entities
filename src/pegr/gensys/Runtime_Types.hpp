@@ -444,14 +444,14 @@ extern const uint64_t ENT_FLAGS_DEFAULT;
  * D. Entity spawned, entity has been spawned and is alive, can not be spawned
  *    for a second time. The only way to delete the entity (arrive at F) is to
  *    first despawn it (go to E).
- * E. Entity despawned, entity has been spawned and is dead, still unspawnable.
+ * E. Entity despawned, entity has been spawned and is dead and unspawnable.
  *    Entity is ready to be deleted (go to E).
  * F. Call to delete_entity, entity does not exist anymore. (In some sense, the
  *    entity itself is indistinguishable from state A, but somewhere out there 
  *    could still be handles with that entity's ID, and all of those handles
  *    must report that the entity is non-existent.)
  * 
- * This table also shows all possible states that all entities can have.
+ * The above table also shows all possible states that all entities can have.
  * 
  * killed implies spawned
  * alive implies spawned
