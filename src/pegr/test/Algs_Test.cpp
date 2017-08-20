@@ -34,7 +34,7 @@ void test_0000_algs() {
         }
         
         std::vector<int> intersect = 
-                Util::map_key_intersect(first, second);
+                Algs::map_key_intersect(first, second);
         
         std::vector<int> expected = {2, 4, 6, 8, 10};
         
@@ -55,7 +55,7 @@ void test_0000_algs() {
         second["h"] = "hydrogen";
         
         std::vector<std::string> intersect = 
-                Util::map_key_intersect(first, second);
+                Algs::map_key_intersect(first, second);
         
         std::vector<std::string> expected = {"b", "c"};
         
