@@ -124,18 +124,6 @@ std::string to_string_genview(Runtime::Genview genview) {
     return sss.str();
 }
 
-Member_Ptr::Member_Ptr(Prim::Type typ, void* ptr)
-: m_type(typ)
-, m_ptr(ptr) {}
-
-Member_Ptr::Member_Ptr()
-: m_type(Prim::Type::NULLPTR)
-, m_ptr(nullptr) {}
-
-Prim::Type Member_Ptr::get_type() const {
-    return m_type;
-}
-
 void throw_mismatch_error(const char* expected, const char* got) {
     std::stringstream sss;
     sss << "Expected "
@@ -151,6 +139,18 @@ void verify_equal_type(Prim::Type expected, Prim::Type got) {
                 prim_to_dbg_string(expected),
                 prim_to_dbg_string(got));
     }
+}
+
+Member_Ptr::Member_Ptr(Prim::Type typ, void* ptr)
+: m_type(typ)
+, m_ptr(ptr) {}
+
+Member_Ptr::Member_Ptr()
+: m_type(Prim::Type::NULLPTR)
+, m_ptr(nullptr) {}
+
+Prim::Type Member_Ptr::get_type() const {
+    return m_type;
 }
 
 void Member_Ptr::set_value_i32(std::int32_t val) const {
@@ -265,10 +265,6 @@ bool Member_Ptr::is_nullptr() const {
     return m_type == Prim::Type::NULLPTR;
 }
 
-Member_Key::Member_Key(Arche::Aggindex aggidx, Prim prim)
-: m_aggidx(aggidx)
-, m_prim(prim) {}
-
 Entity_Handle::Entity_Handle(uint64_t id)
 : m_entity_id(id) {}
 
@@ -306,6 +302,58 @@ Entity* Entity_Handle::get_entity() const {
     //Logger::log()->info("get %v %v", idx, n_entities.size());
     assert(idx >= 0 && idx < n_entities.size());
     return &(n_entities[idx]);
+}
+
+Member_Ptr Cview::get_member_ptr(const Symbol& member_symb) const {
+    //Logger::log()->info("Access %v thru cview", member_symb);
+    Entity* ent_ptr = m_ent.get_volatile_entity_ptr();
+    if (!ent_ptr) {
+        return Member_Ptr();
+    }
+    // Find where the member is stored within the component
+    auto prim_entry = m_comp->m_member_offsets.find(member_symb);
+    if (prim_entry == m_comp->m_member_offsets.end()) {
+        return Member_Ptr();
+    }
+    Member_Key member_key(m_cached_aggidx, prim_entry->second);
+    //Logger::log()->info("Aggidx %v %v %v", 
+    //      member_key.m_aggidx.m_func_idx, 
+    //      member_key.m_aggidx.m_pod_idx, 
+    //      member_key.m_aggidx.m_string_idx);
+    return ent_ptr->get_member(member_key);
+}
+
+bool Cview::operator ==(const Cview& rhs) const {
+    return m_comp == rhs.m_comp && m_ent == rhs.m_ent;
+}
+
+Member_Key::Member_Key(Arche::Aggindex aggidx, Prim prim)
+: m_aggidx(aggidx)
+, m_prim(prim) {}
+
+
+Member_Ptr Genview::get_member_ptr(const Symbol& member_symb) const {
+    Entity* ent_ptr = m_ent.get_volatile_entity_ptr();
+    if (!ent_ptr) {
+        return Member_Ptr();
+    }
+    // Extract the aggidx and primitive
+    auto alias_entry = m_pattern->m_aliases.find(member_symb);
+    if (alias_entry == m_pattern->m_aliases.end()) {
+        return Member_Ptr();
+    }
+    const Runtime::Pattern::Alias& member_alias = alias_entry->second;
+    Runtime::Arche* arche = ent_ptr->get_arche();
+    assert(arche->m_comp_offsets.find(member_alias.m_comp) !=
+            arche->m_comp_offsets.end());
+    Member_Key member_key(
+            arche->m_comp_offsets.at(member_alias.m_comp),
+            member_alias.m_prim_copy);
+    return ent_ptr->get_member(member_key);
+}
+
+bool Genview::operator ==(const Genview& rhs) const {
+    return m_pattern == rhs.m_pattern && m_ent == rhs.m_ent;
 }
 
 Entity::Entity(Arche* arche)
@@ -492,10 +540,6 @@ void Entity::set_flag_killed(bool flag) {
     set_flags(ENT_FLAG_KILLED, flag);
     assert(has_been_killed() == flag);
 }
-void Entity::set_string(std::size_t idx, std::string str) {
-    assert(idx >= 0 && idx < m_strings.size());
-    m_strings[idx] = str;
-}
 Member_Ptr Entity::get_member(const Member_Key& member_key) {
     /* Depending on the member's type, where we read the data and how we
      * intepret it changes. For POD types, the data comes from the chunk. Other
@@ -567,53 +611,6 @@ Member_Ptr Entity::get_member(const Member_Key& member_key) {
         }
     }
     return Member_Ptr(prim.m_type, vptr);
-}
-
-Member_Ptr Cview::get_member_ptr(const Symbol& member_symb) const {
-    //Logger::log()->info("Access %v thru cview", member_symb);
-    Entity* ent_ptr = m_ent.get_volatile_entity_ptr();
-    if (!ent_ptr) {
-        return Member_Ptr();
-    }
-    // Find where the member is stored within the component
-    auto prim_entry = m_comp->m_member_offsets.find(member_symb);
-    if (prim_entry == m_comp->m_member_offsets.end()) {
-        return Member_Ptr();
-    }
-    Member_Key member_key(m_cached_aggidx, prim_entry->second);
-    //Logger::log()->info("Aggidx %v %v %v", 
-    //      member_key.m_aggidx.m_func_idx, 
-    //      member_key.m_aggidx.m_pod_idx, 
-    //      member_key.m_aggidx.m_string_idx);
-    return ent_ptr->get_member(member_key);
-}
-
-bool Cview::operator ==(const Cview& rhs) const {
-    return m_comp == rhs.m_comp && m_ent == rhs.m_ent;
-}
-
-Member_Ptr Genview::get_member_ptr(const Symbol& member_symb) const {
-    Entity* ent_ptr = m_ent.get_volatile_entity_ptr();
-    if (!ent_ptr) {
-        return Member_Ptr();
-    }
-    // Extract the aggidx and primitive
-    auto alias_entry = m_pattern->m_aliases.find(member_symb);
-    if (alias_entry == m_pattern->m_aliases.end()) {
-        return Member_Ptr();
-    }
-    const Runtime::Genre::Pattern::Alias& member_alias = alias_entry->second;
-    Runtime::Arche* arche = ent_ptr->get_arche();
-    assert(arche->m_comp_offsets.find(member_alias.m_comp) !=
-            arche->m_comp_offsets.end());
-    Member_Key member_key(
-            arche->m_comp_offsets.at(member_alias.m_comp),
-            member_alias.m_prim_copy);
-    return ent_ptr->get_member(member_key);
-}
-
-bool Genview::operator ==(const Genview& rhs) const {
-    return m_pattern == rhs.m_pattern && m_ent == rhs.m_ent;
 }
 
 void initialize() {

@@ -567,7 +567,7 @@ int li_genre_mt_call(lua_State* l) {
     }
     
     // Important: iterate using references not copies
-    for (Runtime::Genre::Pattern& pattern : genre->m_patterns) {
+    for (Runtime::Pattern& pattern : genre->m_patterns) {
         if (Util::is_subset_of_presorted(
                 pattern.m_sorted_required_comps_specific, 
                 arche->m_sorted_component_array)) {
