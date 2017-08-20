@@ -565,22 +565,11 @@ int li_entity_mt_index(lua_State* l) {
             return 0;
         }
         
-        {
-            Runtime::Cview cview = ent_unsafe->make_cview(
-                    Runtime::Symbol(keystr, keystrlen));
-            if (cview.is_nullptr()) {
-                return 0;
-            }
-            
-            push_cview(l, cview); // +1
-            return 1;
-        }
-        
         Script::push_reference(ent_unsafe->get_weak_table()); // +1
         int cache_idx = lua_gettop(l);
         
         if (find_in_cache(l, cache_idx, ARG_MEMBER)) {
-            lua_remove(l, -2); // Remove cache
+            lua_remove(l, cache_idx); // Remove cache
             return 1;
         }
         else {
@@ -596,7 +585,7 @@ int li_entity_mt_index(lua_State* l) {
             
             add_to_cache(l, cache_idx, ARG_MEMBER, val_idx);
             
-            lua_remove(l, -1); // Remove cache
+            lua_remove(l, cache_idx); // Remove cache
             return 1;
         }
     }
