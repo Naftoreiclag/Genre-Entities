@@ -14,8 +14,8 @@
  *  limitations under the License.
  */
 
-#ifndef PEGR_UTIL_ALGS_HPP
-#define PEGR_UTIL_ALGS_HPP
+#ifndef PEGR_ALGS_ALGS_HPP
+#define PEGR_ALGS_ALGS_HPP
 
 #include <algorithm>
 #include <cassert>
@@ -104,4 +104,4 @@ bool is_subset_of(
 } // namespace Util
 } // namespace pegr
 
-#endif // PEGR_UTIL_ALGS_HPP
+#endif // PEGR_ALGS_ALGS_HPP

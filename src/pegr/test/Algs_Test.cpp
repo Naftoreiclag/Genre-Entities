@@ -15,7 +15,7 @@
  */
 
 #include "pegr/test/Test_Util.hpp"
-#include "pegr/util/Algs.hpp"
+#include "pegr/algs/Algs.hpp"
 
 namespace pegr {
 namespace Test {

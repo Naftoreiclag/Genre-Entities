@@ -32,7 +32,7 @@
 #include "pegr/logger/Logger.hpp"
 #include "pegr/script/Lua_Interf_Util.hpp"
 #include "pegr/script/Script_Util.hpp"
-#include "pegr/util/Algs.hpp"
+#include "pegr/algs/Algs.hpp"
 
 namespace pegr {
 namespace Gensys {
