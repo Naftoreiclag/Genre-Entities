@@ -28,6 +28,7 @@
 #include "pegr/logger/Logger.hpp"
 #include "pegr/script/Script_Util.hpp"
 #include "pegr/except/Except.hpp"
+#include "pegr/util/Algs.hpp"
 
 namespace pegr {
 namespace Gensys {
@@ -304,6 +305,14 @@ Entity* Entity_Handle::get_entity() const {
     return &(n_entities[idx]);
 }
 
+bool Arche::matches(Entity* ent_unsafe) {
+    return ent_unsafe->get_arche() == this;
+}
+
+bool Cview::is_nullptr() const {
+    return !m_ent.does_exist();
+}
+
 Member_Ptr Cview::get_member_ptr(const Symbol& member_symb) const {
     //Logger::log()->info("Access %v thru cview", member_symb);
     Entity* ent_ptr = m_ent.get_volatile_entity_ptr();
@@ -327,10 +336,31 @@ bool Cview::operator ==(const Cview& rhs) const {
     return m_comp == rhs.m_comp && m_ent == rhs.m_ent;
 }
 
+Cview Comp::match(Entity* ent_unsafe) {
+    Cview retval;
+    // Try find the aggregate index
+    auto aggidx_iter = ent_unsafe->get_arche()
+            ->m_comp_offsets.find(this);
+    if (aggidx_iter == ent_unsafe->get_arche()->m_comp_offsets.end()) {
+        // If its not there, then the matching failed
+        assert(retval.is_nullptr());
+        return retval;
+    }
+    // Assemble the cview
+    retval.m_cached_aggidx = aggidx_iter->second;
+    retval.m_ent = ent_unsafe->get_handle();
+    retval.m_comp = this;
+    assert(!retval.is_nullptr());
+    return retval;
+}
+
 Member_Key::Member_Key(Arche::Aggindex aggidx, Prim prim)
 : m_aggidx(aggidx)
 , m_prim(prim) {}
 
+bool Genview::is_nullptr() const {
+    return !m_ent.does_exist();
+}
 
 Member_Ptr Genview::get_member_ptr(const Symbol& member_symb) const {
     Entity* ent_ptr = m_ent.get_volatile_entity_ptr();
@@ -354,6 +384,33 @@ Member_Ptr Genview::get_member_ptr(const Symbol& member_symb) const {
 
 bool Genview::operator ==(const Genview& rhs) const {
     return m_pattern == rhs.m_pattern && m_ent == rhs.m_ent;
+}
+
+Genview Genre::match(Entity* ent_unsafe) {
+    Genview retval;
+    Runtime::Arche* arche = ent_unsafe->get_arche();
+    // Maybe cache whether or not this archetype matches?
+    if (!Algs::is_subset_of_presorted(
+            m_sorted_required_intersection, 
+            arche->m_sorted_component_array)) {
+        // Cannot possibly match
+        assert(retval.is_nullptr());
+        return retval;
+    }
+    // Important: iterate using references not copies
+    for (Runtime::Pattern& pattern : m_patterns) {
+        if (Algs::is_subset_of_presorted(
+                pattern.m_sorted_required_comps_specific, 
+                arche->m_sorted_component_array)) {
+            retval.m_ent = ent_unsafe->get_handle();
+            retval.m_pattern = &pattern;
+            assert(!retval.is_nullptr());
+            return retval;
+        }
+    }
+    // No matches found
+    assert(retval.is_nullptr());
+    return retval;
 }
 
 Entity::Entity(Arche* arche)
@@ -611,6 +668,27 @@ Member_Ptr Entity::get_member(const Member_Key& member_key) {
         }
     }
     return Member_Ptr(prim.m_type, vptr);
+}
+
+Cview Entity::make_cview(const Symbol& comp_symb) {
+    Cview retval;
+    // Try find the component in the archetype
+    auto comp_iter = m_arche->m_components.find(comp_symb);
+    if (comp_iter == m_arche->m_components.end()) {
+        // Not found, return error
+        assert(retval.is_nullptr());
+        return retval;
+    }
+    // Get the component ptr
+    retval.m_comp = comp_iter->second;
+    // Get the aggregate index (which should definitely be there)
+    auto aggidx_iter = m_arche->m_comp_offsets.find(retval.m_comp);
+    assert(aggidx_iter != m_arche->m_comp_offsets.end());
+    retval.m_cached_aggidx = aggidx_iter->second;
+    
+    retval.m_ent = get_handle();
+    assert(!retval.is_nullptr());
+    return retval;
 }
 
 void initialize() {

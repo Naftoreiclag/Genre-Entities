@@ -276,143 +276,56 @@ void push_genview(lua_State* l, Runtime::Genview genview) {
     push_any_value<Runtime::Genview>(l, genview, n_genview_metatable.get());
 }
 
-Runtime::Cview make_cview(Runtime::Comp* comp, Runtime::Entity* ent_unsafe) {
-    Runtime::Cview retval;
-    retval.m_comp = comp;
-    retval.m_ent = ent_unsafe->get_handle();
-    /* Get the component offset (where this component's data begins within the
-     * aggregate arrays stored inside of every instance of this archetype)
-     */
-    Runtime::Arche* arche = ent_unsafe->get_arche();
-    assert(arche);
-    assert(arche->m_comp_offsets.find(comp) 
-            != arche->m_comp_offsets.end());
-    retval.m_cached_aggidx = arche->m_comp_offsets[comp];
-    return retval;
+/**
+ * @brief Retrieves the cached value, if it exists, from the table at the top
+ * of the stack.
+ * 
+ * @param l The Lua state
+ * @param key_idx The index of the key already on the Lua stack that used to
+ * retrieve the cached value
+ */
+bool find_in_cache(lua_State* l, int cache_idx, int key_idx) {
+    assert_balance(0, 1);
+    
+    assert(cache_idx > 0);
+    
+    // Push the key
+    lua_pushvalue(l, key_idx); // +1
+    
+    // Swap the key with the cached value or nil
+    lua_rawget(l, cache_idx); // -1 +1
+    
+    // No cached value
+    if (lua_isnil(l, -1)) {
+        lua_pop(l, 1); // -1
+        return false;
+    }
+    
+    return true;
 }
 
 /**
- * @brief Retrieves the cached cview from the given entity, caching a new
- * cview beforehand if it is not already present in the cache with the given
- * key.
- * 
- * See overload to defer aggidx lookup until absolutely necessary (like lazy
- * evaluation)
+ * @brief Retrieves the cached value from the table on the top of the stack
  * 
  * @param l The Lua state
- * @param ent_unsafe The pointer to the entity
- * @param key_idx The index of a value already on the Lua stack that used to
- * retrieve the cview from the cache.
- * @param comp The component pointer to use when creating the cview if it was
- * not found in the entity's cache.
- * @param aggidx The cached aggidx to use in the event that this function needs
- * to construct a new cview
+ * @param key_idx The index of the key already on the Lua stack that used to
+ * store the value in the cache
+ * @param val_idx The index of a value to store in the cache
  */
-void make_cache_push_cview(lua_State* l, Runtime::Entity* ent_unsafe, 
-        int key_idx, Runtime::Comp* comp, Runtime::Arche::Aggindex aggidx) {
-    assert_balance(1);
-    assert(key_idx > 0);
+void add_to_cache(lua_State* l, int cache_idx, int key_idx, int val_idx) {
+    assert_balance(0);
     
-    // Get the entity's cview cache, making it if it does not exist
-    Script::push_reference(ent_unsafe->get_weak_table());
+    assert(val_idx > 0);
+    assert(cache_idx > 0);
     
-    // Push the component name
+    // Push the key again so we can store it in the cache
     lua_pushvalue(l, key_idx); // +1
+            
+    // Push the value
+    lua_pushvalue(l, val_idx); // +1
     
-    // Swap the component name with the cview or nil
-    lua_rawget(l, -2); // -1 +1
-    
-    // No cached cview
-    if (lua_isnil(l, -1)) {
-        // Pop nil
-        lua_pop(l, 1); // -1
-        
-        //Logger::log()->info("Creating a cview");
-        
-        // Make a new cview and push it
-        Runtime::Cview cview;
-        cview.m_comp = comp;
-        cview.m_ent = ent_unsafe->get_handle();
-        cview.m_cached_aggidx = aggidx;
-        push_cview(l, cview); // +1
-        
-        // Push the component name again so we can store it in the cache
-        lua_pushvalue(l, key_idx); // +1
-        
-        // Push the cview again
-        lua_pushvalue(l, -2); // +1
-        
-        // Set the table
-        lua_rawset(l, -4); // -2
-        
-        // Note that it is impossible for the cview to be gc'd right now
-        // because its presence on the stack is a strong reference.
-    }
-        
-    // Remove the cache
-    lua_remove(l, -2); // -1
-    
-    assert(lua_isuserdata(l, -1));
-}
-
-/**
- * @brief Retrieves the cached cview from the given entity, caching a new
- * cview beforehand if it is not already present in the cache with the given
- * key.
- * 
- * This overload defers the lookup in the Archetype's table (a somewhat
- * expensive operation) until absolutely necessary (i.e. not already found
- * in the cache.) If the lookup was already performed, use the other overload
- * for this function, which allows you to pass an already-constructed cview.
- * 
- * @param l The Lua state
- * @param ent_unsafe The pointer to the entity
- * @param key_idx The index of a value already on the Lua stack that used to
- * retrieve the cview from the cache.
- * @param comp The component pointer to use when creating the cview if it was
- * not found in the entity's cache.
- */
-void make_cache_push_cview(lua_State* l, Runtime::Entity* ent_unsafe, 
-        int key_idx, Runtime::Comp* comp) {
-    assert_balance(1);
-    assert(key_idx > 0);
-    
-    // Get the entity's cview cache, making it if it does not exist
-    Script::push_reference(ent_unsafe->get_weak_table());
-    
-    // Push the component name
-    lua_pushvalue(l, key_idx); // +1
-    
-    // Swap the component name with the cview or nil
-    lua_rawget(l, -2); // -1 +1
-    
-    // No cached cview
-    if (lua_isnil(l, -1)) {
-        // Pop nil
-        lua_pop(l, 1); // -1
-        
-        //Logger::log()->info("Creating a cview");
-        
-        // Make a new cview and push it
-        push_cview(l, make_cview(comp, ent_unsafe)); // +1
-        
-        // Push the component name again so we can store it in the cache
-        lua_pushvalue(l, key_idx); // +1
-        
-        // Push the cview again
-        lua_pushvalue(l, -2); // +1
-        
-        // Set the table
-        lua_rawset(l, -4); // -2
-        
-        // Note that it is impossible for the cview to be gc'd right now
-        // because its presence on the stack is a strong reference.
-    }
-        
-    // Remove the cache
-    lua_remove(l, -2); // -1
-    
-    assert(lua_isuserdata(l, -1));
+    // Set the table
+    lua_rawset(l, cache_idx); // -2
 }
 
 int push_member_of_entity(lua_State* l, const Runtime::Member_Ptr& mem_ptr) {
@@ -490,31 +403,42 @@ int li_comp_mt_call(lua_State* l) {
     const int ARG_COMP = 1;
     const int ARG_ENT = 2;
     
+    assert_balance(0, 1);
+    
     // The first argument is guaranteed to be the right type
     Runtime::Comp* comp = 
             *(static_cast<Runtime::Comp**>(lua_touserdata(l, ARG_COMP)));
+    Runtime::Entity* ent_ptr = arg_require_entity(l, ARG_ENT)
+            ->get_volatile_entity_ptr();
     
-    Runtime::Entity_Handle ent_h = *arg_require_entity(l, ARG_ENT);
-    
-    Runtime::Entity* ent_unsafe = ent_h.get_volatile_entity_ptr();
-    Runtime::Arche* arche = ent_unsafe->get_arche();
-    
-    auto agg_iter = arche->m_comp_offsets.find(comp);
-    
-    // Impossible to match
-    if (agg_iter == arche->m_comp_offsets.end()) {
-        return 0;
-    }
-    
-    assert_balance(1);
+    Script::push_reference(ent_ptr->get_weak_table()); // +1
+    int cache_idx = lua_gettop(l);
     
     // (PIL 28.5 encourages using lightuserdata as keys)
-    lua_pushlightuserdata(l, comp);
+    lua_pushlightuserdata(l, comp); // +1
     int key_idx = lua_gettop(l);
-    make_cache_push_cview(l, ent_unsafe, key_idx, comp, agg_iter->second);
-    lua_remove(l, key_idx);
     
-    return 1;
+    if (find_in_cache(l, cache_idx, key_idx)) {
+        lua_remove(l, key_idx); // Remove key
+        lua_remove(l, cache_idx); // Remove cache
+        return 1;
+    }
+    else {
+        Runtime::Cview cview = comp->match(ent_ptr);
+        if (cview.is_nullptr()) {
+            lua_pop(l, 2); // Remove key and cache
+            return 0;
+        }
+        
+        push_cview(l, cview); // +1
+        int val_idx = lua_gettop(l);
+        
+        add_to_cache(l, cache_idx, key_idx, val_idx);
+        
+        lua_remove(l, key_idx); // Remove key
+        lua_remove(l, cache_idx); // Remove cache
+        return 1;
+    }
 }
 int li_comp_mt_tostring(lua_State* l) {
     const int ARG_COMP = 1;
@@ -531,8 +455,9 @@ int li_arche_mt_call(lua_State* l) {
     // The first argument is guaranteed to be the right type
     Runtime::Arche* arche = 
             *(static_cast<Runtime::Arche**>(lua_touserdata(l, ARG_ARCHE)));
-    Runtime::Entity_Handle ent_h = *arg_require_entity(l, ARG_ENT);
-    if (ent_h->get_arche() == arche) {
+    Runtime::Entity* ent_ptr = arg_require_entity(l, ARG_ENT)
+            ->get_volatile_entity_ptr();
+    if (arche->matches(ent_ptr)) {
         lua_pushvalue(l, ARG_ENT);
         return 1;
     }
@@ -554,45 +479,14 @@ int li_genre_mt_call(lua_State* l) {
     // The first argument is guaranteed to be the right type
     Runtime::Genre* genre = 
             *(static_cast<Runtime::Genre**>(lua_touserdata(l, ARG_GENRE)));
-    Runtime::Entity_Handle ent_h = *arg_require_entity(l, ARG_ENT);
-    
-    Runtime::Arche* arche = ent_h->get_arche();
-    // Maybe cache whether or not this archetype matches?
-    if (!Util::is_subset_of_presorted(
-            genre->m_sorted_required_intersection, 
-            arche->m_sorted_component_array)) {
-        //Logger::log()->info("no match");
-        // Cannot possibly match
+    Runtime::Entity* ent_ptr = arg_require_entity(l, ARG_ENT)
+            ->get_volatile_entity_ptr();
+    Runtime::Genview genview = genre->match(ent_ptr);
+    if (genview.is_nullptr()) {
         return 0;
     }
-    
-    // Important: iterate using references not copies
-    for (Runtime::Pattern& pattern : genre->m_patterns) {
-        if (Util::is_subset_of_presorted(
-                pattern.m_sorted_required_comps_specific, 
-                arche->m_sorted_component_array)) {
-            // TODO: caching?
-            Runtime::Genview genview;
-            genview.m_ent = ent_h;
-            genview.m_pattern = &pattern;
-            
-            //Logger::log()->info("found");
-            push_genview(l, genview);
-            return 1;
-        }
-        /*
-        for (Runtime::Comp* c : pattern.m_sorted_required_comps_specific) {
-            Logger::log()->info("require: %v", c);
-        }
-        for (Runtime::Comp* c : arche->m_sorted_component_array) {
-            Logger::log()->info("have: %v", c);
-        }
-        */
-    }
-    //Logger::log()->info("no pattern");
-    
-    // No matches found
-    return 0;
+    push_genview(l, genview);
+    return 1;
 }
 int li_genre_mt_tostring(lua_State* l) {
     const int ARG_GENRE = 1;
@@ -671,16 +565,40 @@ int li_entity_mt_index(lua_State* l) {
             return 0;
         }
         
-        const Runtime::Arche* arche = ent_unsafe->get_arche();
-        Runtime::Symbol member_str(keystr, keystrlen);
-        auto comp_iter = arche->m_components.find(member_str);
-        if (comp_iter == arche->m_components.end()) {
-            return 0;
+        {
+            Runtime::Cview cview = ent_unsafe->make_cview(
+                    Runtime::Symbol(keystr, keystrlen));
+            if (cview.is_nullptr()) {
+                return 0;
+            }
+            
+            push_cview(l, cview); // +1
+            return 1;
         }
         
-        make_cache_push_cview(l, ent_unsafe, ARG_MEMBER, comp_iter->second);
+        Script::push_reference(ent_unsafe->get_weak_table()); // +1
+        int cache_idx = lua_gettop(l);
         
-        return 1;
+        if (find_in_cache(l, cache_idx, ARG_MEMBER)) {
+            lua_remove(l, -2); // Remove cache
+            return 1;
+        }
+        else {
+            Runtime::Cview cview = ent_unsafe->make_cview(
+                    Runtime::Symbol(keystr, keystrlen));
+            if (cview.is_nullptr()) {
+                lua_pop(l, 1); // Remove cache
+                return 0;
+            }
+            
+            push_cview(l, cview); // +1
+            int val_idx = lua_gettop(l);
+            
+            add_to_cache(l, cache_idx, ARG_MEMBER, val_idx);
+            
+            lua_remove(l, -1); // Remove cache
+            return 1;
+        }
     }
     return 0;
 }

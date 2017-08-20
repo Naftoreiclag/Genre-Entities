@@ -296,6 +296,8 @@ struct Cview {
     Arche::Aggindex m_cached_aggidx;
     Comp* m_comp;
     
+    bool is_nullptr() const;
+    
 public:
     Member_Ptr get_member_ptr(const Symbol& member_symb) const;
     bool operator ==(const Cview& rhs) const;
@@ -348,6 +350,8 @@ struct Pattern;
 struct Genview {
     Entity_Handle m_ent;
     Pattern* m_pattern;
+    
+    bool is_nullptr() const;
     
 public:
     Member_Ptr get_member_ptr(const Symbol& member_symb) const;
