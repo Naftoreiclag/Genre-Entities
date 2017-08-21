@@ -78,6 +78,6 @@ active entity ecosystem. Until it is spawned in, it is an ordinary archetypical
 view on an entity that also frees the associated memory when gc'd
 ]]
 
-pegr.spawn(cookie1)
+pegr.spawn_entity(cookie1)
 
 -------------------------------------------------------------------------------

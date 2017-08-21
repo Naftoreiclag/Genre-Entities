@@ -785,11 +785,12 @@ int li_find_genre(lua_State* l) {
     return 1;
 }
 int li_new_entity(lua_State* l) {
+    const int ARG_ARCHE = 1;
     if (Gensys::get_global_state() != GlobalState::EXECUTABLE) {
         luaL_error(l, "new_entity is only available during execution");
     }
     
-    Runtime::Arche* arche = *arg_require_arche(l, 1);
+    Runtime::Arche* arche = *arg_require_arche(l, ARG_ARCHE);
     
     Runtime::Entity_Handle ent = Runtime::get_entities().new_entity(arche);
     ent->set_flag_lua_owned(true);
@@ -800,19 +801,57 @@ int li_new_entity(lua_State* l) {
     
     return 1;
 }
+int li_spawn_entity(lua_State* l) {
+    const int ARG_ENTITY = 1;
+    if (Gensys::get_global_state() != GlobalState::EXECUTABLE) {
+        luaL_error(l, "spawn_entity is only available during execution");
+    }
+    Runtime::Entity_Handle ent = *arg_require_entity(l, ARG_ENTITY);
+    
+    if (!ent.does_exist() || ent->has_been_spawned()) {
+        lua_pushboolean(l, false);
+        return 1;
+    }
+    
+    // Spawning transfers ownership from Lua
+    ent->set_flag_lua_owned(false);
+    
+    ent->spawn();
+    
+    lua_pushboolean(l , true);
+    return 1;
+}
+int li_kill_entity(lua_State* l) {
+    const int ARG_ENTITY = 1;
+    if (Gensys::get_global_state() != GlobalState::EXECUTABLE) {
+        luaL_error(l, "kill_entity is only available during execution");
+    }
+    Runtime::Entity_Handle ent = *arg_require_entity(l, ARG_ENTITY);
+    
+    if (!ent.does_exist() || !ent->is_alive()) {
+        lua_pushboolean(l, false);
+        return 1;
+    }
+    
+    ent->kill();
+    Runtime::get_entities().delete_entity(ent);
+    
+    lua_pushboolean(l , true);
+    return 1;
+}
 int li_delete_entity(lua_State* l) {
+    const int ARG_ENTITY = 1;
     if (Gensys::get_global_state() != GlobalState::EXECUTABLE) {
         luaL_error(l, "delete_entity is only available during execution");
     }
     
-    Runtime::Entity_Handle ent = *arg_require_entity(l, 1);
+    Runtime::Entity_Handle ent = *arg_require_entity(l, ARG_ENTITY);
     
-    if (!(ent.does_exist() && ent->is_lua_owned())) {
-        lua_pushboolean(l , false);
+    if (!ent.does_exist()) {
+        lua_pushboolean(l, false);
         return 1;
     }
 
-    assert(!ent->has_been_spawned());
     Runtime::get_entities().delete_entity(ent);
     
     lua_pushboolean(l , true);

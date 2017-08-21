@@ -318,6 +318,18 @@ int li_find_genre(lua_State* l);
 int li_new_entity(lua_State* l);
 
 /**
+ * @brief Spawns an entity, throwing an error if this is not possible
+ * 1: Entity
+ */
+int li_spawn_entity(lua_State* l);
+
+/**
+ * @brief Kills an entity, throwing an error if this is not possible
+ * 1: Entity
+ */
+int li_kill_entity(lua_State* l);
+
+/**
  * @brief Manually deletes an entity. Note that this is not required, and Lua
  * can still gc the entity manually for you. Does not invalidate the provided
  * Entity_Handle, but it does ensure that the handle reports correctly that

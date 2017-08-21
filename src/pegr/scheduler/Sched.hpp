@@ -62,6 +62,8 @@ class Event {
 public:
     enum Type {
         ENTITY_TICK,
+        ENTITY_SPAWNED,
+        ENTITY_KILLED,
         SCRIPTED
     };
     
