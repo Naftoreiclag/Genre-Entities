@@ -14,8 +14,8 @@
  *  limitations under the License.
  */
 
-#ifndef TEMPLATE_USE_HEADER_GENERATOR
-#define TEMPLATE_USE_HEADER_GENERATOR
+#ifndef PEGR_GENSYS_ENTITYHANDLE_HPP
+#define PEGR_GENSYS_ENTITYHANDLE_HPP
 
 #include <cstdint>
 
@@ -121,4 +121,4 @@ private:
 } // namespace Gensys
 } // namespace pegr
 
-#endif // TEMPLATE_USE_HEADER_GENERATOR
+#endif // PEGR_GENSYS_ENTITYHANDLE_HPP
