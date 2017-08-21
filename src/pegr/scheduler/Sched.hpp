@@ -17,8 +17,8 @@
 #ifndef PEGR_SCHEDULER_SCHED_HPP
 #define PEGR_SCHEDULER_SCHED_HPP
 
-#include <string>
 #include <cstdint>
+#include <string>
 
 #include "pegr/resource/Oid.hpp"
 #include "pegr/script/Script.hpp"

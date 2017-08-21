@@ -17,8 +17,8 @@
 #ifndef PEGR_SCHEDULER_LUAINTERF_HPP
 #define PEGR_SCHEDULER_LUAINTERF_HPP
 
-#include "pegr/script/Script.hpp"
 #include "pegr/scheduler/Sched.hpp"
+#include "pegr/script/Script.hpp"
 
 namespace pegr {
 namespace Schedu {

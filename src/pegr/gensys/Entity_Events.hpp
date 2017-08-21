@@ -19,8 +19,8 @@
 
 #include <functional>
 
-#include "pegr/scheduler/Sched.hpp"
 #include "pegr/gensys/Runtime_Types.hpp"
+#include "pegr/scheduler/Sched.hpp"
 
 namespace pegr {
 namespace Gensys {

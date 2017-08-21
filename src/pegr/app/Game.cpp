@@ -20,8 +20,8 @@
 #include <cassert>
 #include <vector>
 
-#include <bgfx/bgfx.h>
 #include <bexam_cubes/cubes.hpp>
+#include <bgfx/bgfx.h>
 
 #include "pegr/engine/App_State.hpp"
 #include "pegr/engine/Engine.hpp"
@@ -98,7 +98,6 @@ void Game_State::do_frame() {
 
 void Game_State::on_window_resize(int32_t width, int32_t height) {
     bgfx::setViewRect(0, 0, 0, width, height);
-    
 }
 
 } // namespace App

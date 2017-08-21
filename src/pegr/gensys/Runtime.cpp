@@ -23,13 +23,13 @@
 #include <unordered_map>
 #include <vector>
 
+#include "pegr/algs/Algs.hpp"
 #include "pegr/debug/Debug_Macros.hpp"
+#include "pegr/except/Except.hpp"
 #include "pegr/gensys/Entity_Collection.hpp"
 #include "pegr/gensys/Util.hpp"
 #include "pegr/logger/Logger.hpp"
 #include "pegr/script/Script_Util.hpp"
-#include "pegr/except/Except.hpp"
-#include "pegr/algs/Algs.hpp"
 
 namespace pegr {
 namespace Gensys {

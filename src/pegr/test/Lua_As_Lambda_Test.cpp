@@ -16,10 +16,10 @@
  
 #include <functional>
 
+#include "pegr/debug/Debug_Macros.hpp"
 #include "pegr/except/Except.hpp"
 #include "pegr/script/Script.hpp"
 #include "pegr/test/Test_Util.hpp"
-#include "pegr/debug/Debug_Macros.hpp"
 
 namespace pegr {
 namespace Test {

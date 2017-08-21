@@ -25,6 +25,7 @@
 #include <sstream>
 #include <vector>
 
+#include "pegr/algs/Algs.hpp"
 #include "pegr/debug/Debug_Macros.hpp"
 #include "pegr/except/Except.hpp"
 #include "pegr/gensys/Compiler.hpp"
@@ -32,7 +33,6 @@
 #include "pegr/logger/Logger.hpp"
 #include "pegr/script/Lua_Interf_Util.hpp"
 #include "pegr/script/Script_Util.hpp"
-#include "pegr/algs/Algs.hpp"
 
 namespace pegr {
 namespace Gensys {

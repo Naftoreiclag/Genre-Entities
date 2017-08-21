@@ -14,8 +14,8 @@
  *  limitations under the License.
  */
 
-#include "pegr/test/Test_Util.hpp"
 #include "pegr/algs/Algs.hpp"
+#include "pegr/test/Test_Util.hpp"
 
 namespace pegr {
 namespace Test {
