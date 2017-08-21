@@ -43,15 +43,18 @@ Entity* Entity_Collection::get_entity(Entity_Handle handle) {
 }
 
 void Entity_Collection::clear() {
+    assert(!m_deferred_mode);
+    
     m_next_handle = 0;
+    
+    for (Entity& ent : m_vector) {
+        if (ent.is_alive()) {
+            ent.kill();
+        }
+    }
     m_vector.clear();
     // Very important: otherwise entity handles may wrongly report existence.
     m_handle_to_index.clear();
-    
-    m_deferred_mode = false;
-    m_queued_vector.clear();
-    m_queued_handle_to_index.clear();
-    m_queued_removals.clear();
 }
 
 Entity_Handle Entity_Collection::new_entity(Arche* arche) {
@@ -66,8 +69,14 @@ void Entity_Collection::delete_entity(Entity_Handle handle_a) {
     /* In deferred mode, we can't remove an entity just yet, since we need to
      * preserve the ordering of the "actual" vector
      */
+    if (handle_a->is_alive()) {
+        handle_a->kill();
+    }
+    
+    assert(handle_a->can_be_spawned() || handle_a->has_been_killed());
     if (m_deferred_mode) {
         m_queued_removals.insert(handle_a);
+        assert(!does_exist(handle_a));
         return;
     }
     
@@ -109,10 +118,11 @@ void Entity_Collection::delete_entity(Entity_Handle handle_a) {
     
     // Remove the corresponding entry from the handle-to-index map
     m_handle_to_index.erase(map_entry_a);
-    assert(m_handle_to_index.find(handle_a) == m_handle_to_index.end());
+    
+    assert(!does_exist(handle_a));
 }
 
-bool Entity_Collection::is_valid(Entity_Handle handle) {
+bool Entity_Collection::does_exist(Entity_Handle handle) {
     if (handle.get_id() == -1) {
         return false;
     }
@@ -140,6 +150,7 @@ void Entity_Collection::for_each(std::function<void(Entity*)> for_body) {
     }
     disable_deferred();
 }
+
 void Entity_Collection::enable_deferred() {
     assert(!m_deferred_mode);
     m_deferred_mode = true;

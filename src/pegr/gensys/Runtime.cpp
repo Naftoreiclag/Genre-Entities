@@ -396,9 +396,6 @@ Entity::Entity(Arche* arche, Entity_Handle handle)
     assert(!has_been_spawned());
 }
 
-Entity::Entity()
-: m_arche(nullptr) {}
-
 Arche* Entity::get_arche() const {
     return m_arche;
 }
@@ -467,31 +464,18 @@ bool Entity::is_lua_owned() const {
     return (get_flags() & ENT_FLAG_LUA_OWNED) == ENT_FLAG_LUA_OWNED;
 }
 
-void Entity::set_flags(std::uint64_t arg_flags, bool set) {
-    std::uint64_t flags = 
-            m_chunk.get().get_value<std::uint64_t>(ENT_HEADER_FLAGS);
-    if (set) {
-        flags |= arg_flags;
-        assert((flags & arg_flags) == arg_flags);
-    } else {
-        flags &= ~arg_flags;
-        assert((flags & arg_flags) == 0);
-    }
-    m_chunk.get().set_value<std::uint64_t>(ENT_HEADER_FLAGS, flags);
+void Entity::spawn() {
+    assert(can_be_spawned());
+    set_flag_spawned(true);
+    assert(has_been_spawned());
 }
-    
-void Entity::set_flag_spawned(bool flag) {
-    set_flags(ENT_FLAG_SPAWNED, flag);
-    assert(has_been_spawned() == flag);
+
+void Entity::kill() {
+    assert(has_been_spawned());
+    set_flag_killed(true);
+    assert(has_been_killed());
 }
-void Entity::set_flag_lua_owned(bool flag) {
-    set_flags(ENT_FLAG_LUA_OWNED, flag);
-    assert(is_lua_owned() == flag);
-}
-void Entity::set_flag_killed(bool flag) {
-    set_flags(ENT_FLAG_KILLED, flag);
-    assert(has_been_killed() == flag);
-}
+
 Member_Ptr Entity::get_member(const Member_Key& member_key) {
     /* Depending on the member's type, where we read the data and how we
      * intepret it changes. For POD types, the data comes from the chunk. Other
@@ -584,6 +568,35 @@ Cview Entity::make_cview(const Symbol& comp_symb) {
     retval.m_ent = get_handle();
     assert(!retval.is_nullptr());
     return retval;
+}
+
+Entity::Entity()
+: m_arche(nullptr) {}
+
+void Entity::set_flags(std::uint64_t arg_flags, bool set) {
+    std::uint64_t flags = 
+            m_chunk.get().get_value<std::uint64_t>(ENT_HEADER_FLAGS);
+    if (set) {
+        flags |= arg_flags;
+        assert((flags & arg_flags) == arg_flags);
+    } else {
+        flags &= ~arg_flags;
+        assert((flags & arg_flags) == 0);
+    }
+    m_chunk.get().set_value<std::uint64_t>(ENT_HEADER_FLAGS, flags);
+}
+    
+void Entity::set_flag_spawned(bool flag) {
+    set_flags(ENT_FLAG_SPAWNED, flag);
+    assert(has_been_spawned() == flag);
+}
+void Entity::set_flag_lua_owned(bool flag) {
+    set_flags(ENT_FLAG_LUA_OWNED, flag);
+    assert(is_lua_owned() == flag);
+}
+void Entity::set_flag_killed(bool flag) {
+    set_flags(ENT_FLAG_KILLED, flag);
+    assert(has_been_killed() == flag);
 }
 
 void initialize() {

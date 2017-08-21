@@ -34,7 +34,7 @@ uint64_t Entity_Handle::get_id() const {
     return m_entity_id;
 }
 bool Entity_Handle::does_exist() const {
-    return n_ent_collection.is_valid(*this);
+    return n_ent_collection.does_exist(*this);
 }
 Entity* Entity_Handle::operator ->() const {
     return get_entity();

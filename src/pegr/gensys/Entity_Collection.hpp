@@ -34,12 +34,26 @@ public:
     
     Entity* get_entity(Entity_Handle handle);
     void clear();
+    
+    /**
+     * @brief Create a new entity: "nonexistent" -> "can_be_spawned"
+     * @param arche The archetype to use
+     * @return the entity
+     */
     Entity_Handle new_entity(Arche* arche);
+    
+    /**
+     * @brief Delete the entity: "killed" -> "nonexistent"
+     *                              or "can_be_spawned" -> "nonexistent"
+     * Note: if the entity is in the "alive" state, this automatically calls
+     * kill_entity() first.
+     * @param handle The handle of the entity
+     */
     void delete_entity(Entity_Handle handle);
-    bool is_valid(Entity_Handle handle);
+
+    bool does_exist(Entity_Handle handle);
     void for_each(std::function<void(Entity*)> for_body);
     
-
 private:
 
     std::uint64_t m_next_handle = 0;
@@ -47,8 +61,11 @@ private:
     std::vector<Entity> m_vector;
     
     /* Deferred mode is used during a call to for_each()
+     * When active, removals and additions are queued. From the user's
+     * perspective, however, these removals and additions really do take place.
      * 
-     * 
+     * Internally, no modifications to the length of m_vector are allowed
+     * when deferred mode is active.
      */
     bool m_deferred_mode = false;
     std::unordered_set<std::uint64_t> m_queued_removals;

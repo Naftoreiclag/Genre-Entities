@@ -477,31 +477,6 @@ public:
     bool is_lua_owned() const;
     
     /**
-     * @brief Changes the state of multiple flags at once. Sets all of the flags
-     * specified in "flags" to the state specified in "set". Note that this does
-     * not just simply set the flags to "flags". Instead, only those flags
-     * bitmasked by "flags" are set to the state "set".
-     * @param flags
-     * @param set
-     */
-    void set_flags(std::uint64_t flags, bool set);
-    
-    /**
-     * @brief Flags this entity as having been spawned or not
-     */
-    void set_flag_spawned(bool flag);
-    
-    /**
-     * @brief Flags this entity as being lua-owned or not
-     */
-    void set_flag_lua_owned(bool flag);
-    
-    /**
-     * @brief Flags this entity as having been killed or not
-     */
-    void set_flag_killed(bool flag);
-    
-    /**
      * @brief Get a void pointer referenced by this data. Note that this does
      * NO SANITY CHECKING WHATSOEVER. This method assumes that you have already
      * checked that the key is appropriate for this entity.
@@ -524,6 +499,19 @@ public:
      */ 
     Entity(Arche* arche, Entity_Handle handle);
     
+    /**
+     * @brief Puts entity in active state. 
+     * "can_be_spawned" must return true before calling this method.
+     * "has_been_spawned" will return true forever.
+     */
+    void spawn();
+    
+    /**
+     * @brief Puts entity in inactive state from which it cannot recover.
+     * "has_been_spawned" must return true before calling this method.
+     * "has_been_killed" will return true forever.
+     */
+    void kill();
     
     /**
      * @brief Default constructor for moving to. Use the static factory methods
@@ -574,6 +562,32 @@ private:
      */
     Script::Unique_Regref m_generic_weak_table;
     
+    /**
+     * @brief Changes the state of multiple flags at once. Sets all of the flags
+     * specified in "flags" to the state specified in "set". Note that this does
+     * not just simply set the flags to "flags". Instead, only those flags
+     * bitmasked by "flags" are set to the state "set".
+     * @param flags
+     * @param set
+     */
+    void set_flags(std::uint64_t flags, bool set);
+    
+    /**
+     * @brief Flags this entity as having been spawned or not
+     */
+    void set_flag_spawned(bool flag);
+    
+public:
+    /**
+     * @brief Flags this entity as being lua-owned or not
+     */
+    void set_flag_lua_owned(bool flag);
+    
+private:
+    /**
+     * @brief Flags this entity as having been killed or not
+     */
+    void set_flag_killed(bool flag);
 };
 
 } // namespace Runtime
