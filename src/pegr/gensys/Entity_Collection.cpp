@@ -54,7 +54,7 @@ void Entity_Collection::clear() {
     m_queued_removals.clear();
 }
 
-Entity_Handle Entity_Collection::emplace(Arche* arche) {
+Entity_Handle Entity_Collection::new_entity(Arche* arche) {
     if (m_deferred_mode) {
         return emplace_into(arche, m_queued_handle_to_index, m_queued_vector);
     } else {
@@ -62,7 +62,7 @@ Entity_Handle Entity_Collection::emplace(Arche* arche) {
     }
 }
 
-void Entity_Collection::remove(Entity_Handle handle_a) {
+void Entity_Collection::delete_entity(Entity_Handle handle_a) {
     /* In deferred mode, we can't remove an entity just yet, since we need to
      * preserve the ordering of the "actual" vector
      */
@@ -151,7 +151,7 @@ void Entity_Collection::disable_deferred() {
     m_deferred_mode = false;
     
     for (std::uint64_t hand : m_queued_removals) {
-        remove(Entity_Handle(hand));
+        delete_entity(Entity_Handle(hand));
     }
     
     std::size_t bottom = m_vector.size();

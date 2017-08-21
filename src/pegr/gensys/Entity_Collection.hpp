@@ -34,8 +34,8 @@ public:
     
     Entity* get_entity(Entity_Handle handle);
     void clear();
-    Entity_Handle emplace(Arche* arche);
-    void remove(Entity_Handle handle);
+    Entity_Handle new_entity(Arche* arche);
+    void delete_entity(Entity_Handle handle);
     bool is_valid(Entity_Handle handle);
     void for_each(std::function<void(Entity*)> for_body);
     
