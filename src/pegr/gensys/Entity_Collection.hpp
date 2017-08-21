@@ -20,6 +20,7 @@
 #include <cstdint>
 #include <functional>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "pegr/gensys/Runtime_Types.hpp"
@@ -37,12 +38,33 @@ public:
     void remove(Entity_Handle handle);
     bool is_valid(Entity_Handle handle);
     void for_each(std::function<void(Entity*)> for_body);
+    
 
 private:
 
     std::uint64_t m_next_handle = 0;
     std::unordered_map<std::uint64_t, std::size_t> m_handle_to_index;
     std::vector<Entity> m_vector;
+    
+    /* Deferred mode is used during a call to for_each()
+     * 
+     * 
+     */
+    bool m_deferred_mode = false;
+    std::unordered_set<std::uint64_t> m_queued_removals;
+    std::unordered_map<std::uint64_t, std::size_t> m_queued_handle_to_index;
+    std::vector<Entity> m_queued_vector;
+    
+    void enable_deferred();
+    void disable_deferred();
+    
+    Entity_Handle emplace_into(Arche* arche, 
+            std::unordered_map<std::uint64_t, std::size_t>& hti,
+            std::vector<Entity>& vec);
+    
+    Entity* get_entity_inside(Entity_Handle handle, 
+            std::unordered_map<std::uint64_t, std::size_t>& hti,
+            std::vector<Entity>& vec);
 };
     
 } // namespace Runtime
