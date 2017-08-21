@@ -40,15 +40,19 @@ std::map<std::string, std::unique_ptr<Runtime::Arche> > n_runtime_arches;
 std::map<std::string, std::unique_ptr<Runtime::Genre> > n_runtime_genres;
 std::vector<Script::Unique_Regref> n_held_lua_values;
 
-const uint64_t ENT_HEADER_FLAGS = 0;
-const uint64_t ENT_HEADER_SIZE = ENT_HEADER_FLAGS + 8;
+const std::uint64_t ENT_HEADER_FLAGS = 0;
+const std::uint64_t ENT_HEADER_SIZE = ENT_HEADER_FLAGS + 8;
 
-const uint64_t ENT_FLAG_SPAWNED =           1 << 0;
-const uint64_t ENT_FLAG_KILLED =            1 << 1;
-const uint64_t ENT_FLAG_LUA_OWNED =         1 << 2;
-const uint64_t ENT_FLAGS_DEFAULT =          0;
+const std::uint64_t ENT_FLAG_SPAWNED =           1 << 0;
+const std::uint64_t ENT_FLAG_KILLED =            1 << 1;
+const std::uint64_t ENT_FLAG_LUA_OWNED =         1 << 2;
+const std::uint64_t ENT_FLAGS_DEFAULT =          0;
 
 Entity_Collection n_ent_collection;
+
+Entity_Collection& get_entities() {
+    return n_ent_collection;
+}
 
 const char* prim_to_dbg_string(Prim::Type ty) {
     switch (ty) {
@@ -385,7 +389,7 @@ Entity::Entity(Arche* arche, Entity_Handle handle)
             m_chunk.get(), ENT_HEADER_SIZE,
             m_arche->m_default_chunk.get().get_size());
     
-    m_chunk.get().set_value<uint64_t>(ENT_HEADER_FLAGS, ENT_FLAGS_DEFAULT);
+    m_chunk.get().set_value<std::uint64_t>(ENT_HEADER_FLAGS, ENT_FLAGS_DEFAULT);
     m_strings = m_arche->m_default_strings;
     
     assert(get_flags() == ENT_FLAGS_DEFAULT);
@@ -394,14 +398,6 @@ Entity::Entity(Arche* arche, Entity_Handle handle)
 
 Entity::Entity()
 : m_arche(nullptr) {}
-
-Entity_Handle Entity::new_entity(Arche* arche) {
-    return n_ent_collection.emplace(arche);
-}
-
-void Entity::delete_entity(Entity_Handle handle) {
-    n_ent_collection.remove(handle);
-}
 
 Arche* Entity::get_arche() const {
     return m_arche;
@@ -448,15 +444,15 @@ Script::Regref Entity::get_func(std::size_t idx) const {
     assert(idx >= 0 && idx < m_arche->m_static_funcs.size());
     return m_arche->m_static_funcs[idx];
 }
-uint64_t Entity::get_flags() const {
-    return m_chunk.get().get_value<uint64_t>(ENT_HEADER_FLAGS);
+std::uint64_t Entity::get_flags() const {
+    return m_chunk.get().get_value<std::uint64_t>(ENT_HEADER_FLAGS);
 }
 
 bool Entity::has_been_spawned() const {
     return (get_flags() & ENT_FLAG_SPAWNED) == ENT_FLAG_SPAWNED;
 }
 bool Entity::is_alive() const {
-    uint64_t flags = get_flags();
+    std::uint64_t flags = get_flags();
     // Spawned and not killed
     
     return (flags & (ENT_FLAG_SPAWNED | ENT_FLAG_KILLED)) == ENT_FLAG_SPAWNED;
@@ -471,8 +467,9 @@ bool Entity::is_lua_owned() const {
     return (get_flags() & ENT_FLAG_LUA_OWNED) == ENT_FLAG_LUA_OWNED;
 }
 
-void Entity::set_flags(uint64_t arg_flags, bool set) {
-    uint64_t flags = m_chunk.get().get_value<uint64_t>(ENT_HEADER_FLAGS);
+void Entity::set_flags(std::uint64_t arg_flags, bool set) {
+    std::uint64_t flags = 
+            m_chunk.get().get_value<std::uint64_t>(ENT_HEADER_FLAGS);
     if (set) {
         flags |= arg_flags;
         assert((flags & arg_flags) == arg_flags);
@@ -480,7 +477,7 @@ void Entity::set_flags(uint64_t arg_flags, bool set) {
         flags &= ~arg_flags;
         assert((flags & arg_flags) == 0);
     }
-    m_chunk.get().set_value<uint64_t>(ENT_HEADER_FLAGS, flags);
+    m_chunk.get().set_value<std::uint64_t>(ENT_HEADER_FLAGS, flags);
 }
     
 void Entity::set_flag_spawned(bool flag) {
@@ -519,12 +516,12 @@ Member_Ptr Entity::get_member(const Member_Key& member_key) {
             switch(prim.m_type) {
                 case Runtime::Prim::Type::I32: {
                     //Logger::log()->info("i32");
-                    vptr = m_chunk.get().get_aligned<int32_t>(pod_offset);
+                    vptr = m_chunk.get().get_aligned<std::int32_t>(pod_offset);
                     break;
                 }
                 case Runtime::Prim::Type::I64: {
                     //Logger::log()->info("i64");
-                    vptr = m_chunk.get().get_aligned<int64_t>(pod_offset);
+                    vptr = m_chunk.get().get_aligned<std::int64_t>(pod_offset);
                     break;
                 }
                 case Runtime::Prim::Type::F32: {
@@ -599,7 +596,7 @@ void cleanup() {
     n_held_lua_values.clear();
 }
 
-uint64_t bottom_52(uint64_t num) {
+std::uint64_t bottom_52(std::uint64_t num) {
     //             0123456789abcdef
     return num & 0x001FFFFFFFFFFFFF;
 }

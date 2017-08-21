@@ -373,9 +373,6 @@ extern const uint64_t ENT_FLAGS_DEFAULT;
  */
 class Entity {
 public:
-    static Entity_Handle new_entity(Arche* arche);
-    static void delete_entity(Entity_Handle handle);
-    
     /* Entities can be moved (within the vector), but not copied.
      */
     Entity(const Entity& rhs) = delete;
@@ -473,7 +470,7 @@ public:
      * @param flags
      * @param set
      */
-    void set_flags(uint64_t flags, bool set);
+    void set_flags(std::uint64_t flags, bool set);
     
     /**
      * @brief Flags this entity as having been spawned or not

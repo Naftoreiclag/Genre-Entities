@@ -19,6 +19,7 @@
 
 #include <functional>
 
+#include "pegr/gensys/Entity_Collection.hpp"
 #include "pegr/gensys/Runtime_Types.hpp"
 
 namespace pegr {
@@ -28,7 +29,7 @@ namespace Runtime {
 void initialize();
 void cleanup();
 
-Entity_Handle reserve_new_handle();
+Entity_Collection& get_entities();
 
 /**
  * @param num A 64 bit unsigned value. When passing the entity's unique id to

@@ -508,7 +508,7 @@ int li_entity_mt_gc(lua_State* l) {
      */
     if (ent.does_exist() && ent->is_lua_owned()) {
         assert(!ent->has_been_spawned());
-        Runtime::Entity::delete_entity(ent);
+        Runtime::get_entities().remove(ent);
     }
     
     ent.Runtime::Entity_Handle::~Entity_Handle();
@@ -791,7 +791,7 @@ int li_new_entity(lua_State* l) {
     
     Runtime::Arche* arche = *arg_require_arche(l, 1);
     
-    Runtime::Entity_Handle ent = Runtime::Entity::new_entity(arche);
+    Runtime::Entity_Handle ent = Runtime::get_entities().emplace(arche);
     ent->set_flag_lua_owned(true);
     assert(ent->is_lua_owned());
     assert(ent->can_be_spawned());
@@ -813,7 +813,7 @@ int li_delete_entity(lua_State* l) {
     }
 
     assert(!ent->has_been_spawned());
-    Runtime::Entity::delete_entity(ent);
+    Runtime::get_entities().remove(ent);
     
     lua_pushboolean(l , true);
     return 1;
