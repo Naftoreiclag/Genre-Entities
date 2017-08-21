@@ -32,6 +32,7 @@ namespace Test {
 void test_0000_algs();
 void test_0000_memory_test();
 void test_0000_ptr_cast();
+void test_0000_signed_unsigned();
 void test_0001_flags();
 void test_0001_init_sanity();
 void test_0002_app_state_machine_test();
@@ -73,6 +74,7 @@ const NamedTest n_tests[] = {
     {"Util algs test", test_0000_algs},
     {"Memory Test", test_0000_memory_test},
     {"Pointer cast", test_0000_ptr_cast},
+    {"Assigning negative to unsigned", test_0000_signed_unsigned},
     {"Flag test", test_0001_flags},
     {"Initialization Sanity Test", test_0001_init_sanity},
     {"App State Machine Test", test_0002_app_state_machine_test},

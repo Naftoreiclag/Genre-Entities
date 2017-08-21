@@ -21,6 +21,7 @@
 
 #include "pegr/except/Except.hpp"
 #include "pegr/logger/Logger.hpp"
+#include "pegr/test/Test_Util.hpp"
 
 namespace pegr {
 namespace Test {
@@ -93,6 +94,13 @@ void test_0000_ptr_cast() {
     }
     
     std::free(static_cast<void*>(memory));
+}
+
+//@Test Assigning negative to unsigned
+void test_0000_signed_unsigned() {
+    std::uint32_t foo = -1;
+    Logger::log()->info(foo);
+    verify_equals(0xFFFFFFFF, foo);
 }
 
 } // namespace Test
