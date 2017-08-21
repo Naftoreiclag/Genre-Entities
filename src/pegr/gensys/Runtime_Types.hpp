@@ -360,6 +360,20 @@ extern const uint64_t ENT_FLAGS_DEFAULT;
  *    could still be handles with that entity's ID, and all of those handles
  *    must report that the entity is non-existent.)
  * 
+ * Human names:
+ * A: "Nonexistent"
+ * B: "Can be spawned (lua-owned)"
+ * C: "Can be spawned"
+ * D: "Alive"
+ * E: "Killed"
+ * F: "Nonexistent"
+ * 
+ * Note that we call it "killed" and not "dead" becuase that name better
+ * communicates that "nonexistent" does not imply "dead" (In order to have
+ * been killed, you must have been alive!)
+ * 
+ * Note that B and C are indistinguishable within the Lua API
+ * 
  * The above table also shows all possible states that all entities can have.
  * 
  * killed implies spawned
