@@ -14,8 +14,8 @@
  *  limitations under the License.
  */
 
-#ifndef PEGR_GENSYS_ENTITYTICKEVENT_HPP
-#define PEGR_GENSYS_ENTITYTICKEVENT_HPP
+#ifndef PEGR_GENSYS_ENTITYEVENTS_HPP
+#define PEGR_GENSYS_ENTITYEVENTS_HPP
 
 #include <functional>
 
@@ -65,4 +65,4 @@ private:
 } // namespace Gensys
 } // namespace pegr
 
-#endif // PEGR_GENSYS_ENTITYTICKEVENT_HPP
+#endif // PEGR_GENSYS_ENTITYEVENTS_HPP

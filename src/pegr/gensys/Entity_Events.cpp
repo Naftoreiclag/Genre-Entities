@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-#include "pegr/gensys/Entity_Tick_Event.hpp"
+#include "pegr/gensys/Entity_Events.hpp"
 
 namespace pegr {
 namespace Gensys {
