@@ -97,6 +97,14 @@ void Game_State::initialize() {
     m_program = Render::make_program(
             Render::find_shader("basic_color.vs"), 
             Render::find_shader("basic_color.fs"));
+    
+    Gensys::Runtime::Arche* arche = Gensys::Runtime::find_arche("cookie.at");
+    
+    m_calls = 0;
+    m_ete->add_listener(Gensys::Event::Arche_Entity_Listener(arche, 
+            [&](Gensys::Runtime::Entity* ent) {
+                ++m_calls;
+            }));
 }
 
 void Game_State::do_tick() {
@@ -114,6 +122,10 @@ void Game_State::do_frame() {
 
 void Game_State::on_window_resize(int32_t width, int32_t height) {
     bgfx::setViewRect(0, 0, 0, width, height);
+}
+
+void Game_State::cleanup() {
+    Logger::log()->info("cookie ticks: %v", m_calls);
 }
 
 } // namespace App

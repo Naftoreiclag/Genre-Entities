@@ -274,9 +274,9 @@ bool Arche::matches(Entity* ent_unsafe) {
     return ent_unsafe->get_arche() == this;
 }
 
-Arche* Arche::match(Entity* ent_unsafe) {
+Entity* Arche::match(Entity* ent_unsafe) {
     if (ent_unsafe->get_arche() == this) {
-        return this;
+        return ent_unsafe;
     }
     return nullptr;
 }

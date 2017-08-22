@@ -34,6 +34,16 @@ Entity_Tick_Event::Entity_Tick_Event()
 : Schedu::Event() {}
 Entity_Tick_Event::~Entity_Tick_Event() {}
 
+void Entity_Tick_Event::add_listener(Arche_Entity_Listener listener) {
+    m_arche_listeners.push_back(listener);
+}
+void Entity_Tick_Event::add_listener(Comp_Entity_Listener listener) {
+    m_comp_listeners.push_back(listener);
+}
+void Entity_Tick_Event::add_listener(Genre_Entity_Listener listener) {
+    m_genre_listeners.push_back(listener);
+}
+
 Schedu::Event::Type Entity_Tick_Event::get_type() const {
     return Schedu::Event::Type::ENTITY_TICK;
 }

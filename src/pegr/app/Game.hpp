@@ -36,6 +36,8 @@ public:
     virtual void do_frame() override;
     virtual void on_window_resize(int32_t width, int32_t height) override;
     
+    virtual void cleanup() override;
+    
 private:
     Render::Unique_Vertex_Buffer m_vert_buff;
     Render::Unique_Index_Buffer m_index_buff;
@@ -44,6 +46,7 @@ private:
     Gensys::Event::Entity_Tick_Event* m_ete;
     
     double m_time;
+    int m_calls;
 };
 
 } // namespace App

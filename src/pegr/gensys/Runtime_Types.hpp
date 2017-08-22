@@ -193,7 +193,7 @@ struct Arche {
     
     bool matches(Entity* ent_unsafe);
     
-    Arche* match(Entity* ent_unsafe);
+    Entity* match(Entity* ent_unsafe);
 };
 
 /**
