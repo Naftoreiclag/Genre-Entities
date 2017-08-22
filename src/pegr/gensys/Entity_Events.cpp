@@ -35,13 +35,13 @@ Entity_Tick_Event::Entity_Tick_Event()
 Entity_Tick_Event::~Entity_Tick_Event() {}
 
 void Entity_Tick_Event::add_listener(Arche_Entity_Listener listener) {
-    m_arche_listeners.push_back(listener);
+    m_arche_listeners.add(listener);
 }
 void Entity_Tick_Event::add_listener(Comp_Entity_Listener listener) {
-    m_comp_listeners.push_back(listener);
+    m_comp_listeners.add(listener);
 }
 void Entity_Tick_Event::add_listener(Genre_Entity_Listener listener) {
-    m_genre_listeners.push_back(listener);
+    m_genre_listeners.add(listener);
 }
 
 Schedu::Event::Type Entity_Tick_Event::get_type() const {
@@ -49,24 +49,21 @@ Schedu::Event::Type Entity_Tick_Event::get_type() const {
 }
 
 void Entity_Tick_Event::trigger() {
-    for (Arche_Entity_Listener& listener : 
-            m_arche_listeners) {
+    m_arche_listeners.for_each([](Arche_Entity_Listener* listener) {
         Runtime::get_entities().for_each([&](Runtime::Entity* ent) {
-            listener.call(ent);
+            listener->call(ent);
         });
-    }
-    for (Comp_Entity_Listener& listener : 
-            m_comp_listeners) {
+    });
+    m_comp_listeners.for_each([](Comp_Entity_Listener* listener) {
         Runtime::get_entities().for_each([&](Runtime::Entity* ent) {
-            listener.call(ent);
+            listener->call(ent);
         });
-    }
-    for (Genre_Entity_Listener& listener : 
-            m_genre_listeners) {
+    });
+    m_genre_listeners.for_each([](Genre_Entity_Listener* listener) {
         Runtime::get_entities().for_each([&](Runtime::Entity* ent) {
-            listener.call(ent);
+            listener->call(ent);
         });
-    }
+    });
 }
 
 } // namespace Event

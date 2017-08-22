@@ -17,8 +17,10 @@
 #ifndef PEGR_GENSYS_ENTITYEVENTS_HPP
 #define PEGR_GENSYS_ENTITYEVENTS_HPP
 
+#include <cstdint>
 #include <functional>
 
+#include "pegr/algs/QIFU_Map.hpp"
 #include "pegr/gensys/Runtime_Types.hpp"
 #include "pegr/scheduler/Sched.hpp"
 
@@ -89,9 +91,9 @@ public:
     
 private:
 
-    std::vector<Arche_Entity_Listener> m_arche_listeners;
-    std::vector<Comp_Entity_Listener> m_comp_listeners;
-    std::vector<Genre_Entity_Listener> m_genre_listeners;
+    Algs::QIFU_Map<std::uint64_t, Arche_Entity_Listener> m_arche_listeners;
+    Algs::QIFU_Map<std::uint64_t, Comp_Entity_Listener> m_comp_listeners;
+    Algs::QIFU_Map<std::uint64_t, Genre_Entity_Listener> m_genre_listeners;
 };
 
 template <Schedu::Event::Type s_event_type>
@@ -103,21 +105,21 @@ public:
     virtual ~Entity_Event() {}
     
     void add_listener(Entity_Listener listener) {
-        m_listeners.push_back(listener);
+        m_listeners.add(listener);
     }
     
     virtual Schedu::Event::Type get_type() const override {
         return s_event_type;
     }
     void trigger(Runtime::Entity* ent) {
-        for (Entity_Listener listener : m_listeners) {
-            listener.call(ent);
-        }
+        m_listeners.for_each([ent](Entity_Listener* listener) {
+            listener->call(ent);
+        });
     }
     
 private:
 
-    std::vector<Entity_Listener> m_listeners;
+    Algs::QIFU_Map<std::uint64_t, Entity_Listener> m_listeners;
 };
 
 typedef Entity_Event<Schedu::Event::Type::ENTITY_KILLED> Entity_Killed_Event;
