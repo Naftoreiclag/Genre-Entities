@@ -32,7 +32,7 @@ public:
     // TODO
 
     virtual Event::Type get_type() const override;
-    virtual void trigger() override;
+    void trigger();
 };
 
 void initialize();

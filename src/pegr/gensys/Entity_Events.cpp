@@ -16,15 +16,19 @@
 
 #include "pegr/gensys/Entity_Events.hpp"
 
+#include "pegr/gensys/Runtime.hpp"
+
 namespace pegr {
 namespace Gensys {
-/*
 namespace Runtime {
 
-extern std::vector<Entity> n_entities;
+Entity_Listener::Entity_Listener(
+        std::function<void(Entity*)> func)
+: m_func(func) {}
 
-} // namespace Runtime
-*/
+void Entity_Listener::call(Runtime::Entity* ent) {
+    m_func(ent);
+}
 
 Entity_Tick_Event::Entity_Tick_Event()
 : Schedu::Event() {}
@@ -33,19 +37,25 @@ Entity_Tick_Event::~Entity_Tick_Event() {}
 Schedu::Event::Type Entity_Tick_Event::get_type() const {
     return Schedu::Event::Type::ENTITY_TICK;
 }
+
 void Entity_Tick_Event::trigger() {
-    /*
-    for (Runtime::Entity& ent : Runtime::n_entities) {
-        for (Ete_Listener& listener : m_listeners) {
-            switch (listener.m_selector) {
-                case Ete_Listener::Selector_Type::COMP: {
-                    Runtime::Comp* comp = listener.m_selector_union.m_comp;
-                    Cview cview = comp->match()
-                }
-            }
-        }
-    }*/
+    for (Matching_Entity_Listener<Arche>& listener : m_arche_listeners) {
+        Runtime::get_entities().for_each([&](Entity* ent) {
+            listener.call(ent);
+        });
+    }
+    for (Matching_Entity_Listener<Comp>& listener : m_comp_listeners) {
+        Runtime::get_entities().for_each([&](Entity* ent) {
+            listener.call(ent);
+        });
+    }
+    for (Matching_Entity_Listener<Genre>& listener : m_genre_listeners) {
+        Runtime::get_entities().for_each([&](Entity* ent) {
+            listener.call(ent);
+        });
+    }
 }
 
+} // namespace Runtime
 } // namespace Gensys
 } // namespace pegr

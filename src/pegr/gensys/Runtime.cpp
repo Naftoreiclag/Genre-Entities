@@ -273,6 +273,13 @@ bool Arche::matches(Entity* ent_unsafe) {
     return ent_unsafe->get_arche() == this;
 }
 
+Arche* Arche::match(Entity* ent_unsafe) {
+    if (ent_unsafe->get_arche() == this) {
+        return this;
+    }
+    return nullptr;
+}
+
 bool Cview::is_nullptr() const {
     return !m_ent.does_exist();
 }
@@ -299,6 +306,9 @@ Member_Ptr Cview::get_member_ptr(const Symbol& member_symb) const {
 bool Cview::operator ==(const Cview& rhs) const {
     return m_comp == rhs.m_comp && m_ent == rhs.m_ent;
 }
+Cview::operator bool() const {
+    return !is_nullptr();
+}
 
 Cview Comp::match(Entity* ent_unsafe) {
     Cview retval;
@@ -324,6 +334,9 @@ Member_Key::Member_Key(Arche::Aggindex aggidx, Prim prim)
 
 bool Genview::is_nullptr() const {
     return !m_ent.does_exist();
+}
+Genview::operator bool() const {
+    return !is_nullptr();
 }
 
 Member_Ptr Genview::get_member_ptr(const Symbol& member_symb) const {

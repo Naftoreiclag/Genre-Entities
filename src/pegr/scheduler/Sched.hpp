@@ -61,8 +61,8 @@ struct Listener_Common {
 class Event {
 public:
     enum Type {
-        ENTITY_TICK,
         ENTITY_SPAWNED,
+        ENTITY_TICK,
         ENTITY_KILLED,
         SCRIPTED
     };
@@ -71,7 +71,6 @@ public:
     virtual ~Event();
     
     virtual Type get_type() const = 0;
-    virtual void trigger() = 0;
 };
 
 void add_event(Resour::Oid oid, std::unique_ptr<Event>&& ev);

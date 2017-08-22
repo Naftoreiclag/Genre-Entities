@@ -149,12 +149,12 @@ Runtime::Genview* arg_require_genview(lua_State* l, int narg);
 /* The push_X functions push a new userdata ptr for the provided raw ptr,
  * applying all proper metatables.
  */
-void push_comp_pointer(lua_State* l, Runtime::Comp* ptr);
-void push_arche_pointer(lua_State* l, Runtime::Arche* ptr);
-void push_genre_pointer(lua_State* l, Runtime::Genre* ptr);
-void push_entity_handle(lua_State* l, Runtime::Entity_Handle ent);
-void push_cview(lua_State* l, Runtime::Cview ent);
-void push_genview(lua_State* l, Runtime::Genview ent);
+void push_gensys_obj(lua_State* l, Runtime::Comp* ptr);
+void push_gensys_obj(lua_State* l, Runtime::Arche* ptr);
+void push_gensys_obj(lua_State* l, Runtime::Genre* ptr);
+void push_gensys_obj(lua_State* l, Runtime::Entity_Handle ent);
+void push_gensys_obj(lua_State* l, Runtime::Cview ent);
+void push_gensys_obj(lua_State* l, Runtime::Genview ent);
 
 /**
  * @brief Attempts to get a component view for the provided entity. If this is

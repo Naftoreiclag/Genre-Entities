@@ -192,6 +192,8 @@ struct Arche {
     Script::Unique_Regref m_lua_userdata;
     
     bool matches(Entity* ent_unsafe);
+    
+    Arche* match(Entity* ent_unsafe);
 };
 
 /**
@@ -210,6 +212,7 @@ struct Cview {
 public:
     Member_Ptr get_member_ptr(const Symbol& member_symb) const;
     bool operator ==(const Cview& rhs) const;
+    explicit operator bool() const;
 };
 
 /**
@@ -265,6 +268,7 @@ struct Genview {
 public:
     Member_Ptr get_member_ptr(const Symbol& member_symb) const;
     bool operator ==(const Genview& rhs) const;
+    explicit operator bool() const;
 };
 
 struct Pattern {

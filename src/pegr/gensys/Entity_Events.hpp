@@ -24,26 +24,50 @@
 
 namespace pegr {
 namespace Gensys {
-    
-class Ete_Listener {
+namespace Runtime {
+
+class Entity_Listener {
 public:
-    enum Selector_Type {
-        COMP,
-        ARCHE,
-        GENRE
-    };
+    Entity_Listener(std::function<void(Entity*)> func);
     
-    union Selector {
-        Runtime::Comp* m_comp;
-        Runtime::Arche* m_arche;
-        Runtime::Genre* m_genre;
-    };
+    void call(Runtime::Entity* ent);
     
 private:
-    Selector_Type m_selector;
-    Selector m_selector_union;
+    std::function<void(Entity*)> m_func;
+};
+
+template<typename Select_T>
+class Matching_Entity_Listener {
+public:
+
+    /* View_T is the type of the return of calling the .match() method of an
+     * instance of the Select_T class. It can be a raw pointer (like in Arche)
+     * or a class (like in Comp and Genre), but it must have explicit operator
+     * bool and copy/move assignable.
+     */
+    typedef typename std::result_of<
+            decltype(&Select_T::match)
+                    (Select_T*, Runtime::Entity*)>::type View_T;
+
+    Matching_Entity_Listener(Select_T* selector, 
+            std::function<void(View_T)> func)
+    : m_selector(selector)
+    , m_func(func) {}
     
-    friend class Entity_Tick_Event;
+    Select_T* get_selector() {
+        return m_selector;
+    }
+    
+    void call(Runtime::Entity* ent) {
+        View_T view = m_selector->match(ent);
+        if (view) {
+            m_func(view);
+        }
+    }
+    
+private:
+    Select_T* m_selector;
+    std::function<void(View_T)> m_func;
 };
     
 class Entity_Tick_Event : public Schedu::Event {
@@ -52,16 +76,50 @@ public:
     Entity_Tick_Event();
     virtual ~Entity_Tick_Event();
     
-    void add_listener(Ete_Listener listener);
+    void add_listener(Matching_Entity_Listener<Arche> listener);
+    void add_listener(Matching_Entity_Listener<Comp> listener);
+    void add_listener(Matching_Entity_Listener<Genre> listener);
 
     virtual Schedu::Event::Type get_type() const override;
-    virtual void trigger() override;
+    void trigger();
     
 private:
 
-    std::vector<Ete_Listener> m_listeners;
+    std::vector<Matching_Entity_Listener<Arche> > m_arche_listeners;
+    std::vector<Matching_Entity_Listener<Comp> > m_comp_listeners;
+    std::vector<Matching_Entity_Listener<Genre> > m_genre_listeners;
 };
 
+template <Schedu::Event::Type s_event_type>
+class Entity_Event : public Schedu::Event {
+public:
+    
+    Entity_Event()
+    : Schedu::Event() {}
+    virtual ~Entity_Event() {}
+    
+    void add_listener(Entity_Listener listener) {
+        m_listeners.push_back(listener);
+    }
+    
+    virtual Schedu::Event::Type get_type() const override {
+        return s_event_type;
+    }
+    void trigger(Entity* ent) {
+        for (Entity_Listener listener : m_listeners) {
+            listener.call(ent);
+        }
+    }
+    
+private:
+
+    std::vector<Entity_Listener> m_listeners;
+};
+
+typedef Entity_Event<Schedu::Event::Type::ENTITY_KILLED> Entity_Killed_Event;
+typedef Entity_Event<Schedu::Event::Type::ENTITY_SPAWNED> Entity_Spawned_Event;
+
+} // namespace Runtime
 } // namespace Gensys
 } // namespace pegr
 

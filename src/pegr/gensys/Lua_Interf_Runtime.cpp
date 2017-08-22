@@ -257,22 +257,22 @@ void push_any_value(lua_State* l, Value_T val, Script::Regref metatable) {
     lua_setmetatable(l, -2);
     *(new (lua_mem) Value_T) = val;
 }
-void push_comp_pointer(lua_State* l, Runtime::Comp* ptr) {
+void push_gensys_obj(lua_State* l, Runtime::Comp* ptr) {
     push_any_pointer<Runtime::Comp*>(l, ptr, n_comp_metatable.get());
 }
-void push_arche_pointer(lua_State* l, Runtime::Arche* ptr) {
+void push_gensys_obj(lua_State* l, Runtime::Arche* ptr) {
     push_any_pointer<Runtime::Arche*>(l, ptr, n_arche_metatable.get());
 }
-void push_genre_pointer(lua_State* l, Runtime::Genre* ptr) {
+void push_gensys_obj(lua_State* l, Runtime::Genre* ptr) {
     push_any_pointer<Runtime::Genre*>(l, ptr, n_genre_metatable.get());
 }
-void push_entity_handle(lua_State* l, Runtime::Entity_Handle ent) {
+void push_gensys_obj(lua_State* l, Runtime::Entity_Handle ent) {
     push_any_value<Runtime::Entity_Handle>(l, ent, n_entity_metatable.get());
 }
-void push_cview(lua_State* l, Runtime::Cview cview) {
+void push_gensys_obj(lua_State* l, Runtime::Cview cview) {
     push_any_value<Runtime::Cview>(l, cview, n_cview_metatable.get());
 }
-void push_genview(lua_State* l, Runtime::Genview genview) {
+void push_gensys_obj(lua_State* l, Runtime::Genview genview) {
     push_any_value<Runtime::Genview>(l, genview, n_genview_metatable.get());
 }
 
@@ -430,7 +430,7 @@ int li_comp_mt_call(lua_State* l) {
             return 0;
         }
         
-        push_cview(l, cview); // +1
+        push_gensys_obj(l, cview); // +1
         int val_idx = lua_gettop(l);
         
         add_to_cache(l, cache_idx, key_idx, val_idx);
@@ -485,7 +485,7 @@ int li_genre_mt_call(lua_State* l) {
     if (genview.is_nullptr()) {
         return 0;
     }
-    push_genview(l, genview);
+    push_gensys_obj(l, genview);
     return 1;
 }
 int li_genre_mt_tostring(lua_State* l) {
@@ -542,7 +542,7 @@ int li_entity_mt_index(lua_State* l) {
         }
         else if (ent_unsafe != nullptr) {
             if (std::strcmp(special_key, "arche") == 0) {
-                push_arche_pointer(l, ent_unsafe->get_arche());
+                push_gensys_obj(l, ent_unsafe->get_arche());
                 return 1;
             } else if (std::strcmp(special_key, "killed") == 0) {
                 lua_pushboolean(l, ent_unsafe->has_been_killed());
@@ -580,7 +580,7 @@ int li_entity_mt_index(lua_State* l) {
                 return 0;
             }
             
-            push_cview(l, cview); // +1
+            push_gensys_obj(l, cview); // +1
             int val_idx = lua_gettop(l);
             
             add_to_cache(l, cache_idx, ARG_MEMBER, val_idx);
@@ -746,7 +746,7 @@ int li_find_comp(lua_State* l) {
         return 0;
     }
     
-    push_comp_pointer(l, comp);
+    push_gensys_obj(l, comp);
     
     return 1;
 }
@@ -763,7 +763,7 @@ int li_find_archetype(lua_State* l) {
         return 0;
     }
     
-    push_arche_pointer(l, arche);
+    push_gensys_obj(l, arche);
     
     return 1;
 }
@@ -780,7 +780,7 @@ int li_find_genre(lua_State* l) {
         return 0;
     }
     
-    push_genre_pointer(l, genre);
+    push_gensys_obj(l, genre);
     
     return 1;
 }
@@ -797,7 +797,7 @@ int li_new_entity(lua_State* l) {
     assert(ent->is_lua_owned());
     assert(ent->can_be_spawned());
     
-    push_entity_handle(l, ent);
+    push_gensys_obj(l, ent);
     
     return 1;
 }
