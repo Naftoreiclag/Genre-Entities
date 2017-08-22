@@ -69,6 +69,10 @@ private:
     Select_T* m_selector;
     std::function<void(View_T)> m_func;
 };
+
+typedef Matching_Entity_Listener<Runtime::Arche> Arche_Entity_Listener;
+typedef Matching_Entity_Listener<Runtime::Comp> Comp_Entity_Listener;
+typedef Matching_Entity_Listener<Runtime::Genre> Genre_Entity_Listener;
     
 class Entity_Tick_Event : public Schedu::Event {
 public:
@@ -76,18 +80,18 @@ public:
     Entity_Tick_Event();
     virtual ~Entity_Tick_Event();
     
-    void add_listener(Matching_Entity_Listener<Runtime::Arche> listener);
-    void add_listener(Matching_Entity_Listener<Runtime::Comp> listener);
-    void add_listener(Matching_Entity_Listener<Runtime::Genre> listener);
+    void add_listener(Arche_Entity_Listener listener);
+    void add_listener(Comp_Entity_Listener listener);
+    void add_listener(Genre_Entity_Listener listener);
 
     virtual Schedu::Event::Type get_type() const override;
     void trigger();
     
 private:
 
-    std::vector<Matching_Entity_Listener<Runtime::Arche> > m_arche_listeners;
-    std::vector<Matching_Entity_Listener<Runtime::Comp> > m_comp_listeners;
-    std::vector<Matching_Entity_Listener<Runtime::Genre> > m_genre_listeners;
+    std::vector<Arche_Entity_Listener> m_arche_listeners;
+    std::vector<Comp_Entity_Listener> m_comp_listeners;
+    std::vector<Genre_Entity_Listener> m_genre_listeners;
 };
 
 template <Schedu::Event::Type s_event_type>

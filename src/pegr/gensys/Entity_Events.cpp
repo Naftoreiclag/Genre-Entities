@@ -39,19 +39,19 @@ Schedu::Event::Type Entity_Tick_Event::get_type() const {
 }
 
 void Entity_Tick_Event::trigger() {
-    for (Matching_Entity_Listener<Runtime::Arche>& listener : 
+    for (Arche_Entity_Listener& listener : 
             m_arche_listeners) {
         Runtime::get_entities().for_each([&](Runtime::Entity* ent) {
             listener.call(ent);
         });
     }
-    for (Matching_Entity_Listener<Runtime::Comp>& listener : 
+    for (Comp_Entity_Listener& listener : 
             m_comp_listeners) {
         Runtime::get_entities().for_each([&](Runtime::Entity* ent) {
             listener.call(ent);
         });
     }
-    for (Matching_Entity_Listener<Runtime::Genre>& listener : 
+    for (Genre_Entity_Listener& listener : 
             m_genre_listeners) {
         Runtime::get_entities().for_each([&](Runtime::Entity* ent) {
             listener.call(ent);
