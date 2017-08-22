@@ -49,6 +49,8 @@ private:
     std::string m_resource;
 };
 
+std::ostream& operator <<(std::ostream& sss, const Oid& oid);
+
 } // namespace Resour
 } // namespace pegr
 

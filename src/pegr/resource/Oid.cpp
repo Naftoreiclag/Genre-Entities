@@ -16,6 +16,8 @@
 
 #include "pegr/resource/Oid.hpp"
 
+#include "pegr/except/Except.hpp"
+
 #include <cassert>
 #include <sstream>
 
@@ -35,7 +37,7 @@ Oid::Oid(std::string repr, std::string def_pack) {
             sss << "Too many colons (\":\") in OID: \""
                 << repr
                 << '"';
-            throw std::runtime_error(sss.str());
+            throw Except::Runtime(sss.str());
         }
     }
 }
@@ -85,6 +87,11 @@ std::string Oid::get_repr() const {
 bool Oid::operator <(const Oid& rhs) const {
     return m_package < rhs.m_package || 
             (m_package == rhs.m_package && m_resource < rhs.m_resource);
+}
+
+std::ostream& operator <<(std::ostream& sss, const Oid& oid) {
+    sss << oid.get_dbg_string();
+    return sss;
 }
 
 } // namespace Resour

@@ -110,6 +110,27 @@ int li_call_event(lua_State* l) {
     return 0;
 }
 int li_hook_listener(lua_State* l) {
+    assert_balance(0);
+    
+    const int ARG_TABLE = 1;
+    
+    luaL_checktype(l, ARG_TABLE, LUA_TTABLE);
+    
+    lua_getfield(l, ARG_TABLE, "on");
+    Script::Pop_Guard popg(1);
+    std::size_t str_len;
+    const char* str_data = lua_tolstring(l, -1, &str_len);
+    if (!str_data) {
+        luaL_error(l, "\"on\" field must be a valid object ID");
+    }
+    Resour::Oid event_oid(std::string(str_data, str_len));
+    
+    Event* event = find_event(event_oid);
+    
+    if (!event) {
+        luaL_error(l, "No event called %s", event_oid);
+    }
+    
     //luaL_error(l, "Not implemented");
     return 0;
 }

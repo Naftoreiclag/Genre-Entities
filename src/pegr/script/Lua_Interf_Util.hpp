@@ -20,6 +20,7 @@
 #include <functional>
 
 #include "pegr/script/Script.hpp"
+#include "pegr/resource/Oid.hpp"
 
 namespace pegr {
 namespace Script {

@@ -21,6 +21,7 @@
 
 #include "pegr/gensys/Entity_Collection.hpp"
 #include "pegr/gensys/Runtime_Types.hpp"
+#include "pegr/resource/Oid.hpp"
 
 namespace pegr {
 namespace Gensys {
@@ -40,9 +41,9 @@ Entity_Collection& get_entities();
  */
 uint64_t bottom_52(uint64_t num);
 
-Comp* find_comp(std::string id);
-Arche* find_arche(std::string id);
-Genre* find_genre(std::string id);
+Comp* find_comp(Resour::Oid oid);
+Arche* find_arche(Resour::Oid oid);
+Genre* find_genre(Resour::Oid oid);
 
 const char* prim_to_dbg_string(Prim::Type ty);
 

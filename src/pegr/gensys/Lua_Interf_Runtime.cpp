@@ -741,14 +741,19 @@ int li_find_comp(lua_State* l) {
     const char* strdata = luaL_checklstring(l, 1, &strlen);
     std::string key(strdata, strlen);
     
-    Runtime::Comp* comp = Runtime::find_comp(key);
-    if (!comp) {
-        return 0;
+    try {
+        Resour::Oid oid(key);
+        Runtime::Comp* comp = Runtime::find_comp(oid);
+        if (!comp) {
+            return 0;
+        }
+        
+        push_gensys_obj(l, comp);
+        
+        return 1;
+    } catch (Except::Runtime& e) {
+        luaL_error(l, e.what());
     }
-    
-    push_gensys_obj(l, comp);
-    
-    return 1;
 }
 int li_find_archetype(lua_State* l) {
     if (Gensys::get_global_state() != GlobalState::EXECUTABLE) {
@@ -758,14 +763,19 @@ int li_find_archetype(lua_State* l) {
     const char* strdata = luaL_checklstring(l, 1, &strlen);
     std::string key(strdata, strlen);
     
-    Runtime::Arche* arche = Runtime::find_arche(key);
-    if (!arche) {
-        return 0;
+    try {
+        Resour::Oid oid(key);
+        Runtime::Arche* arche = Runtime::find_arche(oid);
+        if (!arche) {
+            return 0;
+        }
+        
+        push_gensys_obj(l, arche);
+    
+        return 1;
+    } catch (Except::Runtime& e) {
+        luaL_error(l, e.what());
     }
-    
-    push_gensys_obj(l, arche);
-    
-    return 1;
 }
 int li_find_genre(lua_State* l) {
     if (Gensys::get_global_state() != GlobalState::EXECUTABLE) {
@@ -775,14 +785,19 @@ int li_find_genre(lua_State* l) {
     const char* strdata = luaL_checklstring(l, 1, &strlen);
     std::string key(strdata, strlen);
     
-    Runtime::Genre* genre = Runtime::find_genre(key);
-    if (!genre) {
-        return 0;
+    try {
+        Resour::Oid oid(key);
+        Runtime::Genre* genre = Runtime::find_genre(oid);
+        if (!genre) {
+            return 0;
+        }
+        
+        push_gensys_obj(l, genre);
+        
+        return 1;
+    } catch (Except::Runtime& e) {
+        luaL_error(l, e.what());
     }
-    
-    push_gensys_obj(l, genre);
-    
-    return 1;
 }
 int li_new_entity(lua_State* l) {
     const int ARG_ARCHE = 1;
