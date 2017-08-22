@@ -20,10 +20,10 @@
 
 namespace pegr {
 namespace Gensys {
-namespace Runtime {
+namespace Event {
 
 Entity_Listener::Entity_Listener(
-        std::function<void(Entity*)> func)
+        std::function<void(Runtime::Entity*)> func)
 : m_func(func) {}
 
 void Entity_Listener::call(Runtime::Entity* ent) {
@@ -39,23 +39,26 @@ Schedu::Event::Type Entity_Tick_Event::get_type() const {
 }
 
 void Entity_Tick_Event::trigger() {
-    for (Matching_Entity_Listener<Arche>& listener : m_arche_listeners) {
-        Runtime::get_entities().for_each([&](Entity* ent) {
+    for (Matching_Entity_Listener<Runtime::Arche>& listener : 
+            m_arche_listeners) {
+        Runtime::get_entities().for_each([&](Runtime::Entity* ent) {
             listener.call(ent);
         });
     }
-    for (Matching_Entity_Listener<Comp>& listener : m_comp_listeners) {
-        Runtime::get_entities().for_each([&](Entity* ent) {
+    for (Matching_Entity_Listener<Runtime::Comp>& listener : 
+            m_comp_listeners) {
+        Runtime::get_entities().for_each([&](Runtime::Entity* ent) {
             listener.call(ent);
         });
     }
-    for (Matching_Entity_Listener<Genre>& listener : m_genre_listeners) {
-        Runtime::get_entities().for_each([&](Entity* ent) {
+    for (Matching_Entity_Listener<Runtime::Genre>& listener : 
+            m_genre_listeners) {
+        Runtime::get_entities().for_each([&](Runtime::Entity* ent) {
             listener.call(ent);
         });
     }
 }
 
-} // namespace Runtime
+} // namespace Event
 } // namespace Gensys
 } // namespace pegr

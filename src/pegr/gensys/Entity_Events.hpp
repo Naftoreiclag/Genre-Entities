@@ -24,16 +24,16 @@
 
 namespace pegr {
 namespace Gensys {
-namespace Runtime {
+namespace Event {
 
 class Entity_Listener {
 public:
-    Entity_Listener(std::function<void(Entity*)> func);
+    Entity_Listener(std::function<void(Runtime::Entity*)> func);
     
     void call(Runtime::Entity* ent);
     
 private:
-    std::function<void(Entity*)> m_func;
+    std::function<void(Runtime::Entity*)> m_func;
 };
 
 template<typename Select_T>
@@ -76,18 +76,18 @@ public:
     Entity_Tick_Event();
     virtual ~Entity_Tick_Event();
     
-    void add_listener(Matching_Entity_Listener<Arche> listener);
-    void add_listener(Matching_Entity_Listener<Comp> listener);
-    void add_listener(Matching_Entity_Listener<Genre> listener);
+    void add_listener(Matching_Entity_Listener<Runtime::Arche> listener);
+    void add_listener(Matching_Entity_Listener<Runtime::Comp> listener);
+    void add_listener(Matching_Entity_Listener<Runtime::Genre> listener);
 
     virtual Schedu::Event::Type get_type() const override;
     void trigger();
     
 private:
 
-    std::vector<Matching_Entity_Listener<Arche> > m_arche_listeners;
-    std::vector<Matching_Entity_Listener<Comp> > m_comp_listeners;
-    std::vector<Matching_Entity_Listener<Genre> > m_genre_listeners;
+    std::vector<Matching_Entity_Listener<Runtime::Arche> > m_arche_listeners;
+    std::vector<Matching_Entity_Listener<Runtime::Comp> > m_comp_listeners;
+    std::vector<Matching_Entity_Listener<Runtime::Genre> > m_genre_listeners;
 };
 
 template <Schedu::Event::Type s_event_type>
@@ -105,7 +105,7 @@ public:
     virtual Schedu::Event::Type get_type() const override {
         return s_event_type;
     }
-    void trigger(Entity* ent) {
+    void trigger(Runtime::Entity* ent) {
         for (Entity_Listener listener : m_listeners) {
             listener.call(ent);
         }
@@ -119,7 +119,7 @@ private:
 typedef Entity_Event<Schedu::Event::Type::ENTITY_KILLED> Entity_Killed_Event;
 typedef Entity_Event<Schedu::Event::Type::ENTITY_SPAWNED> Entity_Spawned_Event;
 
-} // namespace Runtime
+} // namespace Event
 } // namespace Gensys
 } // namespace pegr
 

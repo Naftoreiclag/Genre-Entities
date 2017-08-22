@@ -73,7 +73,8 @@ public:
     virtual Type get_type() const = 0;
 };
 
-void add_event(Resour::Oid oid, std::unique_ptr<Event>&& ev);
+Event* add_event(Resour::Oid oid, std::unique_ptr<Event>&& ev);
+
 Event* find_event(Resour::Oid oid);
 
 void initialize();

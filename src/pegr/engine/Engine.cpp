@@ -103,18 +103,6 @@ void initialize(uint16_t flags) {
         }
     }
     
-    if (gensys_used()) {
-        try {
-            Gensys::initialize();
-            Gensys::LI::initialize();
-        } catch (Except::Runtime& e) {
-            std::stringstream sss;
-            sss << "Error while initializing gensys: "
-                << e.what();
-            throw Except::Runtime(sss.str());
-        }
-    }
-    
     if (schedu_used()) {
         try {
             Schedu::initialize();
@@ -122,6 +110,18 @@ void initialize(uint16_t flags) {
         } catch (Except::Runtime& e) {
             std::stringstream sss;
             sss << "Error while initializing scheduler: "
+                << e.what();
+            throw Except::Runtime(sss.str());
+        }
+    }
+    
+    if (gensys_used()) {
+        try {
+            Gensys::initialize();
+            Gensys::LI::initialize();
+        } catch (Except::Runtime& e) {
+            std::stringstream sss;
+            sss << "Error while initializing gensys: "
                 << e.what();
             throw Except::Runtime(sss.str());
         }
@@ -261,13 +261,13 @@ void cleanup() {
         Winput::cleanup();
     }
     
-    if (schedu_used()) {
-        Schedu::LI::cleanup();
-    }
-    
     if (gensys_used()) {
         Gensys::LI::cleanup();
         Gensys::cleanup();
+    }
+    
+    if (schedu_used()) {
+        Schedu::LI::cleanup();
     }
     
     if (script_used()) {

@@ -17,6 +17,7 @@
 #include "pegr/gensys/Gensys.hpp"
 
 #include "pegr/gensys/Compiler.hpp"
+#include "pegr/gensys/Events.hpp"
 #include "pegr/gensys/Runtime.hpp"
 #include "pegr/gensys/Util.hpp"
 
@@ -33,6 +34,7 @@ void initialize() {
     assert(m_global_state == GlobalState::UNINITIALIZED);
     Runtime::initialize();
     Compiler::initialize();
+    Event::initialize();
     m_global_state = GlobalState::MUTABLE;
 }
 void compile() {
@@ -42,6 +44,7 @@ void compile() {
 }
 void cleanup() {
     assert(m_global_state != GlobalState::UNINITIALIZED);
+    Event::cleanup();
     Compiler::cleanup();
     Runtime::cleanup();
     m_global_state = GlobalState::UNINITIALIZED;

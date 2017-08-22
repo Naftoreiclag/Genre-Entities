@@ -36,6 +36,7 @@ foreach(fname
 "gensys/Entity_Collection.cpp"
 "gensys/Entity_Events.cpp"
 "gensys/Entity_Handle.cpp"
+"gensys/Events.cpp"
 "gensys/Gensys.cpp"
 "gensys/Interm_Types.cpp"
 "gensys/Lua_Interf_Runtime.cpp"

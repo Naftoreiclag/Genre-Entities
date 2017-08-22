@@ -36,10 +36,6 @@ GlobalState get_global_state() {
 Event::Event() {}
 Event::~Event() {}
 
-void add_event(Resour::Oid oid, std::unique_ptr<Event>&& ev) {
-    n_events[oid] = std::move(ev);
-}
-
 Event* find_event(Resour::Oid oid) {
     auto iter = n_events.find(oid);
     if (iter == n_events.end()) {
@@ -50,6 +46,12 @@ Event* find_event(Resour::Oid oid) {
     }
     
     return iter->second.get();
+}
+
+Event* add_event(Resour::Oid oid, std::unique_ptr<Event>&& ev) {
+    Event* ptr = ev.get();
+    n_events[oid] = std::move(ev);
+    return ptr;
 }
 
 void initialize() {
