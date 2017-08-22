@@ -40,8 +40,8 @@ Entity_Collection& get_entities();
  */
 uint64_t bottom_52(uint64_t num);
 
-Comp* find_component(std::string id);
-Arche* find_archetype(std::string id);
+Comp* find_comp(std::string id);
+Arche* find_arche(std::string id);
 Genre* find_genre(std::string id);
 
 const char* prim_to_dbg_string(Prim::Type ty);

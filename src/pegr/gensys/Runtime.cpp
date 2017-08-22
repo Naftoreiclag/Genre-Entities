@@ -630,11 +630,11 @@ std::uint64_t bottom_52(std::uint64_t num) {
     return num & 0x001FFFFFFFFFFFFF;
 }
 
-Runtime::Comp* find_component(std::string id_str) {
+Runtime::Comp* find_comp(std::string id_str) {
     return Util::find_something(n_runtime_comps, id_str, 
             "Could not find component: %v");
 }
-Runtime::Arche* find_archetype(std::string id_str) {
+Runtime::Arche* find_arche(std::string id_str) {
     return Util::find_something(n_runtime_arches, id_str, 
             "Could not find archetype: %v");
 }

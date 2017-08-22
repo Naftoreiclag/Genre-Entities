@@ -741,7 +741,7 @@ int li_find_comp(lua_State* l) {
     const char* strdata = luaL_checklstring(l, 1, &strlen);
     std::string key(strdata, strlen);
     
-    Runtime::Comp* comp = Runtime::find_component(key);
+    Runtime::Comp* comp = Runtime::find_comp(key);
     if (!comp) {
         return 0;
     }
@@ -758,7 +758,7 @@ int li_find_archetype(lua_State* l) {
     const char* strdata = luaL_checklstring(l, 1, &strlen);
     std::string key(strdata, strlen);
     
-    Runtime::Arche* arche = Runtime::find_archetype(key);
+    Runtime::Arche* arche = Runtime::find_arche(key);
     if (!arche) {
         return 0;
     }
