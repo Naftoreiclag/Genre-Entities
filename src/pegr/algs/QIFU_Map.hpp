@@ -88,16 +88,17 @@ public:
      * @param handle The handle of the element to remove
      * @return True if an element was actually removed (handle was valid)
      */
-    void remove(Handle_T handle) {
+    bool remove(Handle_T handle) {
         if (m_deferred_mode) {
-            if (!remove_from(handle, 
-                    m_queued_handle_to_index, m_queued_vector)) {
+            if (find_inside(handle, m_handle_to_index, m_vector)) {
                 m_queued_removals.insert(handle);
+                return true;
             }
+            return remove_from(handle, 
+                    m_queued_handle_to_index, m_queued_vector);
         } else {
-            remove_from(handle, m_handle_to_index, m_vector);
+            return remove_from(handle, m_handle_to_index, m_vector);
         }
-        assert(!find(handle));
     }
     
     void clear() {
@@ -244,7 +245,6 @@ private:
     bool remove_from(Handle_T handle_a, 
             std::unordered_map<Handle_T, std::size_t>& hti,
             std::vector<Hanval_Pair>& vec) {
-        assert(vec.size() > 0);
         
         // Find the pair in the handle-to-index map
         auto map_entry_a = hti.find(handle_a);
