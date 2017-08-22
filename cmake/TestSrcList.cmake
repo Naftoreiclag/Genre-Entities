@@ -66,6 +66,7 @@ foreach(fname
 "test/Lua_As_Lambda_Test.cpp"
 "test/Memory_Test.cpp"
 "test/Pod_Chunk_Test.cpp"
+"test/QIFU_Test.cpp"
 "test/Resources_Test.cpp"
 "test/Script_Helper_Test.cpp"
 "test/Script_Test.cpp"

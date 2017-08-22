@@ -38,6 +38,7 @@ void test_0001_init_sanity();
 void test_0002_app_state_machine_test();
 void test_0002_unique_ptr_test();
 void test_0003_lambda_closure();
+void test_0003_qifu_map_test();
 void test_0005_assertion_test();
 void test_0010_check_guard_memory_leaks();
 void test_0010_check_guard_memory_leaks_shared();
@@ -80,6 +81,7 @@ const NamedTest n_tests[] = {
     {"App State Machine Test", test_0002_app_state_machine_test},
     {"Unique Ptr Test", test_0002_unique_ptr_test},
     {"Lambda closure", test_0003_lambda_closure},
+    {"QIFU_Map test", test_0003_qifu_map_test},
     {"Assertion test", test_0005_assertion_test},
     {"Script Unique_Regref memory leaks", test_0010_check_guard_memory_leaks},
     {"Script Shared_Regref memory leaks", test_0010_check_guard_memory_leaks_shared},

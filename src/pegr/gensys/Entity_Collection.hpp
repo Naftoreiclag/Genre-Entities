@@ -47,6 +47,9 @@ public:
      *                              or "can_be_spawned" -> "nonexistent"
      * Note: if the entity is in the "alive" state, this automatically calls
      * kill_entity() first.
+     * 
+     * Does nothing if we do not contain that handle
+     * 
      * @param handle The handle of the entity
      */
     void delete_entity(Entity_Handle handle);
@@ -76,6 +79,10 @@ private:
     void disable_deferred();
     
     Entity_Handle emplace_into(Arche* arche, 
+            std::unordered_map<std::uint64_t, std::size_t>& hti,
+            std::vector<Entity>& vec);
+            
+    bool remove_from(Entity_Handle handle, 
             std::unordered_map<std::uint64_t, std::size_t>& hti,
             std::vector<Entity>& vec);
     

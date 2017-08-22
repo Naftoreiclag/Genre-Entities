@@ -65,61 +65,24 @@ Entity_Handle Entity_Collection::new_entity(Arche* arche) {
     }
 }
 
-void Entity_Collection::delete_entity(Entity_Handle handle_a) {
-    /* In deferred mode, we can't remove an entity just yet, since we need to
-     * preserve the ordering of the "actual" vector
-     */
-    if (handle_a->is_alive()) {
-        handle_a->kill();
+void Entity_Collection::delete_entity(Entity_Handle handle) {
+    if (handle->is_alive()) {
+        handle->kill();
     }
     
-    assert(handle_a->can_be_spawned() || handle_a->has_been_killed());
+    assert(handle->can_be_spawned() || handle->has_been_killed());
+    
     if (m_deferred_mode) {
-        m_queued_removals.insert(handle_a);
-        assert(!does_exist(handle_a));
-        return;
+        if (!remove_from(handle, m_queued_handle_to_index, m_queued_vector)) {
+            /* In deferred mode, we can't remove an entity just yet, since we 
+             * need to preserve the ordering of the "actual" vector
+             */
+            m_queued_removals.insert(handle);
+        }
+    } else {
+        remove_from(handle, m_handle_to_index, m_vector);
     }
-    
-    /* Delete the entity given by the handle (entity "A") by swapping it with
-     * the last entity in the vector (entity "B"), then popping off the last
-     * entity (A). Must also update B's index (set B's index to A's old index).
-     * 
-     * The special case where A and B are the same entity is handled implicitly.
-     */
-    
-    assert(m_vector.size() > 0);
-    
-    // Find the pair in the handle-to-index map
-    auto map_entry_a = m_handle_to_index.find(handle_a);
-    assert(map_entry_a != m_handle_to_index.end());
-    
-    // Get the index of the entity in the entity vector
-    std::size_t index_a = map_entry_a->second;
-    
-    // Get the index of the last entity
-    std::size_t index_b = m_vector.size() - 1;
-    
-    // Get the handle of the last entity
-    Entity_Handle handle_b = m_vector[index_b].get_handle();
-    
-    // Find the pair in the handle-to-index map
-    auto map_entry_b = m_handle_to_index.find(handle_b);
-    assert(map_entry_b != m_handle_to_index.end());
-    
-    // Set the index
-    map_entry_b->second = index_a;
-    
-    // Swap this entity with the back and remove
-    std::iter_swap(m_vector.begin() + index_a, m_vector.begin() + index_b);
-    m_vector.pop_back();
-    assert(m_vector.size() == index_b);
-    assert(m_vector.size() == 0 || 
-            m_handle_to_index[m_vector[index_a].get_handle()] == index_a);
-    
-    // Remove the corresponding entry from the handle-to-index map
-    m_handle_to_index.erase(map_entry_a);
-    
-    assert(!does_exist(handle_a));
+    assert(!does_exist(handle));
 }
 
 bool Entity_Collection::does_exist(Entity_Handle handle) {
@@ -213,6 +176,57 @@ Entity_Handle Entity_Collection::emplace_into(Arche* arche,
     // Return handle to newly created entity
     return hand;
 }
+
+bool Entity_Collection::remove_from(Entity_Handle handle_a, 
+        std::unordered_map<std::uint64_t, std::size_t>& hti,
+        std::vector<Entity>& vec) {
+    
+    assert(handle_a->can_be_spawned() || handle_a->has_been_killed());
+    
+    /* Delete the entity given by the handle (entity "A") by swapping it with
+     * the last entity in the vector (entity "B"), then popping off the last
+     * entity (A). Must also update B's index (set B's index to A's old index).
+     * 
+     * The special case where A and B are the same entity is handled implicitly.
+     */
+    
+    assert(vec.size() > 0);
+    
+    // Find the pair in the handle-to-index map
+    auto map_entry_a = hti.find(handle_a);
+    if (map_entry_a == hti.end()) {
+        return false;
+    }
+    
+    // Get the index of the entity in the entity vector
+    std::size_t index_a = map_entry_a->second;
+    
+    // Get the index of the last entity
+    std::size_t index_b = vec.size() - 1;
+    
+    // Get the handle of the last entity
+    Entity_Handle handle_b = vec[index_b].get_handle();
+    
+    // Find the pair in the handle-to-index map
+    auto map_entry_b = hti.find(handle_b);
+    assert(map_entry_b != hti.end());
+    
+    // Set the index
+    map_entry_b->second = index_a;
+    
+    // Swap this entity with the back and remove
+    std::iter_swap(vec.begin() + index_a, vec.begin() + index_b);
+    vec.pop_back();
+    assert(vec.size() == index_b);
+    assert(vec.size() == 0 || 
+            hti[vec[index_a].get_handle()] == index_a);
+    
+    // Remove the corresponding entry from the handle-to-index map
+    hti.erase(map_entry_a);
+    
+    assert(!does_exist(handle_a));
+}
+
 Entity* Entity_Collection::get_entity_inside(Entity_Handle handle, 
         std::unordered_map<std::uint64_t, std::size_t>& hti,
         std::vector<Entity>& vec) {
