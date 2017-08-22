@@ -60,17 +60,17 @@ Schedu::Event::Type Entity_Tick_Event::get_type() const {
 void Entity_Tick_Event::trigger() {
     m_arche_listeners.for_each([](Arche_Entity_Listener* listener) {
         Runtime::get_entities().for_each([&](Runtime::Entity* ent) {
-            listener->call(ent);
+            if (ent->is_alive()) listener->call(ent);
         });
     });
     m_comp_listeners.for_each([](Comp_Entity_Listener* listener) {
         Runtime::get_entities().for_each([&](Runtime::Entity* ent) {
-            listener->call(ent);
+            if (ent->is_alive()) listener->call(ent);
         });
     });
     m_genre_listeners.for_each([](Genre_Entity_Listener* listener) {
         Runtime::get_entities().for_each([&](Runtime::Entity* ent) {
-            listener->call(ent);
+            if (ent->is_alive()) listener->call(ent);
         });
     });
 }
