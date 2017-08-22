@@ -45,6 +45,9 @@ private:
     
     Gensys::Event::Entity_Tick_Event* m_ete;
     
+    Gensys::Event::Listener_Handle m_on_spawn = Gensys::Event::EMPTY_HANDLE;
+    Gensys::Event::Listener_Handle m_on_kill = Gensys::Event::EMPTY_HANDLE;
+    
     double m_time;
     int m_calls;
 };

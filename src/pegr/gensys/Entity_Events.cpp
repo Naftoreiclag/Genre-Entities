@@ -22,6 +22,9 @@ namespace pegr {
 namespace Gensys {
 namespace Event {
 
+const Listener_Handle EMPTY_HANDLE = 
+        Algs::QIFU_Map<Listener_Handle, void*>::EMPTY_HANDLE;
+
 Entity_Listener::Entity_Listener(
         std::function<void(Runtime::Entity*)> func)
 : m_func(func) {}
@@ -34,14 +37,20 @@ Entity_Tick_Event::Entity_Tick_Event()
 : Schedu::Event() {}
 Entity_Tick_Event::~Entity_Tick_Event() {}
 
-void Entity_Tick_Event::add_listener(Arche_Entity_Listener listener) {
-    m_arche_listeners.add(listener);
+Listener_Handle Entity_Tick_Event::hook(Arche_Entity_Listener listener) {
+    return m_arche_listeners.add(listener);
 }
-void Entity_Tick_Event::add_listener(Comp_Entity_Listener listener) {
-    m_comp_listeners.add(listener);
+Listener_Handle Entity_Tick_Event::hook(Comp_Entity_Listener listener) {
+    return m_comp_listeners.add(listener);
 }
-void Entity_Tick_Event::add_listener(Genre_Entity_Listener listener) {
-    m_genre_listeners.add(listener);
+Listener_Handle Entity_Tick_Event::hook(Genre_Entity_Listener listener) {
+    return m_genre_listeners.add(listener);
+}
+
+bool Entity_Tick_Event::unhook(Listener_Handle handle) {
+    return m_arche_listeners.remove(handle)
+            || m_comp_listeners.remove(handle)
+            || m_genre_listeners.remove(handle);
 }
 
 Schedu::Event::Type Entity_Tick_Event::get_type() const {

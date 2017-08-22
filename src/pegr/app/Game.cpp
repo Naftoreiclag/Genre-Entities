@@ -47,14 +47,14 @@ void Game_State::initialize() {
             
     m_ete = Gensys::Event::get_entity_tick_event();
     
-    Gensys::Event::get_entity_spawned_event()
-            ->add_listener(Gensys::Event::Entity_Listener(
+    m_on_spawn = Gensys::Event::get_entity_spawned_event()
+            ->hook(Gensys::Event::Entity_Listener(
             [](Gensys::Runtime::Entity* ent) {
                 Logger::log()->info("entity spawned");
             }));
     
-    Gensys::Event::get_entity_killed_event()
-            ->add_listener(Gensys::Event::Entity_Listener(
+    m_on_kill = Gensys::Event::get_entity_killed_event()
+            ->hook(Gensys::Event::Entity_Listener(
             [](Gensys::Runtime::Entity* ent) {
                 Logger::log()->info("entity killed");
             }));
@@ -101,7 +101,7 @@ void Game_State::initialize() {
     Gensys::Runtime::Arche* arche = Gensys::Runtime::find_arche("cookie.at");
     
     m_calls = 0;
-    m_ete->add_listener(Gensys::Event::Arche_Entity_Listener(arche, 
+    m_ete->hook(Gensys::Event::Arche_Entity_Listener(arche, 
             [&](Gensys::Runtime::Entity* ent) {
                 ++m_calls;
             }));
@@ -125,6 +125,8 @@ void Game_State::on_window_resize(int32_t width, int32_t height) {
 }
 
 void Game_State::cleanup() {
+    Gensys::Event::get_entity_spawned_event()->unhook(m_on_spawn);
+    Gensys::Event::get_entity_killed_event()->unhook(m_on_kill);
     Logger::log()->info("cookie ticks: %v", m_calls);
 }
 

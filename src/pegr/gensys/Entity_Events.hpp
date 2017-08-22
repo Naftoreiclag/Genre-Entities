@@ -27,6 +27,10 @@
 namespace pegr {
 namespace Gensys {
 namespace Event {
+    
+typedef std::uint64_t Listener_Handle;
+
+extern const Listener_Handle EMPTY_HANDLE;
 
 class Entity_Listener {
 public:
@@ -82,18 +86,20 @@ public:
     Entity_Tick_Event();
     virtual ~Entity_Tick_Event();
     
-    void add_listener(Arche_Entity_Listener listener);
-    void add_listener(Comp_Entity_Listener listener);
-    void add_listener(Genre_Entity_Listener listener);
+    Listener_Handle hook(Arche_Entity_Listener listener);
+    Listener_Handle hook(Comp_Entity_Listener listener);
+    Listener_Handle hook(Genre_Entity_Listener listener);
+    
+    bool unhook(Listener_Handle handle);
 
     virtual Schedu::Event::Type get_type() const override;
     void trigger();
     
 private:
 
-    Algs::QIFU_Map<std::uint64_t, Arche_Entity_Listener> m_arche_listeners;
-    Algs::QIFU_Map<std::uint64_t, Comp_Entity_Listener> m_comp_listeners;
-    Algs::QIFU_Map<std::uint64_t, Genre_Entity_Listener> m_genre_listeners;
+    Algs::QIFU_Map<Listener_Handle, Arche_Entity_Listener> m_arche_listeners;
+    Algs::QIFU_Map<Listener_Handle, Comp_Entity_Listener> m_comp_listeners;
+    Algs::QIFU_Map<Listener_Handle, Genre_Entity_Listener> m_genre_listeners;
 };
 
 template <Schedu::Event::Type s_event_type>
@@ -104,8 +110,12 @@ public:
     : Schedu::Event() {}
     virtual ~Entity_Event() {}
     
-    void add_listener(Entity_Listener listener) {
-        m_listeners.add(listener);
+    Listener_Handle hook(Entity_Listener listener) {
+        return m_listeners.add(listener);
+    }
+    
+    bool unhook(Listener_Handle handle) {
+        return m_listeners.remove(handle);
     }
     
     virtual Schedu::Event::Type get_type() const override {
@@ -119,7 +129,7 @@ public:
     
 private:
 
-    Algs::QIFU_Map<std::uint64_t, Entity_Listener> m_listeners;
+    Algs::QIFU_Map<Listener_Handle, Entity_Listener> m_listeners;
 };
 
 typedef Entity_Event<Schedu::Event::Type::ENTITY_KILLED> Entity_Killed_Event;
