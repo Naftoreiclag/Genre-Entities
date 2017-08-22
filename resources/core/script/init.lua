@@ -247,15 +247,17 @@ pegr.add_event('custom_event.ev', {
   end
 })
 
-local wi_listener = pegr.hook_listener({
+local wi_listener = pegr.hook_listener{
   on = 'world_init.ev',
-  func = function(world) 
+  func = function(event) 
     print('world_init')
     pegr.call_event('custom_event.ev')
   end,
-})
+}
 
-local et_listener = pegr.hook_listener({
+--pegr.unhook_listener(wi_listener)
+
+local et_listener = pegr.hook_listener{
   
   -- On entity ticks
   on = 'entity_tick.ev',
@@ -274,14 +276,18 @@ local et_listener = pegr.hook_listener({
   selector = 'food.g',
   
   -- The actual function to be called
-  func = function(entity)
+  func = function(event)
+    
+    local entity = event.entity
     
     -- Update position based on velocity
     entity.pos_x = entity.pos_x + entity.vel_x
     entity.pos_y = entity.pos_y + entity.vel_y
     
+    
+    --event.cancel()
   end,
-})
+}
 print('added fizz.t')
 
 -------------------------------------------------------------------------------
