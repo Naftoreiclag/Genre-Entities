@@ -268,7 +268,7 @@ local et_listener = pegr.hook_listener{
   -- Every time
   every = 1,
   
-  --[[ (Everything other than 'on', 'func', and 'every' are extra 
+  --[[ (Everything other than 'on', 'func', 'delay', and 'every' are extra 
   arguments, the meaning of which is determined by the choice of 'on')
   ]]
   

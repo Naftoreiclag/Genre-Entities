@@ -79,5 +79,6 @@ view on an entity that also frees the associated memory when gc'd
 ]]
 
 pegr.spawn_entity(cookie1)
+pegr.spawn_entity(pizza1)
 
 -------------------------------------------------------------------------------
