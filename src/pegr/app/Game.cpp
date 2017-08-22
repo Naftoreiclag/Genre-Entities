@@ -44,6 +44,21 @@ Game_State::Game_State()
 Game_State::~Game_State() {}
 
 void Game_State::initialize() {
+            
+    m_ete = Gensys::Event::get_entity_tick_event();
+    
+    Gensys::Event::get_entity_spawned_event()
+            ->add_listener(Gensys::Event::Entity_Listener(
+            [](Gensys::Runtime::Entity* ent) {
+                Logger::log()->info("entity spawned");
+            }));
+    
+    Gensys::Event::get_entity_killed_event()
+            ->add_listener(Gensys::Event::Entity_Listener(
+            [](Gensys::Runtime::Entity* ent) {
+                Logger::log()->info("entity killed");
+            }));
+            
     Script::Unique_Regref sandbox = Script::new_sandbox();
     Script::Unique_Regref init_fun;
     Script::Unique_Regref postinit_fun;
@@ -86,6 +101,7 @@ void Game_State::initialize() {
 
 void Game_State::do_tick() {
     m_time += 0.1;
+    m_ete->trigger();
 }
 void Game_State::do_frame() {
     bgfx::dbgTextClear();

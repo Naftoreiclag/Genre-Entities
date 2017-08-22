@@ -27,6 +27,7 @@
 #include "pegr/debug/Debug_Macros.hpp"
 #include "pegr/except/Except.hpp"
 #include "pegr/gensys/Entity_Collection.hpp"
+#include "pegr/gensys/Events.hpp"
 #include "pegr/gensys/Util.hpp"
 #include "pegr/logger/Logger.hpp"
 #include "pegr/script/Script_Util.hpp"
@@ -480,12 +481,14 @@ bool Entity::is_lua_owned() const {
 void Entity::spawn() {
     assert(can_be_spawned());
     set_flag_spawned(true);
+    Event::get_entity_spawned_event()->trigger(this);
     assert(has_been_spawned());
 }
 
 void Entity::kill() {
     assert(has_been_spawned());
     set_flag_killed(true);
+    Event::get_entity_killed_event()->trigger(this);
     assert(has_been_killed());
 }
 

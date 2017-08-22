@@ -20,6 +20,7 @@
 #include <bgfx/bgfx.h>
 
 #include "pegr/engine/App_State.hpp"
+#include "pegr/gensys/Events.hpp"
 #include "pegr/render/Handles.hpp"
 
 namespace pegr {
@@ -39,6 +40,8 @@ private:
     Render::Unique_Vertex_Buffer m_vert_buff;
     Render::Unique_Index_Buffer m_index_buff;
     Render::Unique_Program m_program;
+    
+    Gensys::Event::Entity_Tick_Event* m_ete;
     
     double m_time;
 };

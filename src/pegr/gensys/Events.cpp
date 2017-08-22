@@ -39,15 +39,13 @@ Entity_Killed_Event* get_entity_killed_event() {
 template<typename Event_T>
 Event_T* reg_event(const char* name) {
     return static_cast<Event_T*>(Schedu::add_event(name, 
-                std::make_unique<Entity_Spawned_Event>()));
+                std::make_unique<Event_T>()));
 }
 
 void initialize() {
-    if (Engine::schedu_used()) {
-        n_spawned = reg_event<Entity_Spawned_Event>("entity_spawned.ev");
-        n_tick = reg_event<Entity_Tick_Event>("entity_tick.ev");
-        n_killed = reg_event<Entity_Killed_Event>("entity_killed.ev");
-    }
+    n_spawned = reg_event<Entity_Spawned_Event>("entity_spawned.ev");
+    n_tick = reg_event<Entity_Tick_Event>("entity_tick.ev");
+    n_killed = reg_event<Entity_Killed_Event>("entity_killed.ev");
 }
 
 void cleanup() {
