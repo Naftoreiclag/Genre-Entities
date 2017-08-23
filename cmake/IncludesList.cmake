@@ -25,6 +25,7 @@ foreach(dir
 "thirdparty/bgfx_examples"
 "thirdparty/easyloggingpp"
 "thirdparty/jsoncpp"
+"thirdparty/ocornut-imgui"
 
 )
 list(APPEND PGLOCAL_INCLUDES_LIST 
