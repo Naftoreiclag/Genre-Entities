@@ -20,7 +20,7 @@
 #include <cassert>
 #include <vector>
 
-#include <bexam_cubes/cubes.hpp>
+#include <bexam/01-cubes/cubes.hpp>
 #include <bgfx/bgfx.h>
 
 #include "pegr/engine/App_State.hpp"
