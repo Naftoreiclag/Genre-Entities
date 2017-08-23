@@ -20,6 +20,7 @@
 #include <bgfx/bgfx.h>
 
 #include "pegr/engine/App_State.hpp"
+#include "pegr/gensys/Events.hpp"
 #include "pegr/render/Handles.hpp"
 
 namespace pegr {
@@ -35,12 +36,20 @@ public:
     virtual void do_frame() override;
     virtual void on_window_resize(int32_t width, int32_t height) override;
     
+    virtual void cleanup() override;
+    
 private:
     Render::Unique_Vertex_Buffer m_vert_buff;
     Render::Unique_Index_Buffer m_index_buff;
     Render::Unique_Program m_program;
     
+    Gensys::Event::Entity_Tick_Event* m_ete;
+    
+    Gensys::Event::Listener_Handle m_on_spawn = Gensys::Event::EMPTY_HANDLE;
+    Gensys::Event::Listener_Handle m_on_kill = Gensys::Event::EMPTY_HANDLE;
+    
     double m_time;
+    int m_calls;
 };
 
 } // namespace App

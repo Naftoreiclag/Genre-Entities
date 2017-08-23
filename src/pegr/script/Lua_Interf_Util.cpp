@@ -40,11 +40,12 @@ void generic_li_add_to_res_table(lua_State* l, Regref registry,
     std::string key(strdata, strlen);
     
     // TODO: resolve namespace issues in key
+    Resour::Oid oid(key);
     
     // Push the target table onto the stack
     Script::push_reference(registry);
     // Push the key
-    lua_pushstring(l, key.c_str());
+    lua_pushstring(l, oid.get_repr().c_str());
     // Push the value (a simple copy of the table argument)
     Script::Util::simple_deep_copy(2);
     Script::Pop_Guard pg(3);
@@ -66,13 +67,13 @@ void generic_li_edit_from_res_table(lua_State* l, Regref registry) {
     const char* strdata = luaL_checklstring(l, 1, &strlen);
     std::string key(strdata, strlen);
     
-    // TODO: resolve namespace issues in key
+    Resour::Oid oid(key);
     
     // Push the target table onto the stack
     Script::push_reference(registry);
     
     // Push the key
-    lua_pushstring(l, key.c_str());
+    lua_pushstring(l, oid.get_repr().c_str());
     
     // Get the value
     lua_gettable(l, -2);

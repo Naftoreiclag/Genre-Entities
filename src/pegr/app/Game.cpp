@@ -20,8 +20,8 @@
 #include <cassert>
 #include <vector>
 
-#include <bgfx/bgfx.h>
 #include <bexam_cubes/cubes.hpp>
+#include <bgfx/bgfx.h>
 
 #include "pegr/engine/App_State.hpp"
 #include "pegr/engine/Engine.hpp"
@@ -44,6 +44,21 @@ Game_State::Game_State()
 Game_State::~Game_State() {}
 
 void Game_State::initialize() {
+            
+    m_ete = Gensys::Event::get_entity_tick_event();
+    
+    m_on_spawn = Gensys::Event::get_entity_spawned_event()
+            ->hook(Gensys::Event::Entity_Listener(
+            [](Gensys::Runtime::Entity* ent) {
+                Logger::log()->info("entity spawned");
+            }));
+    
+    m_on_kill = Gensys::Event::get_entity_killed_event()
+            ->hook(Gensys::Event::Entity_Listener(
+            [](Gensys::Runtime::Entity* ent) {
+                Logger::log()->info("entity killed");
+            }));
+            
     Script::Unique_Regref sandbox = Script::new_sandbox();
     Script::Unique_Regref init_fun;
     Script::Unique_Regref postinit_fun;
@@ -82,10 +97,19 @@ void Game_State::initialize() {
     m_program = Render::make_program(
             Render::find_shader("basic_color.vs"), 
             Render::find_shader("basic_color.fs"));
+    
+    Gensys::Runtime::Arche* arche = Gensys::Runtime::find_arche("cookie.at");
+    
+    m_calls = 0;
+    m_ete->hook(Gensys::Event::Arche_Entity_Listener(arche, 
+            [&](Gensys::Runtime::Entity* ent) {
+                ++m_calls;
+            }));
 }
 
 void Game_State::do_tick() {
     m_time += 0.1;
+    m_ete->trigger();
 }
 void Game_State::do_frame() {
     bgfx::dbgTextClear();
@@ -98,7 +122,12 @@ void Game_State::do_frame() {
 
 void Game_State::on_window_resize(int32_t width, int32_t height) {
     bgfx::setViewRect(0, 0, 0, width, height);
-    
+}
+
+void Game_State::cleanup() {
+    Gensys::Event::get_entity_spawned_event()->unhook(m_on_spawn);
+    Gensys::Event::get_entity_killed_event()->unhook(m_on_kill);
+    Logger::log()->info("cookie ticks: %v", m_calls);
 }
 
 } // namespace App

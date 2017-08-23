@@ -27,15 +27,16 @@
 #include "pegr/gensys/Gensys.hpp"
 #include "pegr/gensys/Util.hpp"
 #include "pegr/logger/Logger.hpp"
+#include "pegr/resource/Oid.hpp"
 
 namespace pegr {
 namespace Gensys {
 
 // Forward delcarations that let us access the runtime maps
 namespace Runtime {
-extern std::map<std::string, std::unique_ptr<Runtime::Comp> > n_runtime_comps;
-extern std::map<std::string, std::unique_ptr<Runtime::Arche> > n_runtime_arches;
-extern std::map<std::string, std::unique_ptr<Runtime::Genre> > n_runtime_genres;
+extern std::map<Resour::Oid, std::unique_ptr<Runtime::Comp> > n_runtime_comps;
+extern std::map<Resour::Oid, std::unique_ptr<Runtime::Arche> > n_runtime_arches;
+extern std::map<Resour::Oid, std::unique_ptr<Runtime::Genre> > n_runtime_genres;
 extern std::vector<Script::Unique_Regref> n_held_lua_values;
 } // namespace Runtime
     
@@ -92,9 +93,9 @@ private:
     std::map<const Interm::Arche*, Arche*> m_arches_by_interm;
     std::map<const Interm::Genre*, Genre*> m_genres_by_interm;
 
-    std::map<std::string, Comp*> m_comps_by_id;
-    std::map<std::string, Arche*> m_arches_by_id;
-    std::map<std::string, Genre*> m_genres_by_id;
+    std::map<Resour::Oid, Comp*> m_comps_by_id;
+    std::map<Resour::Oid, Arche*> m_arches_by_id;
+    std::map<Resour::Oid, Genre*> m_genres_by_id;
     
     Script::Util::Unique_Regref_Manager m_unique_regrefs;
     
@@ -131,29 +132,29 @@ public:
         return m_genres_by_interm;
     }
     
-    const std::map<std::string, Comp*>& get_comps_by_id() const {
+    const std::map<Resour::Oid, Comp*>& get_comps_by_id() const {
         return m_comps_by_id;
     }
-    const std::map<std::string, Arche*>& get_arches_by_id() const {
+    const std::map<Resour::Oid, Arche*>& get_arches_by_id() const {
         return m_arches_by_id;
     }
-    const std::map<std::string, Genre*>& get_genres_by_id() const {
+    const std::map<Resour::Oid, Genre*>& get_genres_by_id() const {
         return m_genres_by_id;
     }
     
-    void add_comp(std::unique_ptr<Comp>&& obj, std::string id) {
+    void add_comp(std::unique_ptr<Comp>&& obj, Resour::Oid id) {
         m_comps_by_interm[obj->m_interm.get()] = obj.get();
         m_comps_by_id[id] = obj.get();
         m_comps.emplace_back(std::move(obj));
     }
     
-    void add_arche(std::unique_ptr<Arche>&& obj, std::string id) {
+    void add_arche(std::unique_ptr<Arche>&& obj, Resour::Oid id) {
         m_arches_by_interm[obj->m_interm.get()] = obj.get();
         m_arches_by_id[id] = obj.get();
         m_arches.emplace_back(std::move(obj));
     }
     
-    void add_genre(std::unique_ptr<Genre>&& obj, std::string id) {
+    void add_genre(std::unique_ptr<Genre>&& obj, Resour::Oid id) {
         m_genres_by_interm[obj->m_interm.get()] = obj.get();
         m_genres_by_id[id] = obj.get();
         m_genres.emplace_back(std::move(obj));
@@ -174,9 +175,9 @@ public:
 
 } // namespace Work
 
-std::map<std::string, std::unique_ptr<Interm::Comp> > n_staged_comps;
-std::map<std::string, std::unique_ptr<Interm::Arche> > n_staged_arches;
-std::map<std::string, std::unique_ptr<Interm::Genre> > n_staged_genres;
+std::map<Resour::Oid, std::unique_ptr<Interm::Comp> > n_staged_comps;
+std::map<Resour::Oid, std::unique_ptr<Interm::Arche> > n_staged_arches;
+std::map<Resour::Oid, std::unique_ptr<Interm::Genre> > n_staged_genres;
 
 void initialize() {
     assert(get_global_state() == GlobalState::UNINITIALIZED);
@@ -642,7 +643,7 @@ void compile() {
     Logger::log()->info("Compilation complete");
 }
 
-void overwrite(std::string id_str, const char* attacker) {
+void overwrite(Resour::Oid id_str, const char* attacker) {
     {
         auto iter = n_staged_comps.find(id_str);
         if (iter != n_staged_comps.end()) {
@@ -669,46 +670,46 @@ void overwrite(std::string id_str, const char* attacker) {
     }
 }
 
-void stage_component(std::string id_str,
+void stage_component(Resour::Oid id_str,
         std::unique_ptr<Interm::Comp>&& comp) {
     overwrite(id_str, "component");
     n_staged_comps[id_str] = std::move(comp);
 }
-Interm::Comp* get_staged_component(std::string id_str) {
+Interm::Comp* get_staged_component(Resour::Oid id_str) {
     return Util::find_something(n_staged_comps, id_str, 
             "Could not find staged component: %v");
 }
-void unstage_component(std::string id_str) {
+void unstage_component(Resour::Oid id_str) {
     Util::erase_something(n_staged_comps, id_str, 
             "Could not find staged component: %v");
 }
-void stage_archetype(std::string id_str,
+void stage_archetype(Resour::Oid id_str,
         std::unique_ptr<Interm::Arche>&& arche) {
     overwrite(id_str, "archetype");
     n_staged_arches[id_str] = std::move(arche);
 }
-Interm::Arche* get_staged_archetype(std::string id_str) {
+Interm::Arche* get_staged_archetype(Resour::Oid id_str) {
     return Util::find_something(n_staged_arches, id_str, 
             "Could not find staged archetype: %v");
 }
-void unstage_archetype(std::string id_str) {
+void unstage_archetype(Resour::Oid id_str) {
     Util::erase_something(n_staged_arches, id_str, 
             "Could not find staged archetype: %v");
 }
-void stage_genre(std::string id_str, std::unique_ptr<Interm::Genre>&& genre) {
+void stage_genre(Resour::Oid id_str, std::unique_ptr<Interm::Genre>&& genre) {
     overwrite(id_str, "genre");
     n_staged_genres[id_str] = std::move(genre);
 }
-Interm::Genre* get_staged_genre(std::string id_str) {
+Interm::Genre* get_staged_genre(Resour::Oid id_str) {
     return Util::find_something(n_staged_genres, id_str, 
             "Could not find staged genre: %v");
 }
-void unstage_genre(std::string id_str) {
+void unstage_genre(Resour::Oid id_str) {
     Util::erase_something(n_staged_genres, id_str, 
             "Could not find staged genre: %v");
 }
 
-ObjectType get_staged_type(std::string id) {
+ObjectType get_staged_type(Resour::Oid id) {
     if (n_staged_comps.find(id) != n_staged_comps.end()) {
         return ObjectType::COMP_DEF;
     }

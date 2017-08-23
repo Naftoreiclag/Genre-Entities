@@ -14,21 +14,24 @@
  *  limitations under the License.
  */
 
-#include "pegr/gensys/Entity_Tick_Event.hpp"
+#ifndef PEGR_GENSYS_EVENTS_HPP
+#define PEGR_GENSYS_EVENTS_HPP
+
+#include "pegr/gensys/Entity_Events.hpp"
 
 namespace pegr {
 namespace Gensys {
+namespace Event {
 
-Entity_Tick_Event::Entity_Tick_Event()
-: Schedu::Event() {}
-Entity_Tick_Event::~Entity_Tick_Event() {}
-
-Schedu::Event::Type Entity_Tick_Event::get_type() const {
-    return Schedu::Event::Type::ENTITY_TICK;
-}
-void Entity_Tick_Event::trigger() {
+Entity_Spawned_Event* get_entity_spawned_event();
+Entity_Tick_Event* get_entity_tick_event();
+Entity_Killed_Event* get_entity_killed_event();
     
-}
+void initialize();
+void cleanup();
 
+} // namespace Events
 } // namespace Gensys
 } // namespace pegr
+
+#endif // PEGR_GENSYS_EVENTS_HPP

@@ -23,6 +23,7 @@
 #include <string>
 #include <vector>
 
+#include "pegr/gensys/Entity_Handle.hpp"
 #include "pegr/gensys/Pod_Chunk.hpp"
 #include "pegr/script/Script.hpp"
 
@@ -122,98 +123,6 @@ private:
 
 class Entity;
 
-/**
- * @class Entity_Handle
- * @brief Since Lua may have holds on Entity instances, rather than pass around
- * pointers, we use 64-bit handles. Note: we used raw pointers to Comp, Arche, 
- * etc. earlier because those objects are guaranteed to exist during the
- * lifetime of a gensys ecosystem. This is not true for Entity, and so we
- * cannot use raw pointers because those can 1) become invalidated and 2)
- * suddenly point to another Entity.
- * 
- * Note that since we will be passing these ids to Lua (and therefore be 
- * converting them into 64-bit floats), the bottom 52 bits are also guaranteed
- * to be unique. (2^53 is the smallest positive value that, when stored in a 
- * 64-bit IEEE 754 double, cannot be incremented by one).
- */
-class Entity_Handle {
-public:
-    Entity_Handle();
-    explicit Entity_Handle(uint64_t id);
-    
-    uint64_t get_id() const;
-    
-    /**
-     * @brief Returns false if any of the following conditions are true:
-     *  -   This handle has no entity associated with it at all, such as
-     *      immediately after using the default constructor
-     *  -   The entity that this handle once referred to was deleted (and
-     *      therefore there is absolutely no data that this handle can
-     *      return.)
-     * This function returns false iff operator-> returns nullptr
-     * Note that existence implies that the entity has been despawned, but
-     * being despawned does not imply non-existence.
-     * 
-     * Existence indicates whether or not any data is retrievable from the 
-     * entity instance.
-     * 
-     * @return Whether an entity "exists"
-     */
-    bool does_exist() const;
-    
-    /**
-     * @brief Rather than expose the get_entity() method, we use an arrow
-     * operator. This also allows Entity members to be accessed directly.
-     * Users should check does_exist() before using.
-     * 
-     * Note that it might be beneficial to use get_volatile_entity_ptr(), but
-     * doing so can be unsafe. The arrow operator is guaranteed to always return
-     * a valid single-use pointer to the entity, provided does_exist() returns
-     * true.
-     */
-    Entity* operator ->() const;
-    
-    explicit operator bool() const;
-    operator uint64_t() const;
-    
-    /**
-     * @brief WARNING! THIS POINTER STAYS VALID ONLY UNDER VERY SPECIFIC 
-     * CONDITIONS! Segfaults ahoy!
-     * 
-     * This is only used when there are many calls to -> that are guaranteed
-     * to have the same return value over time. This should happen so long as
-     * no other entities are created or destroyed during that time.
-     * 
-     * On destruction:
-     *      It's possible that the soon-to-be-deleted entity swaps places with 
-     *      this one, causing the memory address for the entity to change.
-     * On creation:
-     *      Following vector iterator invalidation rules, if a resize occurs,
-     *      then all pointers are invalidated. A resize may occur when adding
-     *      an Entity (i.e. during creation)
-     * 
-     * In general, use this pointer only within the scope of single function,
-     * don't store this value in any long-term container, and do not use this
-     * value if there is any chance of entity creation or deletion during its
-     * usage. For example, don't use this if you are also calling an addon's
-     * function, which could create an entity.
-     */
-    Entity* get_volatile_entity_ptr() const;
-    
-private:
-    uint64_t m_entity_id;
-    
-    /**
-     * @brief Returns the memory address of the enclosed entity. Note that there
-     * is no guarantee that the return of this value will be consistent over
-     * the lifetime of the handle, and therefore it cannot be cached and must
-     * be re-fetched at the beginning of each method call.
-     * @return "volatile" memory address or nullptr if the handle points to
-     * nothing or the entity has been deleted.
-     */
-    Entity* get_entity() const;
-};
-
 struct Comp;
 
 /**
@@ -283,6 +192,8 @@ struct Arche {
     Script::Unique_Regref m_lua_userdata;
     
     bool matches(Entity* ent_unsafe);
+    
+    Entity* match(Entity* ent_unsafe);
 };
 
 /**
@@ -301,6 +212,7 @@ struct Cview {
 public:
     Member_Ptr get_member_ptr(const Symbol& member_symb) const;
     bool operator ==(const Cview& rhs) const;
+    explicit operator bool() const;
 };
 
 /**
@@ -356,6 +268,7 @@ struct Genview {
 public:
     Member_Ptr get_member_ptr(const Symbol& member_symb) const;
     bool operator ==(const Genview& rhs) const;
+    explicit operator bool() const;
 };
 
 struct Pattern {
@@ -444,14 +357,28 @@ extern const uint64_t ENT_FLAGS_DEFAULT;
  * D. Entity spawned, entity has been spawned and is alive, can not be spawned
  *    for a second time. The only way to delete the entity (arrive at F) is to
  *    first despawn it (go to E).
- * E. Entity despawned, entity has been spawned and is dead, still unspawnable.
+ * E. Entity despawned, entity has been spawned and is dead and unspawnable.
  *    Entity is ready to be deleted (go to E).
  * F. Call to delete_entity, entity does not exist anymore. (In some sense, the
  *    entity itself is indistinguishable from state A, but somewhere out there 
  *    could still be handles with that entity's ID, and all of those handles
  *    must report that the entity is non-existent.)
  * 
- * This table also shows all possible states that all entities can have.
+ * Human names:
+ * A: "Nonexistent"
+ * B: "Can be spawned (lua-owned)"
+ * C: "Can be spawned"
+ * D: "Alive"
+ * E: "Killed"
+ * F: "Nonexistent"
+ * 
+ * Note that we call it "killed" and not "dead" becuase that name better
+ * communicates that "nonexistent" does not imply "dead" (In order to have
+ * been killed, you must have been alive!)
+ * 
+ * Note that B and C are indistinguishable within the Lua API
+ * 
+ * The above table also shows all possible states that all entities can have.
  * 
  * killed implies spawned
  * alive implies spawned
@@ -464,9 +391,6 @@ extern const uint64_t ENT_FLAGS_DEFAULT;
  */
 class Entity {
 public:
-    static Entity_Handle new_entity(Arche* arche);
-    static void delete_entity(Entity_Handle handle);
-    
     /* Entities can be moved (within the vector), but not copied.
      */
     Entity(const Entity& rhs) = delete;
@@ -557,31 +481,6 @@ public:
     bool is_lua_owned() const;
     
     /**
-     * @brief Changes the state of multiple flags at once. Sets all of the flags
-     * specified in "flags" to the state specified in "set". Note that this does
-     * not just simply set the flags to "flags". Instead, only those flags
-     * bitmasked by "flags" are set to the state "set".
-     * @param flags
-     * @param set
-     */
-    void set_flags(uint64_t flags, bool set);
-    
-    /**
-     * @brief Flags this entity as having been spawned or not
-     */
-    void set_flag_spawned(bool flag);
-    
-    /**
-     * @brief Flags this entity as being lua-owned or not
-     */
-    void set_flag_lua_owned(bool flag);
-    
-    /**
-     * @brief Flags this entity as having been killed or not
-     */
-    void set_flag_killed(bool flag);
-    
-    /**
      * @brief Get a void pointer referenced by this data. Note that this does
      * NO SANITY CHECKING WHATSOEVER. This method assumes that you have already
      * checked that the key is appropriate for this entity.
@@ -602,8 +501,21 @@ public:
      * @brief Constructor. You likely do not want to use this. Use the static
      * factory methods instead.
      */ 
-    explicit Entity(Arche* arche);
+    Entity(Arche* arche, Entity_Handle handle);
     
+    /**
+     * @brief Puts entity in active state. 
+     * "can_be_spawned" must return true before calling this method.
+     * "has_been_spawned" will return true forever.
+     */
+    void spawn();
+    
+    /**
+     * @brief Puts entity in inactive state from which it cannot recover.
+     * "has_been_spawned" must return true before calling this method.
+     * "has_been_killed" will return true forever.
+     */
+    void kill();
     
     /**
      * @brief Default constructor for moving to. Use the static factory methods
@@ -654,6 +566,32 @@ private:
      */
     Script::Unique_Regref m_generic_weak_table;
     
+    /**
+     * @brief Changes the state of multiple flags at once. Sets all of the flags
+     * specified in "flags" to the state specified in "set". Note that this does
+     * not just simply set the flags to "flags". Instead, only those flags
+     * bitmasked by "flags" are set to the state "set".
+     * @param flags
+     * @param set
+     */
+    void set_flags(std::uint64_t flags, bool set);
+    
+    /**
+     * @brief Flags this entity as having been spawned or not
+     */
+    void set_flag_spawned(bool flag);
+    
+public:
+    /**
+     * @brief Flags this entity as being lua-owned or not
+     */
+    void set_flag_lua_owned(bool flag);
+    
+private:
+    /**
+     * @brief Flags this entity as having been killed or not
+     */
+    void set_flag_killed(bool flag);
 };
 
 } // namespace Runtime

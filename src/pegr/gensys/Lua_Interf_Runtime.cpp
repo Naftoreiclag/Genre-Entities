@@ -24,6 +24,7 @@
 #include <sstream>
 #include <vector>
 
+#include "pegr/algs/Algs.hpp"
 #include "pegr/debug/Debug_Macros.hpp"
 #include "pegr/except/Except.hpp"
 #include "pegr/gensys/Compiler.hpp"
@@ -31,7 +32,6 @@
 #include "pegr/gensys/Runtime.hpp"
 #include "pegr/logger/Logger.hpp"
 #include "pegr/script/Script_Util.hpp"
-#include "pegr/util/Algs.hpp"
 
 namespace pegr {
 namespace Gensys {
@@ -257,22 +257,22 @@ void push_any_value(lua_State* l, Value_T val, Script::Regref metatable) {
     lua_setmetatable(l, -2);
     *(new (lua_mem) Value_T) = val;
 }
-void push_comp_pointer(lua_State* l, Runtime::Comp* ptr) {
+void push_gensys_obj(lua_State* l, Runtime::Comp* ptr) {
     push_any_pointer<Runtime::Comp*>(l, ptr, n_comp_metatable.get());
 }
-void push_arche_pointer(lua_State* l, Runtime::Arche* ptr) {
+void push_gensys_obj(lua_State* l, Runtime::Arche* ptr) {
     push_any_pointer<Runtime::Arche*>(l, ptr, n_arche_metatable.get());
 }
-void push_genre_pointer(lua_State* l, Runtime::Genre* ptr) {
+void push_gensys_obj(lua_State* l, Runtime::Genre* ptr) {
     push_any_pointer<Runtime::Genre*>(l, ptr, n_genre_metatable.get());
 }
-void push_entity_handle(lua_State* l, Runtime::Entity_Handle ent) {
+void push_gensys_obj(lua_State* l, Runtime::Entity_Handle ent) {
     push_any_value<Runtime::Entity_Handle>(l, ent, n_entity_metatable.get());
 }
-void push_cview(lua_State* l, Runtime::Cview cview) {
+void push_gensys_obj(lua_State* l, Runtime::Cview cview) {
     push_any_value<Runtime::Cview>(l, cview, n_cview_metatable.get());
 }
-void push_genview(lua_State* l, Runtime::Genview genview) {
+void push_gensys_obj(lua_State* l, Runtime::Genview genview) {
     push_any_value<Runtime::Genview>(l, genview, n_genview_metatable.get());
 }
 
@@ -430,7 +430,7 @@ int li_comp_mt_call(lua_State* l) {
             return 0;
         }
         
-        push_cview(l, cview); // +1
+        push_gensys_obj(l, cview); // +1
         int val_idx = lua_gettop(l);
         
         add_to_cache(l, cache_idx, key_idx, val_idx);
@@ -485,7 +485,7 @@ int li_genre_mt_call(lua_State* l) {
     if (genview.is_nullptr()) {
         return 0;
     }
-    push_genview(l, genview);
+    push_gensys_obj(l, genview);
     return 1;
 }
 int li_genre_mt_tostring(lua_State* l) {
@@ -508,7 +508,7 @@ int li_entity_mt_gc(lua_State* l) {
      */
     if (ent.does_exist() && ent->is_lua_owned()) {
         assert(!ent->has_been_spawned());
-        Runtime::Entity::delete_entity(ent);
+        Runtime::get_entities().delete_entity(ent);
     }
     
     ent.Runtime::Entity_Handle::~Entity_Handle();
@@ -542,7 +542,7 @@ int li_entity_mt_index(lua_State* l) {
         }
         else if (ent_unsafe != nullptr) {
             if (std::strcmp(special_key, "arche") == 0) {
-                push_arche_pointer(l, ent_unsafe->get_arche());
+                push_gensys_obj(l, ent_unsafe->get_arche());
                 return 1;
             } else if (std::strcmp(special_key, "killed") == 0) {
                 lua_pushboolean(l, ent_unsafe->has_been_killed());
@@ -580,7 +580,7 @@ int li_entity_mt_index(lua_State* l) {
                 return 0;
             }
             
-            push_cview(l, cview); // +1
+            push_gensys_obj(l, cview); // +1
             int val_idx = lua_gettop(l);
             
             add_to_cache(l, cache_idx, ARG_MEMBER, val_idx);
@@ -741,14 +741,19 @@ int li_find_comp(lua_State* l) {
     const char* strdata = luaL_checklstring(l, 1, &strlen);
     std::string key(strdata, strlen);
     
-    Runtime::Comp* comp = Runtime::find_component(key);
-    if (!comp) {
-        return 0;
+    try {
+        Resour::Oid oid(key);
+        Runtime::Comp* comp = Runtime::find_comp(oid);
+        if (!comp) {
+            return 0;
+        }
+        
+        push_gensys_obj(l, comp);
+        
+        return 1;
+    } catch (Except::Runtime& e) {
+        luaL_error(l, e.what());
     }
-    
-    push_comp_pointer(l, comp);
-    
-    return 1;
 }
 int li_find_archetype(lua_State* l) {
     if (Gensys::get_global_state() != GlobalState::EXECUTABLE) {
@@ -758,14 +763,19 @@ int li_find_archetype(lua_State* l) {
     const char* strdata = luaL_checklstring(l, 1, &strlen);
     std::string key(strdata, strlen);
     
-    Runtime::Arche* arche = Runtime::find_archetype(key);
-    if (!arche) {
-        return 0;
+    try {
+        Resour::Oid oid(key);
+        Runtime::Arche* arche = Runtime::find_arche(oid);
+        if (!arche) {
+            return 0;
+        }
+        
+        push_gensys_obj(l, arche);
+    
+        return 1;
+    } catch (Except::Runtime& e) {
+        luaL_error(l, e.what());
     }
-    
-    push_arche_pointer(l, arche);
-    
-    return 1;
 }
 int li_find_genre(lua_State* l) {
     if (Gensys::get_global_state() != GlobalState::EXECUTABLE) {
@@ -775,45 +785,89 @@ int li_find_genre(lua_State* l) {
     const char* strdata = luaL_checklstring(l, 1, &strlen);
     std::string key(strdata, strlen);
     
-    Runtime::Genre* genre = Runtime::find_genre(key);
-    if (!genre) {
-        return 0;
+    try {
+        Resour::Oid oid(key);
+        Runtime::Genre* genre = Runtime::find_genre(oid);
+        if (!genre) {
+            return 0;
+        }
+        
+        push_gensys_obj(l, genre);
+        
+        return 1;
+    } catch (Except::Runtime& e) {
+        luaL_error(l, e.what());
     }
-    
-    push_genre_pointer(l, genre);
-    
-    return 1;
 }
 int li_new_entity(lua_State* l) {
+    const int ARG_ARCHE = 1;
     if (Gensys::get_global_state() != GlobalState::EXECUTABLE) {
         luaL_error(l, "new_entity is only available during execution");
     }
     
-    Runtime::Arche* arche = *arg_require_arche(l, 1);
+    Runtime::Arche* arche = *arg_require_arche(l, ARG_ARCHE);
     
-    Runtime::Entity_Handle ent = Runtime::Entity::new_entity(arche);
+    Runtime::Entity_Handle ent = Runtime::get_entities().new_entity(arche);
     ent->set_flag_lua_owned(true);
     assert(ent->is_lua_owned());
     assert(ent->can_be_spawned());
     
-    push_entity_handle(l, ent);
+    push_gensys_obj(l, ent);
     
     return 1;
 }
+int li_spawn_entity(lua_State* l) {
+    const int ARG_ENTITY = 1;
+    if (Gensys::get_global_state() != GlobalState::EXECUTABLE) {
+        luaL_error(l, "spawn_entity is only available during execution");
+    }
+    Runtime::Entity_Handle ent = *arg_require_entity(l, ARG_ENTITY);
+    
+    if (!ent.does_exist() || ent->has_been_spawned()) {
+        lua_pushboolean(l, false);
+        return 1;
+    }
+    
+    // Spawning transfers ownership from Lua
+    ent->set_flag_lua_owned(false);
+    
+    ent->spawn();
+    
+    lua_pushboolean(l , true);
+    return 1;
+}
+int li_kill_entity(lua_State* l) {
+    const int ARG_ENTITY = 1;
+    if (Gensys::get_global_state() != GlobalState::EXECUTABLE) {
+        luaL_error(l, "kill_entity is only available during execution");
+    }
+    Runtime::Entity_Handle ent = *arg_require_entity(l, ARG_ENTITY);
+    
+    if (!ent.does_exist() || !ent->is_alive()) {
+        lua_pushboolean(l, false);
+        return 1;
+    }
+    
+    ent->kill();
+    Runtime::get_entities().delete_entity(ent);
+    
+    lua_pushboolean(l , true);
+    return 1;
+}
 int li_delete_entity(lua_State* l) {
+    const int ARG_ENTITY = 1;
     if (Gensys::get_global_state() != GlobalState::EXECUTABLE) {
         luaL_error(l, "delete_entity is only available during execution");
     }
     
-    Runtime::Entity_Handle ent = *arg_require_entity(l, 1);
+    Runtime::Entity_Handle ent = *arg_require_entity(l, ARG_ENTITY);
     
-    if (!(ent.does_exist() && ent->is_lua_owned())) {
-        lua_pushboolean(l , false);
+    if (!ent.does_exist()) {
+        lua_pushboolean(l, false);
         return 1;
     }
 
-    assert(!ent->has_been_spawned());
-    Runtime::Entity::delete_entity(ent);
+    Runtime::get_entities().delete_entity(ent);
     
     lua_pushboolean(l , true);
     return 1;

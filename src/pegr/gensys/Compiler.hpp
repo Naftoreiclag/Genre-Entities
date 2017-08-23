@@ -44,7 +44,7 @@ void compile();
  * @param id
  * @param comp the component definition
  */
-void stage_component(std::string id, std::unique_ptr<Interm::Comp>&& comp);
+void stage_component(Resour::Oid id, std::unique_ptr<Interm::Comp>&& comp);
 
 /**
  * @brief Returns a currently staged component from the id. If the component
@@ -52,21 +52,21 @@ void stage_component(std::string id, std::unique_ptr<Interm::Comp>&& comp);
  * @param id
  * @return nullptr or staged Comp_Def
  */
-Interm::Comp* get_staged_component(std::string id);
+Interm::Comp* get_staged_component(Resour::Oid id);
 
 /**
  * @brief Unstages an intermediate component definition for compilation.
  * Also deletes it.
  * @param id
  */
-void unstage_component(std::string id);
+void unstage_component(Resour::Oid id);
 
 /**
  * @brief Stages an intermediate archetype for compilation
  * @param id
  * @param arche the archetype
  */
-void stage_archetype(std::string id, std::unique_ptr<Interm::Arche>&& arche);
+void stage_archetype(Resour::Oid id, std::unique_ptr<Interm::Arche>&& arche);
 
 /**
  * @brief Returns a currently staged archetype from the id. If the archetype
@@ -74,21 +74,21 @@ void stage_archetype(std::string id, std::unique_ptr<Interm::Arche>&& arche);
  * @param id
  * @return nullptr or staged Arche
  */
-Interm::Arche* get_staged_archetype(std::string id);
+Interm::Arche* get_staged_archetype(Resour::Oid id);
 
 /**
  * @brief Unstages an intermediate archetype for compilation.
  * Also deletes it.
  * @param id
  */
-void unstage_archetype(std::string id);
+void unstage_archetype(Resour::Oid id);
 
 /**
  * @brief Stages an intermediate genre for compilation
  * @param id
  * @param genre
  */
-void stage_genre(std::string id, std::unique_ptr<Interm::Genre>&& genre);
+void stage_genre(Resour::Oid id, std::unique_ptr<Interm::Genre>&& genre);
 
 /**
  * @brief Returns a currently staged genre from the id. If the genre
@@ -96,14 +96,14 @@ void stage_genre(std::string id, std::unique_ptr<Interm::Genre>&& genre);
  * @param id
  * @return nullptr or staged Genre
  */
-Interm::Genre* get_staged_genre(std::string id);
+Interm::Genre* get_staged_genre(Resour::Oid id);
 
 /**
  * @brief Unstages an intermediate genre for compilation.
  * Also deletes it.
  * @param id
  */
-void unstage_genre(std::string id);
+void unstage_genre(Resour::Oid id);
 
 enum struct ObjectType {
     NOT_FOUND,
@@ -120,7 +120,7 @@ enum struct ObjectType {
  * @param id
  * @return The type of the object pointed to by this id.
  */
-ObjectType get_staged_type(std::string id);
+ObjectType get_staged_type(Resour::Oid id);
 
 } // namespace Compiler
 } // namespace Gensys

@@ -23,33 +23,37 @@
 #include <unordered_map>
 #include <vector>
 
+#include "pegr/algs/Algs.hpp"
 #include "pegr/debug/Debug_Macros.hpp"
+#include "pegr/except/Except.hpp"
+#include "pegr/gensys/Entity_Collection.hpp"
+#include "pegr/gensys/Events.hpp"
 #include "pegr/gensys/Util.hpp"
 #include "pegr/logger/Logger.hpp"
 #include "pegr/script/Script_Util.hpp"
-#include "pegr/except/Except.hpp"
-#include "pegr/util/Algs.hpp"
 
 namespace pegr {
 namespace Gensys {
 namespace Runtime {
 
-std::map<std::string, std::unique_ptr<Runtime::Comp> > n_runtime_comps;
-std::map<std::string, std::unique_ptr<Runtime::Arche> > n_runtime_arches;
-std::map<std::string, std::unique_ptr<Runtime::Genre> > n_runtime_genres;
+std::map<Resour::Oid, std::unique_ptr<Runtime::Comp> > n_runtime_comps;
+std::map<Resour::Oid, std::unique_ptr<Runtime::Arche> > n_runtime_arches;
+std::map<Resour::Oid, std::unique_ptr<Runtime::Genre> > n_runtime_genres;
 std::vector<Script::Unique_Regref> n_held_lua_values;
 
-const uint64_t ENT_HEADER_FLAGS = 0;
-const uint64_t ENT_HEADER_SIZE = ENT_HEADER_FLAGS + 8;
+const std::uint64_t ENT_HEADER_FLAGS = 0;
+const std::uint64_t ENT_HEADER_SIZE = ENT_HEADER_FLAGS + 8;
 
-const uint64_t ENT_FLAG_SPAWNED =           1 << 0;
-const uint64_t ENT_FLAG_KILLED =            1 << 1;
-const uint64_t ENT_FLAG_LUA_OWNED =         1 << 2;
-const uint64_t ENT_FLAGS_DEFAULT =          0;
+const std::uint64_t ENT_FLAG_SPAWNED =           1 << 0;
+const std::uint64_t ENT_FLAG_KILLED =            1 << 1;
+const std::uint64_t ENT_FLAG_LUA_OWNED =         1 << 2;
+const std::uint64_t ENT_FLAGS_DEFAULT =          0;
 
-uint64_t n_next_handle = 0;
-std::vector<Entity> n_entities;
-std::unordered_map<uint64_t, std::size_t> n_handle_to_index;
+Entity_Collection n_ent_collection;
+
+Entity_Collection& get_entities() {
+    return n_ent_collection;
+}
 
 const char* prim_to_dbg_string(Prim::Type ty) {
     switch (ty) {
@@ -266,47 +270,15 @@ bool Member_Ptr::is_nullptr() const {
     return m_type == Prim::Type::NULLPTR;
 }
 
-Entity_Handle::Entity_Handle(uint64_t id)
-: m_entity_id(id) {}
-
-Entity_Handle::Entity_Handle()
-: m_entity_id(-1) {}
-
-uint64_t Entity_Handle::get_id() const {
-    return m_entity_id;
-}
-bool Entity_Handle::does_exist() const {
-    return m_entity_id != -1
-            && n_handle_to_index.find(*this) != n_handle_to_index.end();
-}
-Entity* Entity_Handle::operator ->() const {
-    return get_entity();
-}
-
-Entity_Handle::operator bool() const {
-    return does_exist();
-}
-Entity_Handle::operator uint64_t() const {
-    return get_id();
-}
-Entity* Entity_Handle::get_volatile_entity_ptr() const {
-    return get_entity();
-}
-
-Entity* Entity_Handle::get_entity() const {
-    if (m_entity_id == -1) return nullptr;
-    auto iter = n_handle_to_index.find(*this);
-    if (iter == n_handle_to_index.end()) {
-        return nullptr;
-    }
-    std::size_t idx = iter->second;
-    //Logger::log()->info("get %v %v", idx, n_entities.size());
-    assert(idx >= 0 && idx < n_entities.size());
-    return &(n_entities[idx]);
-}
-
 bool Arche::matches(Entity* ent_unsafe) {
     return ent_unsafe->get_arche() == this;
+}
+
+Entity* Arche::match(Entity* ent_unsafe) {
+    if (ent_unsafe->get_arche() == this) {
+        return ent_unsafe;
+    }
+    return nullptr;
 }
 
 bool Cview::is_nullptr() const {
@@ -335,6 +307,9 @@ Member_Ptr Cview::get_member_ptr(const Symbol& member_symb) const {
 bool Cview::operator ==(const Cview& rhs) const {
     return m_comp == rhs.m_comp && m_ent == rhs.m_ent;
 }
+Cview::operator bool() const {
+    return !is_nullptr();
+}
 
 Cview Comp::match(Entity* ent_unsafe) {
     Cview retval;
@@ -360,6 +335,9 @@ Member_Key::Member_Key(Arche::Aggindex aggidx, Prim prim)
 
 bool Genview::is_nullptr() const {
     return !m_ent.does_exist();
+}
+Genview::operator bool() const {
+    return !is_nullptr();
 }
 
 Member_Ptr Genview::get_member_ptr(const Symbol& member_symb) const {
@@ -413,9 +391,9 @@ Genview Genre::match(Entity* ent_unsafe) {
     return retval;
 }
 
-Entity::Entity(Arche* arche)
+Entity::Entity(Arche* arche, Entity_Handle handle)
 : m_arche(arche)
-, m_handle(reserve_new_handle()) {
+, m_handle(handle) {
     
     m_chunk.reset(Pod::new_pod_chunk(
             ENT_HEADER_SIZE + m_arche->m_default_chunk.get().get_size()));
@@ -425,84 +403,11 @@ Entity::Entity(Arche* arche)
             m_chunk.get(), ENT_HEADER_SIZE,
             m_arche->m_default_chunk.get().get_size());
     
-    m_chunk.get().set_value<uint64_t>(ENT_HEADER_FLAGS, ENT_FLAGS_DEFAULT);
+    m_chunk.get().set_value<std::uint64_t>(ENT_HEADER_FLAGS, ENT_FLAGS_DEFAULT);
     m_strings = m_arche->m_default_strings;
     
     assert(get_flags() == ENT_FLAGS_DEFAULT);
     assert(!has_been_spawned());
-}
-
-Entity::Entity()
-: m_arche(nullptr) {}
-
-Entity_Handle Entity::new_entity(Arche* arche) {
-    // Record what the entity's index in the vector will be
-    std::size_t index = n_entities.size();
-    
-    // Emplace-back a new entity
-    n_entities.emplace_back(arche);
-    
-    // If there is a failure for some reason
-    if (n_entities.size() != index + 1) {
-        Logger::log()->warn("Unable to create new entity!");
-        
-        // Return a null handle
-        return Entity_Handle();
-    }
-    
-    // Get the entity we just created by reference
-    Entity& ent = n_entities.back();
-    
-    // Map the entity handle to that index in the vector
-    Entity_Handle hand = ent.get_handle();
-    n_handle_to_index[hand] = index;
-    
-    // Return handle to newly created entity
-    return hand;
-}
-
-void Entity::delete_entity(Entity_Handle handle_a) {
-    /* Delete the entity given by the handle (entity "A") by swapping it with
-     * the last entity in the vector (entity "B"), then popping off the last
-     * entity (A). Must also update B's index (set B's index to A's old index).
-     * 
-     * The special case where A and B are the same entity is handled implicitly.
-     */
-    
-    assert(n_entities.size() > 0);
-    
-    // Find the pair in the handle-to-index map
-    auto map_entry_a = n_handle_to_index.find(handle_a);
-    assert(map_entry_a != n_handle_to_index.end());
-    
-    // Get the index of the entity in the entity vector
-    std::size_t index_a = map_entry_a->second;
-    
-    // Get the index of the last entity
-    std::size_t index_b = n_entities.size() - 1;
-    
-    // Get the handle of the last entity
-    Entity_Handle handle_b = n_entities[index_b].get_handle();
-    
-    // Find the pair in the handle-to-index map
-    auto map_entry_b = n_handle_to_index.find(handle_b);
-    assert(map_entry_b != n_handle_to_index.end());
-    
-    // Set the index
-    map_entry_b->second = index_a;
-    
-    // Swap this entity with the back and remove
-    std::iter_swap(n_entities.begin() + index_a, n_entities.begin() + index_b);
-    n_entities.pop_back();
-    assert(n_entities.size() == index_b);
-    assert(n_entities.size() == 0 || 
-            n_handle_to_index[n_entities[index_a].get_handle()] == index_a);
-    
-    // Remove the corresponding entry from the handle-to-index map
-    n_handle_to_index.erase(map_entry_a);
-    assert(n_handle_to_index.find(handle_a) == n_handle_to_index.end());
-    
-    //Logger::log()->info("delete swapped #%v with #%v", index_a, index_b);
 }
 
 Arche* Entity::get_arche() const {
@@ -550,15 +455,15 @@ Script::Regref Entity::get_func(std::size_t idx) const {
     assert(idx >= 0 && idx < m_arche->m_static_funcs.size());
     return m_arche->m_static_funcs[idx];
 }
-uint64_t Entity::get_flags() const {
-    return m_chunk.get().get_value<uint64_t>(ENT_HEADER_FLAGS);
+std::uint64_t Entity::get_flags() const {
+    return m_chunk.get().get_value<std::uint64_t>(ENT_HEADER_FLAGS);
 }
 
 bool Entity::has_been_spawned() const {
     return (get_flags() & ENT_FLAG_SPAWNED) == ENT_FLAG_SPAWNED;
 }
 bool Entity::is_alive() const {
-    uint64_t flags = get_flags();
+    std::uint64_t flags = get_flags();
     // Spawned and not killed
     
     return (flags & (ENT_FLAG_SPAWNED | ENT_FLAG_KILLED)) == ENT_FLAG_SPAWNED;
@@ -573,30 +478,20 @@ bool Entity::is_lua_owned() const {
     return (get_flags() & ENT_FLAG_LUA_OWNED) == ENT_FLAG_LUA_OWNED;
 }
 
-void Entity::set_flags(uint64_t arg_flags, bool set) {
-    uint64_t flags = m_chunk.get().get_value<uint64_t>(ENT_HEADER_FLAGS);
-    if (set) {
-        flags |= arg_flags;
-        assert((flags & arg_flags) == arg_flags);
-    } else {
-        flags &= ~arg_flags;
-        assert((flags & arg_flags) == 0);
-    }
-    m_chunk.get().set_value<uint64_t>(ENT_HEADER_FLAGS, flags);
+void Entity::spawn() {
+    assert(can_be_spawned());
+    set_flag_spawned(true);
+    Event::get_entity_spawned_event()->trigger(this);
+    assert(has_been_spawned());
 }
-    
-void Entity::set_flag_spawned(bool flag) {
-    set_flags(ENT_FLAG_SPAWNED, flag);
-    assert(has_been_spawned() == flag);
+
+void Entity::kill() {
+    assert(has_been_spawned());
+    set_flag_killed(true);
+    Event::get_entity_killed_event()->trigger(this);
+    assert(has_been_killed());
 }
-void Entity::set_flag_lua_owned(bool flag) {
-    set_flags(ENT_FLAG_LUA_OWNED, flag);
-    assert(is_lua_owned() == flag);
-}
-void Entity::set_flag_killed(bool flag) {
-    set_flags(ENT_FLAG_KILLED, flag);
-    assert(has_been_killed() == flag);
-}
+
 Member_Ptr Entity::get_member(const Member_Key& member_key) {
     /* Depending on the member's type, where we read the data and how we
      * intepret it changes. For POD types, the data comes from the chunk. Other
@@ -621,12 +516,12 @@ Member_Ptr Entity::get_member(const Member_Key& member_key) {
             switch(prim.m_type) {
                 case Runtime::Prim::Type::I32: {
                     //Logger::log()->info("i32");
-                    vptr = m_chunk.get().get_aligned<int32_t>(pod_offset);
+                    vptr = m_chunk.get().get_aligned<std::int32_t>(pod_offset);
                     break;
                 }
                 case Runtime::Prim::Type::I64: {
                     //Logger::log()->info("i64");
-                    vptr = m_chunk.get().get_aligned<int64_t>(pod_offset);
+                    vptr = m_chunk.get().get_aligned<std::int64_t>(pod_offset);
                     break;
                 }
                 case Runtime::Prim::Type::F32: {
@@ -691,38 +586,59 @@ Cview Entity::make_cview(const Symbol& comp_symb) {
     return retval;
 }
 
+Entity::Entity()
+: m_arche(nullptr) {}
+
+void Entity::set_flags(std::uint64_t arg_flags, bool set) {
+    std::uint64_t flags = 
+            m_chunk.get().get_value<std::uint64_t>(ENT_HEADER_FLAGS);
+    if (set) {
+        flags |= arg_flags;
+        assert((flags & arg_flags) == arg_flags);
+    } else {
+        flags &= ~arg_flags;
+        assert((flags & arg_flags) == 0);
+    }
+    m_chunk.get().set_value<std::uint64_t>(ENT_HEADER_FLAGS, flags);
+}
+    
+void Entity::set_flag_spawned(bool flag) {
+    set_flags(ENT_FLAG_SPAWNED, flag);
+    assert(has_been_spawned() == flag);
+}
+void Entity::set_flag_lua_owned(bool flag) {
+    set_flags(ENT_FLAG_LUA_OWNED, flag);
+    assert(is_lua_owned() == flag);
+}
+void Entity::set_flag_killed(bool flag) {
+    set_flags(ENT_FLAG_KILLED, flag);
+    assert(has_been_killed() == flag);
+}
+
 void initialize() {
 }
 void cleanup() {
-    n_entities.clear();
-    // Very important: otherwise entity handles may wrongly report existence.
-    n_handle_to_index.clear();
-    
-    n_next_handle = 0;
+    n_ent_collection.clear();
     n_runtime_comps.clear();
     n_runtime_arches.clear();
     n_runtime_genres.clear();
     n_held_lua_values.clear();
 }
 
-Entity_Handle reserve_new_handle() {
-    return Entity_Handle(n_next_handle++);
-}
-
-uint64_t bottom_52(uint64_t num) {
+std::uint64_t bottom_52(std::uint64_t num) {
     //             0123456789abcdef
     return num & 0x001FFFFFFFFFFFFF;
 }
 
-Runtime::Comp* find_component(std::string id_str) {
+Runtime::Comp* find_comp(Resour::Oid id_str) {
     return Util::find_something(n_runtime_comps, id_str, 
             "Could not find component: %v");
 }
-Runtime::Arche* find_archetype(std::string id_str) {
+Runtime::Arche* find_arche(Resour::Oid id_str) {
     return Util::find_something(n_runtime_arches, id_str, 
             "Could not find archetype: %v");
 }
-Runtime::Genre* find_genre(std::string id_str) {
+Runtime::Genre* find_genre(Resour::Oid id_str) {
     return Util::find_something(n_runtime_genres, id_str, 
             "Could not find genre: %v");
 }

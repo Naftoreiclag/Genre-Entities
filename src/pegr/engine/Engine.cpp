@@ -49,8 +49,8 @@ double n_tick_lag = 0;
 
 const uint16_t INIT_FLAG_LOGGER = 0x0001;
 const uint16_t INIT_FLAG_SCRIPT = 0x0002 | INIT_FLAG_LOGGER;
-const uint16_t INIT_FLAG_GENSYS = 0x0004 | INIT_FLAG_SCRIPT;
 const uint16_t INIT_FLAG_SCHEDU = 0x0008 | INIT_FLAG_SCRIPT;
+const uint16_t INIT_FLAG_GENSYS = 0x0004 | INIT_FLAG_SCRIPT | INIT_FLAG_SCHEDU;
 const uint16_t INIT_FLAG_WINPUT = 0x0010 | INIT_FLAG_LOGGER;
 const uint16_t INIT_FLAG_RESOUR = 0x0020 | INIT_FLAG_LOGGER;
 const uint16_t INIT_FLAG_ALL = 0xFFFF;
@@ -103,18 +103,6 @@ void initialize(uint16_t flags) {
         }
     }
     
-    if (gensys_used()) {
-        try {
-            Gensys::initialize();
-            Gensys::LI::initialize();
-        } catch (Except::Runtime& e) {
-            std::stringstream sss;
-            sss << "Error while initializing gensys: "
-                << e.what();
-            throw Except::Runtime(sss.str());
-        }
-    }
-    
     if (schedu_used()) {
         try {
             Schedu::initialize();
@@ -122,6 +110,18 @@ void initialize(uint16_t flags) {
         } catch (Except::Runtime& e) {
             std::stringstream sss;
             sss << "Error while initializing scheduler: "
+                << e.what();
+            throw Except::Runtime(sss.str());
+        }
+    }
+    
+    if (gensys_used()) {
+        try {
+            Gensys::initialize();
+            Gensys::LI::initialize();
+        } catch (Except::Runtime& e) {
+            std::stringstream sss;
+            sss << "Error while initializing gensys: "
                 << e.what();
             throw Except::Runtime(sss.str());
         }
@@ -261,13 +261,13 @@ void cleanup() {
         Winput::cleanup();
     }
     
-    if (schedu_used()) {
-        Schedu::LI::cleanup();
-    }
-    
     if (gensys_used()) {
         Gensys::LI::cleanup();
         Gensys::cleanup();
+    }
+    
+    if (schedu_used()) {
+        Schedu::LI::cleanup();
     }
     
     if (script_used()) {

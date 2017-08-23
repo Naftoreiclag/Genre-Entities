@@ -17,7 +17,11 @@
 #ifndef PEGR_GENSYS_RUNTIME_HPP
 #define PEGR_GENSYS_RUNTIME_HPP
 
+#include <functional>
+
+#include "pegr/gensys/Entity_Collection.hpp"
 #include "pegr/gensys/Runtime_Types.hpp"
+#include "pegr/resource/Oid.hpp"
 
 namespace pegr {
 namespace Gensys {
@@ -26,7 +30,7 @@ namespace Runtime {
 void initialize();
 void cleanup();
 
-Entity_Handle reserve_new_handle();
+Entity_Collection& get_entities();
 
 /**
  * @param num A 64 bit unsigned value. When passing the entity's unique id to
@@ -37,9 +41,9 @@ Entity_Handle reserve_new_handle();
  */
 uint64_t bottom_52(uint64_t num);
 
-Comp* find_component(std::string id);
-Arche* find_archetype(std::string id);
-Genre* find_genre(std::string id);
+Comp* find_comp(Resour::Oid oid);
+Arche* find_arche(Resour::Oid oid);
+Genre* find_genre(Resour::Oid oid);
 
 const char* prim_to_dbg_string(Prim::Type ty);
 

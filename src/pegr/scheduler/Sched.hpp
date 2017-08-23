@@ -17,8 +17,8 @@
 #ifndef PEGR_SCHEDULER_SCHED_HPP
 #define PEGR_SCHEDULER_SCHED_HPP
 
-#include <string>
 #include <cstdint>
+#include <string>
 
 #include "pegr/resource/Oid.hpp"
 #include "pegr/script/Script.hpp"
@@ -61,7 +61,9 @@ struct Listener_Common {
 class Event {
 public:
     enum Type {
+        ENTITY_SPAWNED,
         ENTITY_TICK,
+        ENTITY_KILLED,
         SCRIPTED
     };
     
@@ -69,10 +71,10 @@ public:
     virtual ~Event();
     
     virtual Type get_type() const = 0;
-    virtual void trigger() = 0;
 };
 
-void add_event(Resour::Oid oid, std::unique_ptr<Event>&& ev);
+Event* add_event(Resour::Oid oid, std::unique_ptr<Event>&& ev);
+
 Event* find_event(Resour::Oid oid);
 
 void initialize();

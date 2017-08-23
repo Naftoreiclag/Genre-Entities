@@ -25,6 +25,7 @@
 #include <sstream>
 #include <vector>
 
+#include "pegr/algs/Algs.hpp"
 #include "pegr/debug/Debug_Macros.hpp"
 #include "pegr/except/Except.hpp"
 #include "pegr/gensys/Compiler.hpp"
@@ -32,7 +33,6 @@
 #include "pegr/logger/Logger.hpp"
 #include "pegr/script/Lua_Interf_Util.hpp"
 #include "pegr/script/Script_Util.hpp"
-#include "pegr/util/Algs.hpp"
 
 namespace pegr {
 namespace Gensys {
@@ -75,6 +75,8 @@ const luaL_Reg n_setup_api_safe[] = {
     {"find_archetype", li_find_archetype},
     {"find_genre", li_find_genre},
     {"new_entity", li_new_entity},
+    {"spawn_entity", li_spawn_entity},
+    {"kill_entity", li_kill_entity},
     {"delete_entity", li_delete_entity},
     
     // End of the list
@@ -440,46 +442,6 @@ std::unique_ptr<Interm::Arche> parse_archetype(int table_idx) {
     
     return arche;
 }
-
-/*
-void assert_pattern_source_has_symbol(
-        const Interm::Genre::Pattern& pattern, const Interm::Symbol& symbol) {
-    switch (pattern.m_type) {
-        case Interm::Genre::Pattern::Type::FROM_COMP: {
-            assert(pattern.m_from_component);
-            if (pattern.m_from_component->m_members.find(symbol)
-                    == pattern.m_from_component->m_members.end()) {
-                std::stringstream sss;
-                sss << "Alias pattern references member \""
-                    << symbol
-                    << "\" which does not exist in component \""
-                    << pattern.m_from_component->m_error_msg_name
-                    << '"';
-                throw Except::Runtime(sss.str());
-            }
-            break;
-        }
-        case Interm::Genre::Pattern::Type::FROM_GENRE: {
-            assert(pattern.m_from_genre);
-            if (pattern.m_from_genre->m_interface.find(symbol)
-                    == pattern.m_from_genre->m_interface.end()) {
-                std::stringstream sss;
-                sss << "Alias pattern references member \""
-                    << symbol
-                    << "\" which does not exist in genre \""
-                    << pattern.m_from_genre->m_error_msg_name
-                    << '"';
-                throw Except::Runtime(sss.str());
-            }
-            break;
-        }
-        default: {
-            assert(false);
-            break;
-        }
-    }
-}
-*/
 
 std::map<Interm::Symbol, Interm::Comp*> 
         parse_genre_pattern_matching(int value_idx) {

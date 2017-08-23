@@ -50,7 +50,7 @@ pegr.add_component('circle.c', {
 })
 print('added circle.c')
 
-pegr.add_component('edible.c', {
+pegr.add_component('dog:edible.c', {
   food_value = {'f32', 0},
   on_eaten = {'func', function(self) end},
 })
@@ -85,7 +85,7 @@ pegr.add_archetype('cookie.at', {
     radius = {'f32', 0.5},
   },
   edible = {
-    __is = 'edible.c',
+    __is = 'dog:edible.c',
     
     -- 0.315 foodiness (this is a VERY hearty cookie)
     food_value = {'f32', 0.315},
@@ -123,7 +123,7 @@ pegr.add_archetype('pizza.at', {
     radius = {'f32', 2.0},
   },
   edible = {
-    __is = 'edible.c',
+    __is = 'dog:edible.c',
     
     -- 0.63 foodiness (this is a deep dish)
     food_value = {'f32', 0.63},
@@ -210,7 +210,7 @@ pegr.add_genre('food.g', {
       matching = {
         position = 'position.c',
         velocity = 'velocity.c',
-        edible = 'edible.c',
+        edible = 'dog:edible.c',
       },
       aliases = {
         pos_x = 'position.x',
@@ -247,15 +247,17 @@ pegr.add_event('custom_event.ev', {
   end
 })
 
-local wi_listener = pegr.hook_listener({
+local wi_listener = pegr.hook_listener{
   on = 'world_init.ev',
-  func = function(world) 
+  func = function(event) 
     print('world_init')
     pegr.call_event('custom_event.ev')
   end,
-})
+}
 
-local et_listener = pegr.hook_listener({
+--pegr.unhook_listener(wi_listener)
+
+local et_listener = pegr.hook_listener{
   
   -- On entity ticks
   on = 'entity_tick.ev',
@@ -266,7 +268,7 @@ local et_listener = pegr.hook_listener({
   -- Every time
   every = 1,
   
-  --[[ (Everything other than 'on', 'func', and 'every' are extra 
+  --[[ (Everything other than 'on', 'func', 'delay', and 'every' are extra 
   arguments, the meaning of which is determined by the choice of 'on')
   ]]
   
@@ -274,14 +276,18 @@ local et_listener = pegr.hook_listener({
   selector = 'food.g',
   
   -- The actual function to be called
-  func = function(entity)
+  func = function(event)
+    
+    local entity = event.entity
     
     -- Update position based on velocity
     entity.pos_x = entity.pos_x + entity.vel_x
     entity.pos_y = entity.pos_y + entity.vel_y
     
+    
+    --event.cancel()
   end,
-})
+}
 print('added fizz.t')
 
 -------------------------------------------------------------------------------
