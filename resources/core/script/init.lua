@@ -50,7 +50,7 @@ pegr.add_component('circle.c', {
 })
 print('added circle.c')
 
-pegr.add_component('edible.c', {
+pegr.add_component('dog:edible.c', {
   food_value = {'f32', 0},
   on_eaten = {'func', function(self) end},
 })
@@ -85,7 +85,7 @@ pegr.add_archetype('cookie.at', {
     radius = {'f32', 0.5},
   },
   edible = {
-    __is = 'edible.c',
+    __is = 'dog:edible.c',
     
     -- 0.315 foodiness (this is a VERY hearty cookie)
     food_value = {'f32', 0.315},
@@ -123,7 +123,7 @@ pegr.add_archetype('pizza.at', {
     radius = {'f32', 2.0},
   },
   edible = {
-    __is = 'edible.c',
+    __is = 'dog:edible.c',
     
     -- 0.63 foodiness (this is a deep dish)
     food_value = {'f32', 0.63},
@@ -210,7 +210,7 @@ pegr.add_genre('food.g', {
       matching = {
         position = 'position.c',
         velocity = 'velocity.c',
-        edible = 'edible.c',
+        edible = 'dog:edible.c',
       },
       aliases = {
         pos_x = 'position.x',
