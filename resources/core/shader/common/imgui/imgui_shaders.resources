@@ -1,0 +1,106 @@
+[
+    {
+        "name" : "imgui_color.fs",
+        "type" : "shader",
+        "file" : "fs_imgui_color.sc",
+        "params" : {
+            "type" : "frag"
+        }
+    },
+    {
+        "name" : "imgui_cubemap.fs",
+        "type" : "shader",
+        "file" : "fs_imgui_cubemap.sc",
+        "params" : {
+            "type" : "frag"
+        }
+    },
+    {
+        "name" : "imgui_image.fs",
+        "type" : "shader",
+        "file" : "fs_imgui_image.sc",
+        "params" : {
+            "type" : "frag"
+        }
+    },
+    {
+        "name" : "imgui_image_swizz.fs",
+        "type" : "shader",
+        "file" : "fs_imgui_image_swizz.sc",
+        "params" : {
+            "type" : "frag"
+        }
+    },
+    {
+        "name" : "imgui_latlong.fs",
+        "type" : "shader",
+        "file" : "fs_imgui_latlong.sc",
+        "params" : {
+            "type" : "frag"
+        }
+    },
+    {
+        "name" : "imgui_texture.fs",
+        "type" : "shader",
+        "file" : "fs_imgui_texture.sc",
+        "params" : {
+            "type" : "frag"
+        }
+    },
+    {
+        "name" : "ocornut_imgui.fs",
+        "type" : "shader",
+        "file" : "fs_ocornut_imgui.sc",
+        "params" : {
+            "type" : "frag"
+        }
+    },
+    {
+        "name" : "imgui_color.vs",
+        "type" : "shader",
+        "file" : "vs_imgui_color.sc",
+        "params" : {
+            "type" : "vert"
+        }
+    },
+    {
+        "name" : "imgui_cubemap.vs",
+        "type" : "shader",
+        "file" : "vs_imgui_cubemap.sc",
+        "params" : {
+            "type" : "vert"
+        }
+    },
+    {
+        "name" : "imgui_image.vs",
+        "type" : "shader",
+        "file" : "vs_imgui_image.sc",
+        "params" : {
+            "type" : "vert"
+        }
+    },
+    {
+        "name" : "imgui_latlong.vs",
+        "type" : "shader",
+        "file" : "vs_imgui_latlong.sc",
+        "params" : {
+            "type" : "vert"
+        }
+    },
+    {
+        "name" : "imgui_texture.vs",
+        "type" : "shader",
+        "file" : "vs_imgui_texture.sc",
+        "params" : {
+            "type" : "vert"
+        }
+    },
+    {
+        "name" : "ocornut_imgui.vs",
+        "type" : "shader",
+        "file" : "vs_ocornut_imgui.sc",
+        "params" : {
+            "type" : "vert"
+        }
+    }
+]

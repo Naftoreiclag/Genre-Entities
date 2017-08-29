@@ -51,8 +51,8 @@ const uint16_t INIT_FLAG_LOGGER = 0x0001;
 const uint16_t INIT_FLAG_SCRIPT = 0x0002 | INIT_FLAG_LOGGER;
 const uint16_t INIT_FLAG_SCHEDU = 0x0008 | INIT_FLAG_SCRIPT;
 const uint16_t INIT_FLAG_GENSYS = 0x0004 | INIT_FLAG_SCRIPT | INIT_FLAG_SCHEDU;
-const uint16_t INIT_FLAG_WINPUT = 0x0010 | INIT_FLAG_LOGGER;
-const uint16_t INIT_FLAG_RESOUR = 0x0020 | INIT_FLAG_LOGGER;
+const uint16_t INIT_FLAG_RESOUR = 0x0010 | INIT_FLAG_LOGGER;
+const uint16_t INIT_FLAG_WINPUT = 0x0020 | INIT_FLAG_LOGGER | INIT_FLAG_RESOUR;
 const uint16_t INIT_FLAG_ALL = 0xFFFF;
 const uint16_t INIT_FLAG_NONE = 0x0000;
 
@@ -127,23 +127,23 @@ void initialize(uint16_t flags) {
         }
     }
     
-    if (winput_used()) {
-        try {
-            Winput::initialize();
-        } catch (Except::Runtime& e) {
-            std::stringstream sss;
-            sss << "Error while initializing window/input: "
-                << e.what();
-            throw Except::Runtime(sss.str());
-        }
-    }
-    
     if (resour_used()) {
         try {
             Resour::initialize();
         } catch (Except::Runtime& e) {
             std::stringstream sss;
             sss << "Error while initializing resources: "
+                << e.what();
+            throw Except::Runtime(sss.str());
+        }
+    }
+    
+    if (winput_used()) {
+        try {
+            Winput::initialize();
+        } catch (Except::Runtime& e) {
+            std::stringstream sss;
+            sss << "Error while initializing window/input: "
                 << e.what();
             throw Except::Runtime(sss.str());
         }
@@ -216,6 +216,9 @@ void async_tick(const boost::system::error_code& asio_err,
 void async_render(const boost::system::error_code& asio_err,
         boost::asio::deadline_timer* timer) {
     
+    if (winput_used()) {
+        Winput::pre_frame();
+    }
     update_lag_time();
     n_asm->do_frame();
     if (winput_used()) {
@@ -253,12 +256,12 @@ void cleanup() {
     n_asm.clear_all();
     n_tick_id = 0;
     
-    if (resour_used()) {
-        Resour::cleanup();
-    }
-    
     if (winput_used()) {
         Winput::cleanup();
+    }
+    
+    if (resour_used()) {
+        Resour::cleanup();
     }
     
     if (gensys_used()) {

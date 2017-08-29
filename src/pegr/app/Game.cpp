@@ -22,6 +22,7 @@
 
 #include <bexam/01-cubes/cubes.hpp>
 #include <bgfx/bgfx.h>
+#include <ocornut-imgui/imgui.h>
 
 #include "pegr/engine/App_State.hpp"
 #include "pegr/engine/Engine.hpp"
@@ -118,6 +119,7 @@ void Game_State::do_frame() {
     Cubes_Example::pegr_update(m_time + Engine::get_tick_lag() * 0.1, 
             Winput::get_window_width(),
             Winput::get_window_height(), m_program.get());
+    ImGui::ShowTestWindow();
 }
 
 void Game_State::on_window_resize(int32_t width, int32_t height) {

@@ -14,29 +14,40 @@
  *  limitations under the License.
  */
 
-#ifndef PEGR_WINPUT_WINPUT_HPP
-#define PEGR_WINPUT_WINPUT_HPP
+#ifndef PEGR_WINPUT_DBGUI_HPP
+#define PEGR_WINPUT_DBGUI_HPP
 
 #include <cstdint>
+
+#include <bgfx/bgfx.h>
+
+#include "pegr/render/Handles.hpp"
 
 namespace pegr {
 namespace Winput {
 
-extern const char* const WINDOW_DEFAULT_TITLE;
-extern const int32_t WINDOW_DEFAULT_WIDTH;
-extern const int32_t WINDOW_DEFAULT_HEIGHT;
+extern const uint8_t DBGUI_VIEW_ID;
+    
+class Dbgui {
+public:
+    void initialize();
+    void new_frame();
+    void render();
+    void cleanup();
+    
+    ~Dbgui();
 
-void initialize();
-void pollEvents();
-void cleanup();
-
-void pre_frame();
-void submit_frame();
-
-int32_t get_window_width();
-int32_t get_window_height();
+private:
+    Render::Unique_Program m_prog;
+    Render::Unique_Program m_img_prog;
+    Render::Unique_Uniform m_lod_enabled_unif;
+    Render::Unique_Uniform m_tex_unif;
+    bgfx::VertexDecl m_vertdecl;
+    Render::Unique_Texture m_tex;
+    bool m_initialized;
+};
 
 } // namespace Winput
 } // namespace pegr
 
-#endif // PEGR_WINPUT_WINPUT_HPP
+#endif // PEGR_WINPUT_DBGUI_HPP

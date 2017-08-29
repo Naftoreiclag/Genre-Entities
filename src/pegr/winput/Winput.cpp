@@ -28,6 +28,7 @@
 #include "pegr/except/Except.hpp"
 #include "pegr/logger/Logger.hpp"
 #include "pegr/render/Shaders.hpp"
+#include "pegr/winput/Dbgui.hpp"
 #include "pegr/winput/Enum_Utils.hpp"
 
 namespace pegr {
@@ -36,6 +37,8 @@ namespace Winput {
 const char* const WINDOW_DEFAULT_TITLE = "Engine";
 const int32_t WINDOW_DEFAULT_WIDTH = 640;
 const int32_t WINDOW_DEFAULT_HEIGHT = 480;
+
+Dbgui n_dbgui;
 
 SDL_Window* n_window;
 SDL_SysWMinfo n_syswm_info;
@@ -91,7 +94,7 @@ bgfx::PlatformData extract_plat_specific(const SDL_SysWMinfo& syswm_info) {
 void initialize() {
     Logger::log()->info("Initializing window and input");
     
-    if(SDL_Init(0) < 0) {
+    if (SDL_Init(0) < 0) {
         std::stringstream sss;
         sss << "Could not initalize SDL: "
             << SDL_GetError();
@@ -110,7 +113,7 @@ void initialize() {
         n_window_width = width;
         n_window_height = height;
     }
-    if(!n_window) {
+    if (!n_window) {
         throw Except::Runtime("Could not create SDL window");
     }
     
@@ -147,6 +150,8 @@ void initialize() {
     
     Logger::log()->info("bgfx renderer type: %v", 
             Util::to_string_bgfx_rt(bgfx::getRendererType()));
+    
+    n_dbgui.initialize();
 }
 
 void on_sdl_window_resize(const SDL_WindowEvent& window) {
@@ -185,7 +190,10 @@ void pollEvents() {
     }
 }
 void cleanup() {
+    
     Logger::log()->info("Cleaning window and input");
+    
+    n_dbgui.cleanup();
     
     Render::clear_cached_programs();
     Render::clear_cached_shaders();
@@ -199,8 +207,13 @@ void cleanup() {
     SDL_Quit();
 }
 
+void pre_frame() {
+    n_dbgui.new_frame();
+}
+
 void submit_frame() {
     bgfx::touch(0);
+    n_dbgui.render();
     bgfx::frame();
 }
 

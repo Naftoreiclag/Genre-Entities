@@ -23,6 +23,7 @@ set(PGLOCAL_SOURCES_LIST "")
 foreach(fname 
 
 "../thirdparty/bgfx_examples/bexam/01-cubes/cubes.cpp"
+"../thirdparty/bgfx_examples/bexam/common/imgui/imgui.cpp"
 "../thirdparty/easyloggingpp/easylogging++.cc"
 "../thirdparty/jsoncpp/jsoncpp.cpp"
 "../thirdparty/ocornut-imgui/ocornut-imgui/imgui.cpp"
@@ -76,6 +77,7 @@ foreach(fname
 "test/Unique_Handles_Test.cpp"
 "test/Unique_Ptr_Test.cpp"
 "text/Text.cpp"
+"winput/Dbgui.cpp"
 "winput/Enum_Utils.cpp"
 "winput/Winput.cpp"
 
