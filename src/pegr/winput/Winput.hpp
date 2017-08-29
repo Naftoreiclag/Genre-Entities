@@ -23,8 +23,14 @@ namespace pegr {
 namespace Winput {
 
 extern const char* const WINDOW_DEFAULT_TITLE;
-extern const int32_t WINDOW_DEFAULT_WIDTH;
-extern const int32_t WINDOW_DEFAULT_HEIGHT;
+extern const std::int32_t WINDOW_DEFAULT_WIDTH;
+extern const std::int32_t WINDOW_DEFAULT_HEIGHT;
+
+extern const std::uint32_t MOUSE_BUTTON_LEFT;
+extern const std::uint32_t MOUSE_BUTTON_MIDDLE;
+extern const std::uint32_t MOUSE_BUTTON_RIGHT;
+extern const std::uint32_t MOUSE_BUTTON_EXTRA_1;
+extern const std::uint32_t MOUSE_BUTTON_EXTRA_2;
 
 void initialize();
 void pollEvents();
@@ -33,8 +39,11 @@ void cleanup();
 void pre_frame();
 void submit_frame();
 
-int32_t get_window_width();
-int32_t get_window_height();
+std::int32_t get_mouse_x();
+std::int32_t get_mouse_y();
+std::uint32_t get_mouse_buttons();
+std::int32_t get_window_width();
+std::int32_t get_window_height();
 
 } // namespace Winput
 } // namespace pegr

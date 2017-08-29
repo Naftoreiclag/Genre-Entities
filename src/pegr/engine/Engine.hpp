@@ -52,6 +52,7 @@ void set_tick_frequency(int32_t hertz);
 
 uint64_t get_tick_id();
 double get_tick_lag();
+double get_frame_delta();
 
 bool is_main_loop_running();
 

@@ -19,6 +19,7 @@
 #include <bexam/common/imgui/imgui.h>
 #include <ocornut-imgui/imgui.h>
 
+#include "pegr/engine/Engine.hpp"
 #include "pegr/render/Shaders.hpp"
 #include "pegr/winput/Winput.hpp"
 
@@ -74,6 +75,15 @@ void Dbgui::new_frame() {
     imio.DisplaySize.x = Winput::get_window_width();
     imio.DisplaySize.y = Winput::get_window_height();
     imio.DeltaTime = 0;
+    imio.MousePos.x = Winput::get_mouse_x();
+    imio.MousePos.y = Winput::get_mouse_y();
+    std::uint32_t mbuttons = Winput::get_mouse_buttons();
+    imio.MouseDown[0] = mbuttons & Winput::MOUSE_BUTTON_LEFT;
+    imio.MouseDown[1] = mbuttons & Winput::MOUSE_BUTTON_MIDDLE;
+    imio.MouseDown[2] = mbuttons & Winput::MOUSE_BUTTON_RIGHT;
+    imio.MouseDown[3] = mbuttons & Winput::MOUSE_BUTTON_EXTRA_1;
+    imio.MouseDown[4] = mbuttons & Winput::MOUSE_BUTTON_EXTRA_2;
+    imio.DeltaTime = Engine::get_frame_delta();
     
     ImGui::NewFrame();
 }
@@ -85,7 +95,6 @@ void Dbgui::render() {
             m_tex_unif.get(), m_lod_enabled_unif.get());
 }
 void Dbgui::cleanup() {
-    
     m_tex.reset();
     m_vertdecl = bgfx::VertexDecl();
     m_tex_unif.reset();
