@@ -19,8 +19,8 @@
 #include <bexam/common/imgui/imgui.h>
 #include <ocornut-imgui/imgui.h>
 
-#include "pegr/winput/Winput.hpp"
 #include "pegr/render/Shaders.hpp"
+#include "pegr/winput/Winput.hpp"
 
 namespace pegr {
 namespace Winput {
