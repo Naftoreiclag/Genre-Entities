@@ -30,6 +30,7 @@ foreach(fname
 "../thirdparty/ocornut-imgui/ocornut-imgui/imgui_demo.cpp"
 "../thirdparty/ocornut-imgui/ocornut-imgui/imgui_draw.cpp"
 "Main.cpp"
+"algs/Partition_Tracker.cpp"
 "app/Game.cpp"
 "debug/Debug_Assert_Lua_Balance.cpp"
 "engine/App_State.cpp"

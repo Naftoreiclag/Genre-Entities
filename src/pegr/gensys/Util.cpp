@@ -20,59 +20,11 @@
 #include <cstdint>
 #include <vector>
 
+#include "pegr/algs/Partition_Tracker.hpp"
+
 namespace pegr {
 namespace Gensys {
 namespace Util {
-
-void Partition_Tracker::occupy(std::size_t offset, std::size_t size) {
-    std::size_t end_range = offset + size;
-    if (end_range > m_data.size()) {
-        m_data.resize(end_range, 0);
-    }
-    std::fill(m_data.begin() + offset, m_data.begin() + end_range, 1);
-}
-
-bool Partition_Tracker::can_occupy(std::size_t offset, std::size_t size) {
-    std::size_t end_range = offset + size;
-    if (offset > m_data.size()) {
-        return true;
-    }
-    auto end_iter = 
-            end_range > m_data.size() ? 
-                    m_data.end() : 
-                    m_data.begin() + end_range;
-    return std::find(m_data.begin() + offset, end_iter, 1) == end_iter;
-}
-
-std::size_t Partition_Tracker::get_minimum_size() {
-    // Finds the index of the last occupied byte
-    auto last_occupied = 
-            std::find(m_data.rbegin(), m_data.rend(), 1).base();
-    return std::distance(m_data.begin(), last_occupied + 1);
-}
-
-/*
-std::size_t sizeof_prim_type(Interm::Prim::Type t) {
-    switch (t) {
-        case Interm::Prim::Type::I32: {
-            return sizeof(int32_t);
-        }
-        case Interm::Prim::Type::I64: {
-            return sizeof(int64_t);
-        }
-        case Interm::Prim::Type::F32: {
-            return sizeof(float);
-        }
-        case Interm::Prim::Type::F64: {
-            return sizeof(double);
-        }
-        case Interm::Prim::Type::FUNC: {
-            return sizeof(Script::Arridx);
-        }
-    }
-    return -1;
-}
-*/
 
 Pod::Chunk_Ptr new_pod_chunk_from_interm_prims(
         const std::map<Interm::Symbol, Interm::Prim>& members, 
@@ -115,7 +67,7 @@ Pod::Chunk_Ptr new_pod_chunk_from_interm_prims(
     std::sort(sorted_sizes.begin(), sorted_sizes.end(), 
             std::greater<std::size_t>());
     
-    Partition_Tracker ptrack;
+    Algs::Partition_Tracker ptrack;
     for (std::size_t size : sorted_sizes) {
         const auto& equal_sized_members = symbols_by_size[size];
         for (auto member_symbol : equal_sized_members) {

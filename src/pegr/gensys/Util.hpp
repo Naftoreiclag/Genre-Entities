@@ -29,17 +29,6 @@ namespace pegr {
 namespace Gensys {
 namespace Util {
 
-class Partition_Tracker {
-public:
-    void occupy(std::size_t offset, std::size_t size);
-    
-    bool can_occupy(std::size_t offset, std::size_t size);
-    
-    std::size_t get_minimum_size();
-private:
-    std::vector<char> m_data;
-};
-
 /**
  * @brief Makes a pod chunk from a map of symbols and primitives. Uses int64_t[]
  * as the underlying data chunk.
