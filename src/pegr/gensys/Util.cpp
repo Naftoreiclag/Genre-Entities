@@ -26,7 +26,7 @@ namespace pegr {
 namespace Gensys {
 namespace Util {
 
-Pod::Chunk_Ptr new_pod_chunk_from_interm_prims(
+Algs::Podc_Ptr new_pod_chunk_from_interm_prims(
         const std::map<Interm::Symbol, Interm::Prim>& members, 
         std::map<Interm::Symbol, std::size_t>& symbol_to_offset) {
     symbol_to_offset.clear();
@@ -91,7 +91,7 @@ Pod::Chunk_Ptr new_pod_chunk_from_interm_prims(
         }
     }
     
-    Pod::Chunk_Ptr pcp = Pod::new_pod_chunk(ptrack.get_minimum_size());
+    Algs::Podc_Ptr pcp = Algs::Podc_Ptr::new_pod_chunk(ptrack.get_minimum_size());
     copy_named_prims_into_pod_chunk(members, symbol_to_offset, pcp, 0);
     return pcp;
 }
@@ -99,7 +99,7 @@ Pod::Chunk_Ptr new_pod_chunk_from_interm_prims(
 void copy_named_prims_into_pod_chunk(
         const std::map<Interm::Symbol, Interm::Prim>& members, 
         const std::map<Interm::Symbol, std::size_t>& symbol_to_offset, 
-        Pod::Chunk_Ptr pcp, std::size_t dest_offset) {
+        Algs::Podc_Ptr pcp, std::size_t dest_offset) {
     for (const auto& symbol_offset_pair : symbol_to_offset) {
         const Interm::Symbol& symb = symbol_offset_pair.first;
         

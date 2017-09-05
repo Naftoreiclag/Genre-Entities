@@ -23,8 +23,7 @@
 #include <memory>
 
 namespace pegr {
-namespace Gensys {
-namespace Pod {
+namespace Algs {
 
 /**
  * @class Chunk_Ptr
@@ -36,25 +35,52 @@ namespace Pod {
  * 
  * Satisfies NullablePointer requirements
  */
-class Chunk_Ptr {
+class Podc_Ptr {
 public:
     /**
      * @brief Constructs a nullptr
      */
-    Chunk_Ptr();
+    Podc_Ptr();
+    
+    /**
+     * @brief Creates a new chunk with the requested size. Rounds up to nearest
+     * 8 bytes (64 bit alignment). Chunks of size zero can be created. Such 
+     * chunks are not nullptr, and are not equal to each other.
+     * @param size The requested size in bytes
+     * @return "Pointer"
+     */
+    static Podc_Ptr new_pod_chunk(std::size_t size);
+
+    /**
+     * @brief Deletes a chunk that was created by new_pod_chunk()
+     */
+    static void delete_pod_chunk(Podc_Ptr ptr);
+
+    /**
+     * @brief Copies the data from one chunk into another
+     * @param src The source chunk
+     * @param src_start Offset to begin reading from (must be multiple of 8)
+     * @param dest The destination chunk
+     * @param dest_start Offset to begin overwriting at (must be multiple of 8)
+     * @param num_bytes The number of bytes to copy (must be multiple of 8)
+     */
+    static void copy_pod_chunk(
+            Podc_Ptr src, std::size_t src_start,
+            Podc_Ptr dest, std::size_t dest_start, std::size_t num_bytes);
+
     
     /**
      * @brief Constructor. You should not directly call this in most
      * circumstances. Instead, use the factory function new_pod_chunk()
      * declared below. This constructor does not assume deletion responsibility.
      */
-    Chunk_Ptr(void* chunk, std::size_t size);
+    Podc_Ptr(void* chunk, std::size_t size);
     
-    Chunk_Ptr(const Chunk_Ptr& rhs) = default;
-    Chunk_Ptr(Chunk_Ptr&& rhs) = default;
-    Chunk_Ptr& operator =(const Chunk_Ptr& rhs) = default;
-    Chunk_Ptr& operator =(Chunk_Ptr&& rhs) = default;
-    ~Chunk_Ptr() = default;
+    Podc_Ptr(const Podc_Ptr& rhs) = default;
+    Podc_Ptr(Podc_Ptr&& rhs) = default;
+    Podc_Ptr& operator =(const Podc_Ptr& rhs) = default;
+    Podc_Ptr& operator =(Podc_Ptr&& rhs) = default;
+    ~Podc_Ptr() = default;
     
     /**
      * @return If this is pointing to nothing 
@@ -129,15 +155,15 @@ public:
      */
     std::size_t get_size() const;
     
-    bool operator ==(const Chunk_Ptr& rhs) const;
-    bool operator !=(const Chunk_Ptr& rhs) const;
+    bool operator ==(const Podc_Ptr& rhs) const;
+    bool operator !=(const Podc_Ptr& rhs) const;
     
     explicit operator bool() const;
     
-    friend bool operator ==(std::nullptr_t, const Chunk_Ptr& rhs);
-    friend bool operator ==(const Chunk_Ptr& lhs, std::nullptr_t);
-    friend bool operator !=(std::nullptr_t, const Chunk_Ptr& rhs);
-    friend bool operator !=(const Chunk_Ptr& lhs, std::nullptr_t);
+    friend bool operator ==(std::nullptr_t, const Podc_Ptr& rhs);
+    friend bool operator ==(const Podc_Ptr& lhs, std::nullptr_t);
+    friend bool operator !=(std::nullptr_t, const Podc_Ptr& rhs);
+    friend bool operator !=(const Podc_Ptr& lhs, std::nullptr_t);
 
 private:
     void* m_voidptr;
@@ -145,41 +171,13 @@ private:
 };
 
 struct Chunk_Ptr_Deleter {
-    typedef Chunk_Ptr pointer;
+    typedef Podc_Ptr pointer;
     void operator ()(pointer ptr) const;
 };
 
-typedef std::unique_ptr<Chunk_Ptr, Chunk_Ptr_Deleter> Unique_Chunk_Ptr;
+typedef std::unique_ptr<Podc_Ptr, Chunk_Ptr_Deleter> Unique_Chunk_Ptr;
 
-/**
- * @brief Creates a new chunk with the requested size. Rounds up to nearest 8
- * bytes (64 bit alignment). Chunks of size zero can be created. Such chunks
- * are not nullptr, and are not equal to each other.
- * @param size The requested size in bytes
- * @return "Pointer"
- */
-Chunk_Ptr new_pod_chunk(std::size_t size);
-
-/**
- * @brief Deletes a chunk that was created by new_pod_chunk()
- */
-void delete_pod_chunk(Chunk_Ptr ptr);
-
-/**
- * @brief Copies the data from one chunk into another
- * @param src The source chunk
- * @param src_start Offset to begin reading from (must be multiple of 8)
- * @param dest The destination chunk
- * @param dest_start Offset to begin overwriting at (must be multiple of 8)
- * @param num_bytes The number of bytes to copy (must be multiple of 8)
- */
-void copy_pod_chunk(
-        Chunk_Ptr src, std::size_t src_start,
-        Chunk_Ptr dest, std::size_t dest_start, std::size_t num_bytes);
-
-
-} // namespace Pod
-} // namespace Gensys
+} // namespace Algs
 } // namespace pegr
 
 #endif // PEGR_GENSYS_PODCHUNK_HPP

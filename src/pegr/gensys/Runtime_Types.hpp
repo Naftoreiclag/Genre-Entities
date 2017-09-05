@@ -24,7 +24,7 @@
 #include <vector>
 
 #include "pegr/gensys/Entity_Handle.hpp"
-#include "pegr/gensys/Pod_Chunk.hpp"
+#include "pegr/algs/Pod_Chunk.hpp"
 #include "pegr/script/Script.hpp"
 
 namespace pegr {
@@ -175,7 +175,7 @@ struct Arche {
     /* Default chunk which is fast-copied into the entity's chunk. These chunks
      * only contain POD types.
      */
-    Pod::Unique_Chunk_Ptr m_default_chunk;
+    Algs::Unique_Chunk_Ptr m_default_chunk;
 
     /* Default collection of default strings
      */
@@ -406,7 +406,7 @@ public:
     /**
      * @return m_chunk, the data chunk which holds instance data
      */
-    Pod::Chunk_Ptr get_chunk() const;
+    Algs::Podc_Ptr get_chunk() const;
     
     /**
      * @return m_handle The handle for this entity
@@ -545,7 +545,7 @@ private:
      * The instance data comprises the remainder of the memory block. Only
      * constant-size data is stored here.
      */
-    Pod::Unique_Chunk_Ptr m_chunk;
+    Algs::Unique_Chunk_Ptr m_chunk;
 
     // Array of strings that replace the archetype defaults.
     // TODO: a bitfield for checking if the strings are actually different

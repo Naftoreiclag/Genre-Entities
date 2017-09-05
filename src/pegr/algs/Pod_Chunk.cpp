@@ -14,75 +14,26 @@
  *  limitations under the License.
  */
 
-#include "pegr/gensys/Pod_Chunk.hpp"
+#include "pegr/algs/Pod_Chunk.hpp"
 
 #include <algorithm>
 #include <cassert>
 
 namespace pegr {
-namespace Gensys {
-namespace Pod {
+namespace Algs {
 
-Chunk_Ptr::Chunk_Ptr(void* chunk, std::size_t size)
-: m_voidptr(chunk)
-, m_size(size) {
-    assert(m_size % 8 == 0);
-}
-
-Chunk_Ptr::Chunk_Ptr()
+Podc_Ptr::Podc_Ptr()
 : m_voidptr(nullptr)
 , m_size(0) {}
 
-bool Chunk_Ptr::is_nullptr() const {
-    return m_voidptr == nullptr;
-}
-void Chunk_Ptr::make_nullptr() {
-    m_voidptr = nullptr;
-    m_size = 0;
-}
-
-void* Chunk_Ptr::get_raw() const {
-    return m_voidptr;
-}
-std::size_t Chunk_Ptr::get_size() const {
-    return m_size;
-}
-
-bool Chunk_Ptr::operator ==(const Chunk_Ptr& rhs) const {
-    return m_voidptr == rhs.m_voidptr;
-}
-bool Chunk_Ptr::operator !=(const Chunk_Ptr& rhs) const {
-    return m_voidptr != rhs.m_voidptr;
-}
-Chunk_Ptr::operator bool() const {
-    return m_voidptr == nullptr;
-}
-    
-bool operator ==(std::nullptr_t, const Chunk_Ptr& rhs) {
-    return rhs.m_voidptr == nullptr;
-}
-bool operator ==(const Chunk_Ptr& lhs, std::nullptr_t) {
-    return lhs.m_voidptr == nullptr;
-}
-bool operator !=(std::nullptr_t, const Chunk_Ptr& rhs) {
-    return rhs.m_voidptr != nullptr;
-}
-bool operator !=(const Chunk_Ptr& lhs, std::nullptr_t) {
-    return lhs.m_voidptr != nullptr;
-}
-
-void Chunk_Ptr_Deleter::operator ()(pointer ptr) const {
-    delete_pod_chunk(ptr);
-}
-
-Chunk_Ptr new_pod_chunk(std::size_t req_size) {
+Podc_Ptr Podc_Ptr::new_pod_chunk(std::size_t req_size) {
     /* Special case if there is no size: Create a "zero-length" array
      * NOT nullptr! This ensures that no two independent return values for this 
      * function are equal!
      */
     if (req_size == 0) {
         int64_t* chunk = new int64_t[1];
-        return Chunk_Ptr(chunk, 0);
+        return Podc_Ptr(chunk, 0);
     }
     
     assert(sizeof(int64_t) == 8);
@@ -90,17 +41,17 @@ Chunk_Ptr new_pod_chunk(std::size_t req_size) {
     // Fewest number of int64's that can hold the requested number of bytes
     std::size_t num_64s = (req_size / 8) + (req_size % 8 == 0 ? 0 : 1);
     int64_t* chunk = new int64_t[num_64s];
-    return Chunk_Ptr(chunk, num_64s * 8);
+    return Podc_Ptr(chunk, num_64s * 8);
 }
 
-void delete_pod_chunk(Chunk_Ptr ptr) {
+void Podc_Ptr::delete_pod_chunk(Podc_Ptr ptr) {
     if (ptr.is_nullptr()) return;
     delete[] static_cast<int64_t*>(ptr.get_raw());
 }
 
-void copy_pod_chunk(
-        Chunk_Ptr src, std::size_t src_start,
-        Chunk_Ptr dest, std::size_t dest_start, std::size_t num_bytes) {
+void Podc_Ptr::copy_pod_chunk(
+        Podc_Ptr src, std::size_t src_start,
+        Podc_Ptr dest, std::size_t dest_start, std::size_t num_bytes) {
 
     assert(src_start % 8 == 0);
     assert(dest_start % 8 == 0);
@@ -126,6 +77,53 @@ void copy_pod_chunk(
         dest_array + (dest_start / 8));
 }
 
-} // namespace Pod
-} // namespace Gensys
+Podc_Ptr::Podc_Ptr(void* chunk, std::size_t size)
+: m_voidptr(chunk)
+, m_size(size) {
+    assert(m_size % 8 == 0);
+}
+
+bool Podc_Ptr::is_nullptr() const {
+    return m_voidptr == nullptr;
+}
+void Podc_Ptr::make_nullptr() {
+    m_voidptr = nullptr;
+    m_size = 0;
+}
+
+void* Podc_Ptr::get_raw() const {
+    return m_voidptr;
+}
+std::size_t Podc_Ptr::get_size() const {
+    return m_size;
+}
+
+bool Podc_Ptr::operator ==(const Podc_Ptr& rhs) const {
+    return m_voidptr == rhs.m_voidptr;
+}
+bool Podc_Ptr::operator !=(const Podc_Ptr& rhs) const {
+    return m_voidptr != rhs.m_voidptr;
+}
+Podc_Ptr::operator bool() const {
+    return m_voidptr == nullptr;
+}
+    
+bool operator ==(std::nullptr_t, const Podc_Ptr& rhs) {
+    return rhs.m_voidptr == nullptr;
+}
+bool operator ==(const Podc_Ptr& lhs, std::nullptr_t) {
+    return lhs.m_voidptr == nullptr;
+}
+bool operator !=(std::nullptr_t, const Podc_Ptr& rhs) {
+    return rhs.m_voidptr != nullptr;
+}
+bool operator !=(const Podc_Ptr& lhs, std::nullptr_t) {
+    return lhs.m_voidptr != nullptr;
+}
+
+void Chunk_Ptr_Deleter::operator ()(pointer ptr) const {
+    Podc_Ptr::delete_pod_chunk(ptr);
+}
+
+} // namespace Algs
 } // namespace pegr

@@ -22,7 +22,7 @@
 #include <vector>
 
 #include "pegr/gensys/Interm_Types.hpp"
-#include "pegr/gensys/Pod_Chunk.hpp"
+#include "pegr/algs/Pod_Chunk.hpp"
 #include "pegr/logger/Logger.hpp"
 
 namespace pegr {
@@ -37,7 +37,7 @@ namespace Util {
  * the offsets into the resulting chunk
  * @return 
  */
-Pod::Chunk_Ptr new_pod_chunk_from_interm_prims(
+Algs::Podc_Ptr new_pod_chunk_from_interm_prims(
         const std::map<Interm::Symbol, Interm::Prim>& members, 
         std::map<Interm::Symbol, std::size_t>& symbol_to_offset);
 
@@ -52,7 +52,7 @@ Pod::Chunk_Ptr new_pod_chunk_from_interm_prims(
 void copy_named_prims_into_pod_chunk(
         const std::map<Interm::Symbol, Interm::Prim>& members, 
         const std::map<Interm::Symbol, std::size_t>& symbol_to_offset, 
-        Pod::Chunk_Ptr chunk, std::size_t dest_offset);
+        Algs::Podc_Ptr chunk, std::size_t dest_offset);
         
 
 
