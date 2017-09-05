@@ -26,7 +26,7 @@ Podc_Ptr::Podc_Ptr()
 : m_voidptr(nullptr)
 , m_size(0) {}
 
-Podc_Ptr Podc_Ptr::new_pod_chunk(std::size_t req_size) {
+Podc_Ptr Podc_Ptr::new_podc(std::size_t req_size) {
     /* Special case if there is no size: Create a "zero-length" array
      * NOT nullptr! This ensures that no two independent return values for this 
      * function are equal!
@@ -44,12 +44,12 @@ Podc_Ptr Podc_Ptr::new_pod_chunk(std::size_t req_size) {
     return Podc_Ptr(chunk, num_64s * 8);
 }
 
-void Podc_Ptr::delete_pod_chunk(Podc_Ptr ptr) {
+void Podc_Ptr::delete_podc(Podc_Ptr ptr) {
     if (ptr.is_nullptr()) return;
     delete[] static_cast<int64_t*>(ptr.get_raw());
 }
 
-void Podc_Ptr::copy_pod_chunk(
+void Podc_Ptr::copy_podc(
         Podc_Ptr src, std::size_t src_start,
         Podc_Ptr dest, std::size_t dest_start, std::size_t num_bytes) {
 
@@ -122,7 +122,7 @@ bool operator !=(const Podc_Ptr& lhs, std::nullptr_t) {
 }
 
 void Chunk_Ptr_Deleter::operator ()(pointer ptr) const {
-    Podc_Ptr::delete_pod_chunk(ptr);
+    Podc_Ptr::delete_podc(ptr);
 }
 
 } // namespace Algs

@@ -26,7 +26,7 @@ namespace pegr {
 namespace Algs {
 
 /**
- * @class Chunk_Ptr
+ * @class Podc_Ptr
  * @brief This class acts similar to an ordinary C pointer to an imaginary
  * "Chunk" class instance, which is really just a raw area of memory. Note that
  * this means that Chunk_Ptr has all of the dangers of ordinary C pointers, such
@@ -42,6 +42,12 @@ public:
      */
     Podc_Ptr();
     
+    Podc_Ptr(const Podc_Ptr& rhs) = default;
+    Podc_Ptr(Podc_Ptr&& rhs) = default;
+    Podc_Ptr& operator =(const Podc_Ptr& rhs) = default;
+    Podc_Ptr& operator =(Podc_Ptr&& rhs) = default;
+    ~Podc_Ptr() = default;
+    
     /**
      * @brief Creates a new chunk with the requested size. Rounds up to nearest
      * 8 bytes (64 bit alignment). Chunks of size zero can be created. Such 
@@ -49,12 +55,12 @@ public:
      * @param size The requested size in bytes
      * @return "Pointer"
      */
-    static Podc_Ptr new_pod_chunk(std::size_t size);
+    static Podc_Ptr new_podc(std::size_t size);
 
     /**
-     * @brief Deletes a chunk that was created by new_pod_chunk()
+     * @brief Deletes a chunk that was created by new_podc()
      */
-    static void delete_pod_chunk(Podc_Ptr ptr);
+    static void delete_podc(Podc_Ptr ptr);
 
     /**
      * @brief Copies the data from one chunk into another
@@ -64,24 +70,9 @@ public:
      * @param dest_start Offset to begin overwriting at (must be multiple of 8)
      * @param num_bytes The number of bytes to copy (must be multiple of 8)
      */
-    static void copy_pod_chunk(
+    static void copy_podc(
             Podc_Ptr src, std::size_t src_start,
             Podc_Ptr dest, std::size_t dest_start, std::size_t num_bytes);
-
-    
-    /**
-     * @brief Constructor. You should not directly call this in most
-     * circumstances. Instead, use the factory function new_pod_chunk()
-     * declared below. This constructor does not assume deletion responsibility.
-     */
-    Podc_Ptr(void* chunk, std::size_t size);
-    
-    Podc_Ptr(const Podc_Ptr& rhs) = default;
-    Podc_Ptr(Podc_Ptr&& rhs) = default;
-    Podc_Ptr& operator =(const Podc_Ptr& rhs) = default;
-    Podc_Ptr& operator =(Podc_Ptr&& rhs) = default;
-    ~Podc_Ptr() = default;
-    
     /**
      * @return If this is pointing to nothing 
      */
@@ -168,6 +159,13 @@ public:
 private:
     void* m_voidptr;
     std::size_t m_size;
+    
+    /**
+     * @brief Constructor. You should not directly call this in most
+     * circumstances. Instead, use the factory function new_pod_chunk()
+     * declared below. This constructor does not assume deletion responsibility.
+     */
+    Podc_Ptr(void* chunk, std::size_t size);
 };
 
 struct Chunk_Ptr_Deleter {

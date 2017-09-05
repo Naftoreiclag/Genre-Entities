@@ -91,7 +91,7 @@ Algs::Podc_Ptr new_pod_chunk_from_interm_prims(
         }
     }
     
-    Algs::Podc_Ptr pcp = Algs::Podc_Ptr::new_pod_chunk(ptrack.get_minimum_size());
+    Algs::Podc_Ptr pcp = Algs::Podc_Ptr::new_podc(ptrack.get_minimum_size());
     copy_named_prims_into_pod_chunk(members, symbol_to_offset, pcp, 0);
     return pcp;
 }

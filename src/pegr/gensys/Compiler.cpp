@@ -311,7 +311,7 @@ void compile_archetype_resize_pod(Work::Space& workspace,
         const Work::Comp* comp = comp_iter->second;
         total_size += comp->m_compiled_chunk.get().get_size();
     }
-    arche->m_runtime->m_default_chunk.reset(Algs::Podc_Ptr::new_pod_chunk(total_size));
+    arche->m_runtime->m_default_chunk.reset(Algs::Podc_Ptr::new_podc(total_size));
 }
 
 /**
@@ -337,7 +337,7 @@ void compile_archetype_fill_pod(Work::Space& workspace,
         const Work::Comp* comp = comp_iter->second;
 
         // Copy the pod chunk
-        Algs::Podc_Ptr::copy_pod_chunk(
+        Algs::Podc_Ptr::copy_podc(
                 comp->m_compiled_chunk.get(),
                 0,
                 arche->m_runtime->m_default_chunk.get(),
