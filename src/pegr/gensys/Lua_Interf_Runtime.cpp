@@ -805,7 +805,20 @@ int li_new_entity(lua_State* l) {
         luaL_error(l, "new_entity is only available during execution");
     }
     
-    Runtime::Arche* arche = *arg_require_arche(l, ARG_ARCHE);
+    std::size_t strlen;
+    const char* strdata = lua_tolstring(l, 1, &strlen);
+    
+    Runtime::Arche* arche;
+    if (strdata) {
+        std::string key(strdata, strlen);
+        Resour::Oid oid(key);
+        arche = Runtime::find_arche(oid);
+        if (!arche) {
+            return 0;
+        }
+    } else {
+        arche = *arg_require_arche(l, ARG_ARCHE);
+    }
     
     Runtime::Entity_Handle ent = Runtime::get_entities().new_entity(arche);
     ent->set_flag_lua_owned(true);

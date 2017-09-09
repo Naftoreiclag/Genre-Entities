@@ -41,18 +41,20 @@ namespace Engine {
 typedef std::chrono::time_point<std::chrono::steady_clock> Steady_Time_Point;
 boost::asio::io_service n_io;
 Steady_Time_Point n_last_tick_timestamp;
+Steady_Time_Point n_last_frame_timestamp;
 
 int64_t n_tick_period_ns = 1e6;
 int32_t n_tick_freq = 1;
 uint64_t n_tick_id = 0;
 double n_tick_lag = 0;
+double n_frame_delta = 0;
 
 const uint16_t INIT_FLAG_LOGGER = 0x0001;
 const uint16_t INIT_FLAG_SCRIPT = 0x0002 | INIT_FLAG_LOGGER;
 const uint16_t INIT_FLAG_SCHEDU = 0x0008 | INIT_FLAG_SCRIPT;
 const uint16_t INIT_FLAG_GENSYS = 0x0004 | INIT_FLAG_SCRIPT | INIT_FLAG_SCHEDU;
-const uint16_t INIT_FLAG_WINPUT = 0x0010 | INIT_FLAG_LOGGER;
-const uint16_t INIT_FLAG_RESOUR = 0x0020 | INIT_FLAG_LOGGER;
+const uint16_t INIT_FLAG_RESOUR = 0x0010 | INIT_FLAG_LOGGER;
+const uint16_t INIT_FLAG_WINPUT = 0x0020 | INIT_FLAG_LOGGER | INIT_FLAG_RESOUR;
 const uint16_t INIT_FLAG_ALL = 0xFFFF;
 const uint16_t INIT_FLAG_NONE = 0x0000;
 
@@ -127,23 +129,23 @@ void initialize(uint16_t flags) {
         }
     }
     
-    if (winput_used()) {
-        try {
-            Winput::initialize();
-        } catch (Except::Runtime& e) {
-            std::stringstream sss;
-            sss << "Error while initializing window/input: "
-                << e.what();
-            throw Except::Runtime(sss.str());
-        }
-    }
-    
     if (resour_used()) {
         try {
             Resour::initialize();
         } catch (Except::Runtime& e) {
             std::stringstream sss;
             sss << "Error while initializing resources: "
+                << e.what();
+            throw Except::Runtime(sss.str());
+        }
+    }
+    
+    if (winput_used()) {
+        try {
+            Winput::initialize();
+        } catch (Except::Runtime& e) {
+            std::stringstream sss;
+            sss << "Error while initializing window/input: "
                 << e.what();
             throw Except::Runtime(sss.str());
         }
@@ -185,6 +187,13 @@ void update_lag_time() {
     n_tick_lag = newlag;
 }
 
+void update_frame_delta() {
+    Steady_Time_Point now = std::chrono::steady_clock::now();
+    std::chrono::duration<double> diff = now - n_last_frame_timestamp;
+    n_frame_delta = diff.count();
+    n_last_frame_timestamp = now;
+}
+
 void async_max_speed(const boost::system::error_code& asio_err,
         boost::asio::deadline_timer* timer) {
     update_lag_time();
@@ -215,8 +224,11 @@ void async_tick(const boost::system::error_code& asio_err,
 
 void async_render(const boost::system::error_code& asio_err,
         boost::asio::deadline_timer* timer) {
-    
     update_lag_time();
+    update_frame_delta();
+    if (winput_used()) {
+        Winput::pre_frame();
+    }
     n_asm->do_frame();
     if (winput_used()) {
         Winput::submit_frame();
@@ -246,6 +258,7 @@ void run() {
             async_max_speed, boost::asio::placeholders::error,
             &max_speed_timer));
     n_last_tick_timestamp = std::chrono::steady_clock::now();
+    n_last_frame_timestamp = std::chrono::steady_clock::now();
     n_io.run();
 }
 
@@ -253,12 +266,12 @@ void cleanup() {
     n_asm.clear_all();
     n_tick_id = 0;
     
-    if (resour_used()) {
-        Resour::cleanup();
-    }
-    
     if (winput_used()) {
         Winput::cleanup();
+    }
+    
+    if (resour_used()) {
+        Resour::cleanup();
     }
     
     if (gensys_used()) {
@@ -291,6 +304,9 @@ uint64_t get_tick_id() {
 }
 double get_tick_lag() {
     return n_tick_lag;
+}
+double get_frame_delta() {
+    return n_frame_delta;
 }
 
 bool is_main_loop_running() {

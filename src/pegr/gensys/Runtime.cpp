@@ -395,10 +395,10 @@ Entity::Entity(Arche* arche, Entity_Handle handle)
 : m_arche(arche)
 , m_handle(handle) {
     
-    m_chunk.reset(Pod::new_pod_chunk(
+    m_chunk.reset(Algs::Podc_Ptr::new_podc(
             ENT_HEADER_SIZE + m_arche->m_default_chunk.get().get_size()));
     
-    Pod::copy_pod_chunk(
+    Algs::Podc_Ptr::copy_podc(
             m_arche->m_default_chunk.get(), 0, 
             m_chunk.get(), ENT_HEADER_SIZE,
             m_arche->m_default_chunk.get().get_size());
@@ -413,7 +413,7 @@ Entity::Entity(Arche* arche, Entity_Handle handle)
 Arche* Entity::get_arche() const {
     return m_arche;
 }
-Pod::Chunk_Ptr Entity::get_chunk() const {
+Algs::Podc_Ptr Entity::get_chunk() const {
     return m_chunk.get();
 }
 Entity_Handle Entity::get_handle() const {

@@ -111,7 +111,7 @@ int li_call_event(lua_State* l) {
 }
 int li_hook_listener(lua_State* l) {
     assert_balance(0);
-    
+    /*
     const int ARG_TABLE = 1;
     
     luaL_checktype(l, ARG_TABLE, LUA_TTABLE);
@@ -130,8 +130,8 @@ int li_hook_listener(lua_State* l) {
     if (!event) {
         luaL_error(l, "No event called %s", event_oid);
     }
-    
-    //luaL_error(l, "Not implemented");
+    */
+    luaL_error(l, "Not implemented");
     return 0;
 }
     

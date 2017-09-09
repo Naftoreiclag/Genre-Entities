@@ -21,7 +21,7 @@
 #include <map>
 #include <vector>
 
-#include "pegr/gensys/Pod_Chunk.hpp"
+#include "pegr/algs/Pod_Chunk.hpp"
 #include "pegr/script/Script.hpp"
 
 namespace pegr {

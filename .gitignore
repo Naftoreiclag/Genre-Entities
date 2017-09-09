@@ -5,3 +5,4 @@ ide/*
 run/ignore/*
 run/logs/*
 run/core/*
+run/config/*

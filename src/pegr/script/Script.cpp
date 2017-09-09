@@ -238,6 +238,12 @@ const std::vector<Whitelist_Entry> m_global_whitelist = {
         "insert",
         "remove",
         "sort"
+    } },
+    { "jit", {
+        "version",
+        "version_num",
+        //"os",  // Unnecessary, privacy concerns
+        //"arch"  // Unnecessary, privacy concerns
     } }
 };
 
@@ -253,15 +259,17 @@ void create_state_and_open_libs() {
 }
 
 Regref m_luaglob__VERISON;
-Regref m_luaglob_tostring;
+Regref m_luaglob_jit;
 Regref m_luaglob_print;
+Regref m_luaglob_tostring;
 
 void cache_lua_std_lib() {
     assert_balance(0);
     const Lua_Global_Cacher cachers[] = {
         {"_VERSION",    &m_luaglob__VERISON},
-        {"tostring",    &m_luaglob_tostring},
+        {"jit",         &m_luaglob_jit},
         {"print",       &m_luaglob_print},
+        {"tostring",    &m_luaglob_tostring},
         
         // End of the list
         {nullptr, nullptr}
@@ -281,7 +289,14 @@ void cache_lua_std_lib() {
 
 void get_and_print_lua_version() {
     assert_balance(0);
-    push_reference(m_luaglob__VERISON);
+    push_reference(m_luaglob_jit);
+    if (lua_isnil(m_l, -1)) {
+        lua_pop(m_l, 1);
+        push_reference(m_luaglob__VERISON);
+    } else {
+        lua_getfield(m_l, -1, "version");
+        lua_remove(m_l, -2);
+    }
     std::size_t strlen;
     const char* luastr = lua_tolstring(m_l, -1, &strlen);
     m_lua_version = std::string(luastr, strlen);
@@ -303,16 +318,24 @@ void setup_basic_pristine_sandbox() {
         const char* module = whitelisted_table.first;
         const auto& members = whitelisted_table.second;
         if (module) {
-            lua_newtable(m_l);
-            lua_getglobal(m_l, module);
-            assert(!lua_isnil(m_l, -1) && "Required library not found!");
-            for (const char* member : members) {
-                lua_getfield(m_l, -1, member);
-                assert(!lua_isnil(m_l, -1) && "Required lib func not found!");
-                lua_setfield(m_l, -3, member);
+            lua_newtable(m_l); // Make a new empty table to copy the module into
+            lua_getglobal(m_l, module); // Get the global module
+            if (std::strcmp("jit", module) == 0) {
+                if (lua_isnil(m_l, -1)) {
+                    lua_pop(m_l, 2); // Remove the global module and nil
+                    Logger::log()->info("No jit module!");
+                    continue;
+                }
+            } else {
+                assert(!lua_isnil(m_l, -1) && "Required library not found!");
             }
-            lua_pop(m_l, 1);
-            lua_setfield(m_l, -2, module);
+            for (const char* member : members) {
+                lua_getfield(m_l, -1, member); // Get the func from the module
+                assert(!lua_isnil(m_l, -1) && "Required lib func not found!");
+                lua_setfield(m_l, -3, member); // Store into module copy
+            }
+            lua_pop(m_l, 1); // Remove the global module
+            lua_setfield(m_l, -2, module); // Store module copy into sandbox
         }
         else {
             for (const char* member : members) {

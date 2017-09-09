@@ -53,7 +53,7 @@ struct Comp {
     std::unique_ptr<Interm::Comp> m_interm;
     std::unique_ptr<Runtime::Comp> m_runtime;
     std::map<Interm::Symbol, std::size_t> m_symbol_to_offset;
-    Pod::Unique_Chunk_Ptr m_compiled_chunk;
+    Algs::Unique_Chunk_Ptr m_compiled_chunk;
     std::vector<std::string> m_strings;
     std::vector<Script::Regref> m_funcs;
 };
@@ -311,7 +311,7 @@ void compile_archetype_resize_pod(Work::Space& workspace,
         const Work::Comp* comp = comp_iter->second;
         total_size += comp->m_compiled_chunk.get().get_size();
     }
-    arche->m_runtime->m_default_chunk.reset(Pod::new_pod_chunk(total_size));
+    arche->m_runtime->m_default_chunk.reset(Algs::Podc_Ptr::new_podc(total_size));
 }
 
 /**
@@ -337,7 +337,7 @@ void compile_archetype_fill_pod(Work::Space& workspace,
         const Work::Comp* comp = comp_iter->second;
 
         // Copy the pod chunk
-        Pod::copy_pod_chunk(
+        Algs::Podc_Ptr::copy_podc(
                 comp->m_compiled_chunk.get(),
                 0,
                 arche->m_runtime->m_default_chunk.get(),

@@ -19,8 +19,8 @@
 
 #include <functional>
 
-#include "pegr/script/Script.hpp"
 #include "pegr/resource/Oid.hpp"
+#include "pegr/script/Script.hpp"
 
 namespace pegr {
 namespace Script {

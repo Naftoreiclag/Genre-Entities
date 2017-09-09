@@ -28,6 +28,7 @@
 #include "pegr/except/Except.hpp"
 #include "pegr/logger/Logger.hpp"
 #include "pegr/render/Shaders.hpp"
+#include "pegr/winput/Dbgui.hpp"
 #include "pegr/winput/Enum_Utils.hpp"
 
 namespace pegr {
@@ -37,14 +38,32 @@ const char* const WINDOW_DEFAULT_TITLE = "Engine";
 const int32_t WINDOW_DEFAULT_WIDTH = 640;
 const int32_t WINDOW_DEFAULT_HEIGHT = 480;
 
+extern const std::uint32_t MOUSE_BUTTON_LEFT = SDL_BUTTON_LMASK;
+extern const std::uint32_t MOUSE_BUTTON_MIDDLE = SDL_BUTTON_MMASK;
+extern const std::uint32_t MOUSE_BUTTON_RIGHT = SDL_BUTTON_RMASK;
+extern const std::uint32_t MOUSE_BUTTON_EXTRA_1 = SDL_BUTTON_X1MASK;
+extern const std::uint32_t MOUSE_BUTTON_EXTRA_2 = SDL_BUTTON_X2MASK;
+
+Dbgui n_dbgui;
+
 SDL_Window* n_window;
 SDL_SysWMinfo n_syswm_info;
 
-int32_t n_window_width = WINDOW_DEFAULT_WIDTH;
-int32_t n_window_height = WINDOW_DEFAULT_HEIGHT;
+std::int32_t n_mouse_x = 0;
+std::int32_t n_mouse_y = 0;
 
-int32_t get_window_width() { return n_window_width; }
-int32_t get_window_height() { return n_window_height; }
+std::int32_t get_mouse_x() { return n_mouse_x; }
+std::int32_t get_mouse_y() { return n_mouse_y; }
+
+std::uint32_t get_mouse_buttons() {
+    return SDL_GetMouseState(nullptr, nullptr);
+}
+
+std::int32_t n_window_width = WINDOW_DEFAULT_WIDTH;
+std::int32_t n_window_height = WINDOW_DEFAULT_HEIGHT;
+
+std::int32_t get_window_width() { return n_window_width; }
+std::int32_t get_window_height() { return n_window_height; }
 
 bgfx::PlatformData extract_plat_specific(const SDL_SysWMinfo& syswm_info) {
     bgfx::PlatformData plat_specific;
@@ -91,7 +110,7 @@ bgfx::PlatformData extract_plat_specific(const SDL_SysWMinfo& syswm_info) {
 void initialize() {
     Logger::log()->info("Initializing window and input");
     
-    if(SDL_Init(0) < 0) {
+    if (SDL_Init(0) < 0) {
         std::stringstream sss;
         sss << "Could not initalize SDL: "
             << SDL_GetError();
@@ -110,7 +129,7 @@ void initialize() {
         n_window_width = width;
         n_window_height = height;
     }
-    if(!n_window) {
+    if (!n_window) {
         throw Except::Runtime("Could not create SDL window");
     }
     
@@ -147,6 +166,17 @@ void initialize() {
     
     Logger::log()->info("bgfx renderer type: %v", 
             Util::to_string_bgfx_rt(bgfx::getRendererType()));
+    
+    n_dbgui.initialize();
+}
+
+void on_sdl_mouse_button(const SDL_MouseButtonEvent& button) {
+    // ...
+}
+
+void on_sdl_mouse_motion(const SDL_MouseMotionEvent& motion) {
+    n_mouse_x = motion.x;
+    n_mouse_y = motion.y;
 }
 
 void on_sdl_window_resize(const SDL_WindowEvent& window) {
@@ -167,6 +197,15 @@ void pollEvents() {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
+            case SDL_MOUSEBUTTONUP:
+            case SDL_MOUSEBUTTONDOWN: {
+                on_sdl_mouse_button(event.button);
+                break;
+            }
+            case SDL_MOUSEMOTION: {
+                on_sdl_mouse_motion(event.motion);
+                break;
+            }
             case SDL_WINDOWEVENT: {
                 switch (event.window.event) {
                     case SDL_WINDOWEVENT_RESIZED: {
@@ -185,7 +224,10 @@ void pollEvents() {
     }
 }
 void cleanup() {
+    
     Logger::log()->info("Cleaning window and input");
+    
+    n_dbgui.cleanup();
     
     Render::clear_cached_programs();
     Render::clear_cached_shaders();
@@ -199,8 +241,13 @@ void cleanup() {
     SDL_Quit();
 }
 
+void pre_frame() {
+    n_dbgui.new_frame();
+}
+
 void submit_frame() {
     bgfx::touch(0);
+    n_dbgui.render();
     bgfx::frame();
 }
 

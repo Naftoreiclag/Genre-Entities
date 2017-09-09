@@ -14,10 +14,9 @@
  *  limitations under the License.
  */
 
-#include "pegr/gensys/Pod_Chunk.hpp"
-
 #include <sstream>
 
+#include "pegr/algs/Pod_Chunk.hpp"
 #include "pegr/except/Except.hpp"
 
 namespace pegr {
@@ -25,7 +24,7 @@ namespace Test {
 
 //@Test PodChunk test
 void test_0085_00_podchunk_test() {
-    Gensys::Pod::Chunk_Ptr pcp = Gensys::Pod::new_pod_chunk(256);
+    Algs::Podc_Ptr pcp = Algs::Podc_Ptr::new_podc(256);
     
     pcp.set_value<int32_t>(0, 12345);
     pcp.set_value<int64_t>(8, 123456789);
@@ -69,7 +68,7 @@ void test_0085_00_podchunk_test() {
         }
     }
     
-    Gensys::Pod::delete_pod_chunk(pcp);
+    Algs::Podc_Ptr::delete_podc(pcp);
 }
 
 } // namespace Test

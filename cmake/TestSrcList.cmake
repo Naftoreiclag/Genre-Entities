@@ -22,10 +22,16 @@
 set(PGLOCAL_SOURCES_LIST "")
 foreach(fname 
 
-"../thirdparty/bgfx_examples/bexam_cubes/cubes.cpp"
+"../thirdparty/bgfx_examples/bexam/01-cubes/cubes.cpp"
+"../thirdparty/bgfx_examples/bexam/common/imgui/imgui.cpp"
 "../thirdparty/easyloggingpp/easylogging++.cc"
 "../thirdparty/jsoncpp/jsoncpp.cpp"
+"../thirdparty/ocornut-imgui/ocornut-imgui/imgui.cpp"
+"../thirdparty/ocornut-imgui/ocornut-imgui/imgui_demo.cpp"
+"../thirdparty/ocornut-imgui/ocornut-imgui/imgui_draw.cpp"
 "Test.cpp"
+"algs/Partition_Tracker.cpp"
+"algs/Pod_Chunk.cpp"
 "app/Game.cpp"
 "debug/Debug_Assert_Lua_Balance.cpp"
 "engine/App_State.cpp"
@@ -41,7 +47,6 @@ foreach(fname
 "gensys/Interm_Types.cpp"
 "gensys/Lua_Interf_Runtime.cpp"
 "gensys/Lua_Interf_Setup.cpp"
-"gensys/Pod_Chunk.cpp"
 "gensys/Runtime.cpp"
 "gensys/Util.cpp"
 "logger/Logger.cpp"
@@ -73,6 +78,7 @@ foreach(fname
 "test/Unique_Handles_Test.cpp"
 "test/Unique_Ptr_Test.cpp"
 "text/Text.cpp"
+"winput/Dbgui.cpp"
 "winput/Enum_Utils.cpp"
 "winput/Winput.cpp"
 
